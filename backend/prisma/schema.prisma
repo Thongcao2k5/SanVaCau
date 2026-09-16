@@ -4,5 +4,312 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model app_user {
+  id                   BigInt           @id @default(autoincrement())
+  email                String           @unique @db.VarChar(255)
+  password_hash        String           @db.VarChar(255)
+  full_name            String           @db.VarChar(150)
+  phone                String?          @db.VarChar(20)
+  role                 String           @default("CUSTOMER") @db.VarChar(30)
+  status               String           @default("ACTIVE") @db.VarChar(20)
+  branch_id            BigInt?
+  must_change_password Boolean          @default(false)
+  created_at           DateTime         @default(now()) @db.Timestamp(6)
+  updated_at           DateTime         @default(now()) @db.Timestamp(6)
+  branch               branch?          @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audit_log            audit_log[]
+  booking              booking[]
+  cart                 cart?
+  customer_order       customer_order[]
+  news                 news[]
+
+  @@index([branch_id, role], map: "ix_app_user_branch")
+}
+
+model audit_log {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt
+  action      String   @db.VarChar(100)
+  entity_type String   @db.VarChar(100)
+  entity_id   BigInt?
+  description String?  @db.VarChar(1000)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  app_user    app_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model banner {
+  id         BigInt    @id @default(autoincrement())
+  title      String?   @db.VarChar(200)
+  image_url  String    @db.VarChar(1000)
+  link_url   String?   @db.VarChar(1000)
+  sort_order Int       @default(0)
+  start_at   DateTime? @db.Timestamp(6)
+  end_at     DateTime? @db.Timestamp(6)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model booking {
+  id             BigInt         @id @default(autoincrement())
+  customer_id    BigInt
+  court_id       BigInt
+  booking_date   DateTime       @db.Date
+  status         String         @default("BOOKED") @db.VarChar(20)
+  total_amount   Decimal        @db.Decimal(18, 2)
+  payment_method String?        @db.VarChar(20)
+  payment_status String         @default("UNPAID") @db.VarChar(20)
+  created_at     DateTime       @default(now()) @db.Timestamp(6)
+  checked_in_at  DateTime?      @db.Timestamp(6)
+  completed_at   DateTime?      @db.Timestamp(6)
+  cancelled_at   DateTime?      @db.Timestamp(6)
+  court          court          @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user       app_user       @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  booking_slot   booking_slot[]
+
+  @@index([court_id, booking_date], map: "ix_booking_court_date")
+  @@index([customer_id, booking_date], map: "ix_booking_customer_date")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model booking_slot {
+  id               BigInt    @id @default(autoincrement())
+  booking_id       BigInt
+  court_id         BigInt
+  booking_date     DateTime  @db.Date
+  time_slot_id     BigInt
+  price_at_booking Decimal   @db.Decimal(18, 2)
+  booking          booking   @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  court            court     @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  time_slot        time_slot @relation(fields: [time_slot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([booking_id, time_slot_id])
+  @@index([court_id, booking_date, time_slot_id], map: "ix_booking_slot_schedule")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model branch {
+  id             BigInt           @id @default(autoincrement())
+  name           String           @db.VarChar(150)
+  address        String           @db.VarChar(300)
+  phone          String?          @db.VarChar(20)
+  opening_time   DateTime         @db.Time(6)
+  closing_time   DateTime         @db.Time(6)
+  status         String           @default("ACTIVE") @db.VarChar(20)
+  created_at     DateTime         @default(now()) @db.Timestamp(6)
+  updated_at     DateTime         @default(now()) @db.Timestamp(6)
+  app_user       app_user[]
+  branch_service branch_service[]
+  court          court[]
+  customer_order customer_order[]
+  inventory      inventory[]
+  news           news[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model branch_service {
+  id                 BigInt         @id @default(autoincrement())
+  branch_id          BigInt
+  service_id         BigInt
+  reference_price    Decimal?       @db.Decimal(18, 2)
+  description        String?        @db.VarChar(1000)
+  estimated_duration String?        @db.VarChar(100)
+  is_available       Boolean        @default(true)
+  branch             branch         @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  racket_service     racket_service @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([branch_id, service_id])
+}
+
+model brand {
+  id          BigInt    @id @default(autoincrement())
+  name        String    @unique @db.VarChar(120)
+  description String?   @db.VarChar(500)
+  is_active   Boolean   @default(true)
+  product     product[]
+}
+
+model cart {
+  id          BigInt      @id @default(autoincrement())
+  customer_id BigInt      @unique
+  updated_at  DateTime    @default(now()) @db.Timestamp(6)
+  app_user    app_user    @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cart_item   cart_item[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cart_item {
+  id                 BigInt          @id @default(autoincrement())
+  cart_id            BigInt
+  product_variant_id BigInt
+  quantity           Int
+  cart               cart            @relation(fields: [cart_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product_variant    product_variant @relation(fields: [product_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([cart_id, product_variant_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model category {
+  id             BigInt     @id @default(autoincrement())
+  name           String     @db.VarChar(120)
+  parent_id      BigInt?
+  description    String?    @db.VarChar(500)
+  sort_order     Int        @default(0)
+  is_active      Boolean    @default(true)
+  category       category?  @relation("categoryTocategory", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_category category[] @relation("categoryTocategory")
+  product        product[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model court {
+  id           BigInt         @id @default(autoincrement())
+  branch_id    BigInt
+  name         String         @db.VarChar(100)
+  description  String?        @db.VarChar(500)
+  status       String         @default("ACTIVE") @db.VarChar(20)
+  booking      booking[]
+  booking_slot booking_slot[]
+  branch       branch         @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  court_price  court_price[]
+
+  @@unique([branch_id, name])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model court_price {
+  id           BigInt    @id @default(autoincrement())
+  court_id     BigInt
+  time_slot_id BigInt
+  price        Decimal   @db.Decimal(18, 2)
+  court        court     @relation(fields: [court_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  time_slot    time_slot @relation(fields: [time_slot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([court_id, time_slot_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model customer_order {
+  id           BigInt       @id @default(autoincrement())
+  customer_id  BigInt
+  branch_id    BigInt
+  status       String       @default("PENDING") @db.VarChar(30)
+  total_amount Decimal      @db.Decimal(18, 2)
+  created_at   DateTime     @default(now()) @db.Timestamp(6)
+  ready_at     DateTime?    @db.Timestamp(6)
+  completed_at DateTime?    @db.Timestamp(6)
+  cancelled_at DateTime?    @db.Timestamp(6)
+  branch       branch       @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user     app_user     @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_item   order_item[]
+
+  @@index([branch_id, status], map: "ix_order_branch_status")
+  @@index([customer_id, created_at], map: "ix_order_customer")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model inventory {
+  id                 BigInt          @id @default(autoincrement())
+  branch_id          BigInt
+  product_variant_id BigInt
+  quantity           Int             @default(0)
+  updated_at         DateTime        @default(now()) @db.Timestamp(6)
+  branch             branch          @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variant    product_variant @relation(fields: [product_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([branch_id, product_variant_id])
+  @@index([branch_id], map: "ix_inventory_branch")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model news {
+  id             BigInt    @id @default(autoincrement())
+  title          String    @db.VarChar(250)
+  summary        String?   @db.VarChar(500)
+  content        String
+  thumbnail_url  String?   @db.VarChar(1000)
+  author_user_id BigInt
+  branch_id      BigInt?
+  status         String    @default("DRAFT") @db.VarChar(20)
+  published_at   DateTime? @db.Timestamp(6)
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime  @default(now()) @db.Timestamp(6)
+  app_user       app_user  @relation(fields: [author_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  branch         branch?   @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, published_at], map: "ix_news_status_published")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model order_item {
+  id                 BigInt          @id @default(autoincrement())
+  order_id           BigInt
+  product_variant_id BigInt
+  product_name       String          @db.VarChar(200)
+  variant_name       String          @db.VarChar(150)
+  unit_price         Decimal         @db.Decimal(18, 2)
+  quantity           Int
+  customer_order     customer_order  @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variant    product_variant @relation(fields: [product_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product {
+  id              BigInt            @id @default(autoincrement())
+  category_id     BigInt
+  brand_id        BigInt?
+  name            String            @db.VarChar(200)
+  description     String?
+  image_url       String?           @db.VarChar(1000)
+  is_active       Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  brand           brand?            @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  category        category          @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product_variant product_variant[]
+
+  @@index([brand_id], map: "ix_product_brand")
+  @@index([category_id], map: "ix_product_category")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model product_variant {
+  id           BigInt       @id @default(autoincrement())
+  product_id   BigInt
+  sku          String       @unique @db.VarChar(80)
+  variant_name String       @db.VarChar(150)
+  price        Decimal      @db.Decimal(18, 2)
+  image_url    String?      @db.VarChar(1000)
+  is_active    Boolean      @default(true)
+  cart_item    cart_item[]
+  inventory    inventory[]
+  order_item   order_item[]
+  product      product      @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model racket_service {
+  id             BigInt           @id @default(autoincrement())
+  name           String           @db.VarChar(150)
+  description    String?          @db.VarChar(1000)
+  image_url      String?          @db.VarChar(1000)
+  is_active      Boolean          @default(true)
+  branch_service branch_service[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model time_slot {
+  id           BigInt         @id @default(autoincrement())
+  start_time   DateTime       @db.Time(6)
+  end_time     DateTime       @db.Time(6)
+  sort_order   Int            @unique
+  is_active    Boolean        @default(true)
+  booking_slot booking_slot[]
+  court_price  court_price[]
+
+  @@unique([start_time, end_time])
 }

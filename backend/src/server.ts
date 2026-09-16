@@ -1,22 +1,19 @@
-import cors from "cors";
-import dotenv from "dotenv";
-import express from "express";
+import { app } from "./app.js";
+import { env } from "./config/env.js";
+import { prisma } from "./lib/prisma.js";
 
-dotenv.config();
+const server = app.listen(env.PORT, () => {
+  console.log(`SanVaCau API listening on port ${env.PORT}`);
+});
 
-const app = express();
-const port = Number(process.env.PORT) || 3000;
+const shutdown = async (signal: NodeJS.Signals) => {
+  console.log(`${signal} received. Shutting down server...`);
 
-app.use(cors());
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.json({
-    status: "ok",
-    service: "SanVaCau API"
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
   });
-});
+};
 
-app.listen(port, () => {
-  console.log(`SanVaCau API listening on port ${port}`);
-});
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
