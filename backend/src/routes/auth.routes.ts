@@ -2,6 +2,7 @@ import { Router } from "express";
 import { hashPassword, signAuthToken, verifyPassword } from "../lib/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireRole } from "../middleware/role.middleware.js";
 import type { AuthUser } from "../types/auth.js";
 
 export const authRouter = Router();
@@ -235,6 +236,16 @@ authRouter.post("/dev/create-admin", async (req, res, next) => {
 authRouter.get("/me", requireAuth, (req, res) => {
   res.json({
     success: true,
+    data: {
+      user: req.user,
+    },
+  });
+});
+
+authRouter.get("/admin-check", requireAuth, requireRole("ADMIN"), (req, res) => {
+  res.json({
+    success: true,
+    message: "Admin access granted",
     data: {
       user: req.user,
     },
