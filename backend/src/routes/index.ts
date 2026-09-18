@@ -6,6 +6,7 @@ import { categoryRouter } from "./category.routes.js";
 import { brandRouter } from "./brand.routes.js"; // Import route brand
 import { productRouter } from "./product.routes.js";
 import { productVariantRouter } from "./product-variant.routes.js";
+import { inventoryRouter } from "./inventory.routes.js";
 export const router = Router();
 
 router.get("/health", (_req, res) => {
@@ -33,3 +34,4 @@ router.use("/branches", branchRouter);
 router.use("/categories", categoryRouter);
 router.use("/products", productRouter);
 router.use("/product-variants", productVariantRouter);
+router.use("/inventories", inventoryRouter);
