@@ -1,0 +1,81 @@
+<svg width="1180" height="760" viewBox="0 0 1180 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1180" height="760" fill="#F8FAFC"/>
+
+  <text x="88" y="58" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#1F2937">SanVaCau - mockup hiện tại</text>
+  <text x="88" y="86" font-family="Arial, sans-serif" font-size="15" fill="#64748B">Bản khung frontend vừa setup: Home và Product List</text>
+
+  <g transform="translate(105 120)">
+    <rect width="390" height="610" rx="34" fill="#111827"/>
+    <rect x="14" y="14" width="362" height="582" rx="26" fill="#FFFBFB"/>
+    <rect x="14" y="14" width="362" height="64" rx="26" fill="#FFFBFB"/>
+    <text x="34" y="54" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#1F2937">SanVaCau</text>
+
+    <text x="34" y="122" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#1F2937">Sân cầu &amp; cửa hàng</text>
+    <text x="34" y="153" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#1F2937">thể thao</text>
+    <text x="34" y="186" font-family="Arial, sans-serif" font-size="14" fill="#64748B">Khách có thể xem sản phẩm và sân trước,</text>
+    <text x="34" y="207" font-family="Arial, sans-serif" font-size="14" fill="#64748B">đăng nhập khi cần đặt sân hoặc mua hàng.</text>
+
+    <g transform="translate(34 242)">
+      <rect width="322" height="104" rx="8" fill="#FFFFFF" stroke="#FECACA"/>
+      <rect x="16" y="30" width="44" height="44" rx="8" fill="#FCE7E7"/>
+      <path d="M31 45H45L49 64H27L31 45Z" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <path d="M34 45C34 39 42 39 42 45" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <text x="76" y="43" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#1F2937">Sản phẩm</text>
+      <text x="76" y="68" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Xem vợt, phụ kiện, biến thể và tồn kho.</text>
+      <text x="294" y="61" font-family="Arial, sans-serif" font-size="26" fill="#64748B">›</text>
+    </g>
+
+    <g transform="translate(34 362)">
+      <rect width="322" height="104" rx="8" fill="#FFFFFF" stroke="#FECACA"/>
+      <rect x="16" y="30" width="44" height="44" rx="8" fill="#FCE7E7"/>
+      <circle cx="38" cy="52" r="13" stroke="#DC2626" stroke-width="2"/>
+      <path d="M29 61L47 43" stroke="#DC2626" stroke-width="2"/>
+      <text x="76" y="43" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#1F2937">Đặt sân</text>
+      <text x="76" y="68" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Xem chi nhánh và sân cầu trước khi đặt lịch.</text>
+      <text x="294" y="61" font-family="Arial, sans-serif" font-size="26" fill="#64748B">›</text>
+    </g>
+  </g>
+
+  <g transform="translate(685 120)">
+    <rect width="390" height="610" rx="34" fill="#111827"/>
+    <rect x="14" y="14" width="362" height="582" rx="26" fill="#FFFBFB"/>
+    <rect x="14" y="14" width="362" height="64" rx="26" fill="#FFFBFB"/>
+    <text x="34" y="54" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#1F2937">Sản phẩm</text>
+
+    <g transform="translate(34 98)">
+      <rect width="322" height="124" rx="8" fill="#FFFFFF" stroke="#FECACA"/>
+      <rect x="12" y="20" width="82" height="82" rx="8" fill="#FCE7E7"/>
+      <path d="M39 50H67L73 78H33L39 50Z" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <path d="M45 50C45 39 61 39 61 50" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <text x="110" y="34" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1F2937">Vợt Yonex Astrox</text>
+      <text x="110" y="59" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#DC2626">Yonex</text>
+      <text x="110" y="80" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Vợt cầu lông</text>
+      <text x="110" y="103" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Dòng vợt tấn công, thân cứng...</text>
+      <text x="296" y="70" font-family="Arial, sans-serif" font-size="26" fill="#64748B">›</text>
+    </g>
+
+    <g transform="translate(34 238)">
+      <rect width="322" height="124" rx="8" fill="#FFFFFF" stroke="#FECACA"/>
+      <rect x="12" y="20" width="82" height="82" rx="8" fill="#FCE7E7"/>
+      <path d="M39 50H67L73 78H33L39 50Z" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <path d="M45 50C45 39 61 39 61 50" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <text x="110" y="34" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1F2937">Giày cầu lông Mizuno</text>
+      <text x="110" y="59" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#DC2626">Mizuno</text>
+      <text x="110" y="80" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Giày cầu lông</text>
+      <text x="110" y="103" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Bám sân tốt, phù hợp chơi indoor...</text>
+      <text x="296" y="70" font-family="Arial, sans-serif" font-size="26" fill="#64748B">›</text>
+    </g>
+
+    <g transform="translate(34 378)">
+      <rect width="322" height="124" rx="8" fill="#FFFFFF" stroke="#FECACA"/>
+      <rect x="12" y="20" width="82" height="82" rx="8" fill="#FCE7E7"/>
+      <path d="M39 50H67L73 78H33L39 50Z" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <path d="M45 50C45 39 61 39 61 50" stroke="#DC2626" stroke-width="2" fill="none"/>
+      <text x="110" y="34" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1F2937">Ống cầu Victor</text>
+      <text x="110" y="59" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#DC2626">Victor</text>
+      <text x="110" y="80" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Phụ kiện</text>
+      <text x="110" y="103" font-family="Arial, sans-serif" font-size="13" fill="#64748B">Dùng cho tập luyện và thi đấu...</text>
+      <text x="296" y="70" font-family="Arial, sans-serif" font-size="26" fill="#64748B">›</text>
+    </g>
+  </g>
+</svg>
