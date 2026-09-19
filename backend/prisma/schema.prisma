@@ -267,6 +267,7 @@ model product {
   description     String?
   image_url       String?           @db.VarChar(1000)
   is_active       Boolean           @default(true)
+  is_featured     Boolean           @default(false)
   created_at      DateTime          @default(now()) @db.Timestamp(6)
   updated_at      DateTime          @default(now()) @db.Timestamp(6)
   brand           brand?            @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

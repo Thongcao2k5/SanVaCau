@@ -13,6 +13,7 @@ type ProductRow = {
   description: string | null;
   image_url: string | null;
   is_active: boolean;
+  is_featured: boolean;
   created_at: Date;
   updated_at: Date;
   category: {
@@ -33,6 +34,7 @@ const productSelect = {
   description: true,
   image_url: true,
   is_active: true,
+  is_featured: true,
   created_at: true,
   updated_at: true,
   category: {
@@ -73,6 +75,7 @@ const toProductResponse = (product: ProductRow) => ({
   description: product.description,
   imageUrl: product.image_url,
   isActive: product.is_active,
+  isFeatured: product.is_featured,
   createdAt: product.created_at,
   updatedAt: product.updated_at,
   category: {
@@ -115,6 +118,7 @@ productRouter.get("/", async (req, res, next) => {
   try {
     const categoryId = req.query.categoryId === undefined ? null : parseBodyBigIntId(req.query.categoryId);
     const brandId = req.query.brandId === undefined ? null : parseBodyBigIntId(req.query.brandId);
+    const featured = req.query.featured === "true" ? true : req.query.featured === "false" ? false : null;
 
     if (req.query.categoryId !== undefined && !categoryId) {
       res.status(400).json({
@@ -132,9 +136,18 @@ productRouter.get("/", async (req, res, next) => {
       return;
     }
 
+    if (req.query.featured !== undefined && featured === null) {
+      res.status(400).json({
+        success: false,
+        message: "featured must be true or false",
+      });
+      return;
+    }
+
     const products = await prisma.product.findMany({
       where: {
         is_active: true,
+        ...(featured !== null ? { is_featured: featured } : {}),
         ...(categoryId ? { category_id: categoryId } : {}),
         ...(brandId ? { brand_id: brandId } : {}),
       },
@@ -201,6 +214,7 @@ productRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
     const description = typeof req.body?.description === "string" ? req.body.description.trim() : null;
     const imageUrl = typeof req.body?.imageUrl === "string" ? req.body.imageUrl.trim() : null;
+    const isFeatured = typeof req.body?.isFeatured === "boolean" ? req.body.isFeatured : false;
 
     if (!categoryId || !name) {
       res.status(400).json({
@@ -248,6 +262,7 @@ productRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next
         description,
         image_url: imageUrl,
         is_active: true,
+        is_featured: isFeatured,
       },
       select: productSelect,
     });
@@ -313,6 +328,7 @@ productRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, 
           ? req.body.imageUrl.trim()
           : undefined;
     const isActive = typeof req.body?.isActive === "boolean" ? req.body.isActive : undefined;
+    const isFeatured = typeof req.body?.isFeatured === "boolean" ? req.body.isFeatured : undefined;
 
     if (name === "") {
       res.status(400).json({
@@ -369,6 +385,7 @@ productRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, 
       ...(description !== undefined ? { description } : {}),
       ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
       ...(isActive !== undefined ? { is_active: isActive } : {}),
+      ...(isFeatured !== undefined ? { is_featured: isFeatured } : {}),
       updated_at: new Date(),
     };
 
