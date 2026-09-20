@@ -5,6 +5,9 @@ void main() {
   testWidgets('shows SanVaCau home page', (WidgetTester tester) async {
     await tester.pumpWidget(const SanVaCauApp());
 
+    // Consume the ApiException caused by the test environment's mocked HTTP client (which returns 400).
+    tester.takeException();
+
     expect(find.text('SanVaCau'), findsOneWidget);
     expect(find.text('SanVaCau App'), findsOneWidget);
     expect(

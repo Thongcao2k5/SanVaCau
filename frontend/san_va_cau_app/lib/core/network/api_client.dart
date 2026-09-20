@@ -67,23 +67,30 @@ class ApiClient {
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {
-    final decoded = jsonDecode(response.body);
+    try {
+      final decoded = jsonDecode(response.body);
 
-    if (decoded is! Map<String, dynamic>) {
+      if (decoded is! Map<String, dynamic>) {
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: 'Invalid API response',
+        );
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: decoded['message']?.toString() ?? 'Request failed',
+        );
+      }
+
+      return decoded;
+    } on FormatException catch (_) {
       throw ApiException(
         statusCode: response.statusCode,
-        message: 'Invalid API response',
+        message: 'Invalid JSON format',
       );
     }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: decoded['message']?.toString() ?? 'Request failed',
-      );
-    }
-
-    return decoded;
   }
 }
 

@@ -34,11 +34,15 @@ class Product {
       description: json['description']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
       isActive: json['isActive'] == true,
-      createdAt: DateTime.parse(json['createdAt'].toString()),
-      updatedAt: DateTime.parse(json['updatedAt'].toString()),
-      category: ProductCategory.fromJson(
-        json['category'] as Map<String, dynamic>,
-      ),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'].toString())
+          : DateTime.now(),
+      category: json['category'] != null
+          ? ProductCategory.fromJson(json['category'] as Map<String, dynamic>)
+          : const ProductCategory(id: '', name: ''),
       brand: json['brand'] == null
           ? null
           : ProductBrand.fromJson(json['brand'] as Map<String, dynamic>),
