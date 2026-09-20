@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sân&Cầu - Hệ Thống Thiết Kế & Showroom Quy Chuẩn (Home, Products, Court Matrix)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Design Tokens theo đúng AppColors trong Flutter */
+      --primary: #DC2626;         /* Đỏ thể thao Crimson (Yonex / Victor Red) */
+      --primary-dark: #991B1B;    /* Đỏ sẫm */
+      --primary-soft: #FCE7E7;    /* Đỏ nhạt nền badge, icon */
+      --border-color: #FECACA;    /* Viền phớt đỏ nhẹ */
+      --bg-main: #FFFBFB;         /* Nền tổng thể trang */
+      --surface: #FFFFFF;         /* Nền card trắng */
+      --surface-subtle: #F8FAFC;
+      --text-primary: #1F2937;    /* Tiêu đề xám đen đậm */
+      --text-secondary: #64748B;  /* Chữ chú thích */
+      --text-muted: #94A3B8;
+
+      /* Màu trạng thái & Accent */
+      --status-free: #16A34A;     /* Xanh lá: Sân còn trống */
+      --status-free-soft: #DCFCE7;
+      --status-booked: #94A3B8;   /* Xám: Đã kín lịch */
+      --accent-blue: #2563EB;     /* Tin tức */
+      --accent-purple: #7C3AED;   /* Chi nhánh */
+      --accent-gold: #F59E0B;     /* Đánh giá sao */
+
+      /* Bo góc chuẩn */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+
+      /* Đổ bóng chuẩn */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 4px 16px -2px rgba(220, 38, 38, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+      --shadow-hero: 0 10px 24px -4px rgba(220, 38, 38, 0.25);
+      --shadow-hover: 0 12px 24px -4px rgba(220, 38, 38, 0.14);
+    }
+
+    body.dark {
+      --bg-main: #0F172A;
+      --surface: #1E293B;
+      --surface-subtle: #334155;
+      --border-color: #475569;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --primary-soft: #450A0A;
+      --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Header Nav */
+    header.showcase-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text h1 span.tag {
+      font-size: 11px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Screen Selector Tabs */
+    .screen-tabs {
+      display: flex;
+      background: var(--surface-subtle);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+    }
+
+    .header-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mode-pill {
+      display: flex;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 2px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Main Container */
+    main.main-viewport {
+      flex: 1;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Phone Mockup Frame */
+    .phone-container {
+      width: 400px;
+      height: 840px;
+      background: var(--surface);
+      border-radius: 46px;
+      border: 12px solid #1E293B;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    /* Responsive Mode expands container */
+    .phone-container.expanded {
+      width: 100%;
+      max-width: 1100px;
+      height: auto;
+      min-height: 800px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+    }
+
+    .phone-container.expanded .phone-status-bar,
+    .phone-container.expanded .phone-bottom-nav {
+      display: none;
+    }
+
+    /* Phone Status Header */
+    .phone-status-bar {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 50;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .island-notch {
+      width: 105px;
+      height: 22px;
+      background: #111827;
+      border-radius: 20px;
+    }
+
+    .phone-scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg-main);
+    }
+
+    .phone-scroll-body::-webkit-scrollbar {
+      width: 4px;
+    }
+    .phone-scroll-body::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    /* Views Screens */
+    .screen-view {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .screen-view.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===================================================
+       1. HOME SCREEN COMPONENTS (Khớp HomeHeroSection, etc.)
+       =================================================== */
+    .app-top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .branch-selector-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .branch-selector-pill span.icon {
+      color: var(--primary);
+    }
+
+    /* Hero Section (Khớp HomeHeroSection.dart) */
+    .home-hero-card {
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: white;
+      box-shadow: var(--shadow-hero);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .hero-badge {
+      background: rgba(255, 255, 255, 0.18);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      opacity: 0.9;
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+
+    .hero-btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-hero-primary {
+      flex: 1;
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-hero-outlined {
+      flex: 1;
+      background: transparent;
+      color: white;
+      border: 1.5px solid white;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Section Heading */
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .section-see-all {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Quick Actions 2x2 Grid (Khớp HomeQuickActions.dart) */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .action-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .action-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .action-card.court .action-icon-wrap { background: #DCFCE7; color: #16A34A; }
+    .action-card.shop .action-icon-wrap { background: var(--primary-soft); color: var(--primary); }
+    .action-card.news .action-icon-wrap { background: #DBEAFE; color: #2563EB; }
+    .action-card.branch .action-icon-wrap { background: #F3E8FF; color: #7C3AED; }
+
+    .action-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .action-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.3;
+    }
+
+    /* Horizontal Featured Products Carousel (Khớp featured_products_section.dart) */
+    .horizontal-scroll-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin: 0 -4px;
+    }
+
+    .horizontal-scroll-row::-webkit-scrollbar { display: none; }
+
+    .mini-product-card {
+      min-width: 170px;
+      max-width: 170px;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+
+    .mini-prod-img {
+      height: 115px;
+      background: #F8FAFC;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-prod-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand-tag-floating {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: white;
+      color: var(--primary);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .mini-prod-info {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mini-prod-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-prod-price {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* ===================================================
+       2. PRODUCT LIST SCREEN (Khớp ProductListPage & product_card.dart)
+       =================================================== */
+    .filter-pills-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .filter-pills-row::-webkit-scrollbar { display: none; }
+
+    .pill-filter-item {
+      white-space: nowrap;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pill-filter-item.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Product Card List (Khớp 100% product_card.dart) */
+    .product-list-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .flutter-product-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px; /* BorderRadius.circular(8) trong code */
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .flutter-product-card:hover {
+      border-color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    .flutter-prod-img-box {
+      width: 82px;
+      height: 82px;
+      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.08); /* AppColors.primary.withValues(alpha: 0.08) */
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .flutter-prod-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .flutter-prod-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flutter-prod-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .flutter-prod-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary); /* AppColors.primary */
+      margin-bottom: 2px;
+    }
+
+    .flutter-prod-cat {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .flutter-prod-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .flutter-prod-price-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .chevron-icon {
+      color: var(--text-muted);
+      font-size: 20px;
+      align-self: center;
+    }
+
+    /* ===================================================
+       3. COURT BOOKING MATRIX (Ma trận Sân x Khung giờ)
+       =================================================== */
+    .branch-card-header {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .branch-card-header h3 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .branch-card-header p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Date Scroller */
+    .date-scroller-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .date-scroller-row::-webkit-scrollbar { display: none; }
+
+    .date-chip {
+      min-width: 68px;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .date-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .date-chip .day-name { font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .date-chip .day-num { font-size: 16px; font-weight: 800; }
+
+    /* The Court x Time Matrix Grid */
+    .matrix-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: var(--shadow-card);
+    }
+
+    table.matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 340px;
+    }
+
+    table.matrix-table th {
+      background: var(--primary-soft);
+      padding: 10px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    table.matrix-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      text-align: center;
+      font-size: 11px;
+      vertical-align: middle;
+    }
+
+    .time-col {
+      background: var(--surface-subtle);
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      padding: 8px !important;
+    }
+
+    .cell-slot {
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cell-slot.available {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+    }
+    .cell-slot.available:hover {
+      background: #DCFCE7;
+      border-color: #86EFAC;
+    }
+
+    .cell-slot.selected {
+      background: var(--primary) !important;
+      border: 1px solid var(--primary-dark) !important;
+      color: white !important;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+    }
+    .cell-slot.selected .slot-vnd { color: #FEE2E2 !important; }
+
+    .cell-slot.booked {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+
+    .slot-vnd {
+      font-size: 9px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    /* Sticky Bottom Booking Bar */
+    .sticky-booking-bar {
+      background: var(--surface);
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15);
+    }
+
+    .calc-info h4 {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .calc-info p {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .btn-checkout-red {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Phone Bottom Navigation */
+    .phone-bottom-nav {
+      height: 60px;
+      background: var(--surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-item svg { width: 20px; height: 20px; }
+
+    /* Modal / Drawer preview for Variant selection */
+    .variant-sheet {
+      display: none;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 2px solid var(--border-color);
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+      z-index: 60;
+      animation: slideUp 0.2s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="showcase-header">
+    <a href="#" class="brand">
+      <div class="brand-logo">🏸</div>
+      <div class="brand-text">
+        <h1>Sân&Cầu <span class="tag">Design Standard v1.0</span></h1>
+        <p>Quy chuẩn thiết kế dùng chung cho Flutter App & WebApp (Tông Đỏ Yonex #DC2626)</p>
+      </div>
+    </a>
+
+    <!-- Screen Tabs Switcher -->
+    <div class="screen-tabs">
+      <button class="tab-btn active" onclick="switchScreen('home-view')">
+        🏠 1. Trang Chủ (Home)
+      </button>
+      <button class="tab-btn" onclick="switchScreen('products-view')">
+        🛍️ 2. Danh Sách Sản Phẩm
+      </button>
+      <button class="tab-btn" onclick="switchScreen('court-view')">
+        🏸 3. Ma Trận Đặt Sân
+      </button>
+    </div>
+
+    <!-- Header View Mode & Theme -->
+    <div class="header-tools">
+      <div class="mode-pill">
+        <button class="mode-btn active" id="btn-mobile" onclick="setViewMode('mobile')">📱 Mobile</button>
+        <button class="mode-btn" id="btn-desktop" onclick="setViewMode('desktop')">💻 Web View</button>
+      </div>
+      <button class="theme-btn" onclick="toggleDarkMode()" title="Sáng / Tối">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="main-viewport">
+
+    <div class="phone-container" id="mockup-frame">
+      
+      <!-- Status bar -->
+      <div class="phone-status-bar">
+        <span>9:41</span>
+        <div class="island-notch"></div>
+        <span>5G 🔋</span>
+      </div>
+
+      <!-- Scrollable Phone Screen -->
+      <div class="phone-scroll-body">
+
+        <!-- ===================================================
+             VIEW 1: TRANG CHỦ (Khớp HomeHeroSection, etc.)
+             =================================================== -->
+        <div id="home-view" class="screen-view active">
+          
+          <!-- Top Branch Selector Bar -->
+          <div class="app-top-header">
+            <div class="branch-selector-pill">
+              <span class="icon">📍</span>
+              <span>CN Quận 7 - 128 Nguyễn Thị Thập</span>
+              <span style="font-size: 10px;">▼</span>
+            </div>
+            <div style="font-size: 20px; cursor: pointer;">🔔</div>
+          </div>
+
+          <!-- Hero Banner Section (Khớp HomeHeroSection.dart) -->
+          <div class="home-hero-card">
+            <div class="hero-tag-row">
+              <span class="hero-badge">SanVaCau App</span>
+              <span style="font-size: 18px;">🏸</span>
+            </div>
+            <div class="hero-title">Đặt sân nhanh,<br>mua đồ cầu lông dễ dàng</div>
+            <div class="hero-subtitle">Sân cầu và cửa hàng thể thao chuyên nghiệp trong một ứng dụng.</div>
+            <div class="hero-btn-row">
+              <button class="btn-hero-primary" onclick="switchScreen('court-view')">
+                📅 Đặt sân
+              </button>
+              <button class="btn-hero-outlined" onclick="switchScreen('products-view')">
+                🛍️ Sản phẩm
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: Khám phá nhanh (Khớp HomeQuickActions.dart) -->
+          <div class="section-header-row">
+            <div class="section-title">Khám phá nhanh</div>
+          </div>
+
+          <div class="quick-actions-grid">
+            <!-- Đặt sân -->
+            <div class="action-card court" onclick="switchScreen('court-view')">
+              <div class="action-icon-wrap">🏸</div>
+              <div class="action-name">Đặt sân</div>
+              <div class="action-desc">Tìm sân và đặt lịch trực tuyến</div>
+            </div>
+            <!-- Sản phẩm -->
+            <div class="action-card shop" onclick="switchScreen('products-view')">
+              <div class="action-icon-wrap">🛍️</div>
+              <div class="action-name">Sản phẩm</div>
+              <div class="action-desc">Vợt, giày, áo, phụ kiện chính hãng</div>
+            </div>
+            <!-- Tin tức -->
+            <div class="action-card news" onclick="alert('Module tin tức: Cập nhật giải đấu, kỹ thuật cầu lông')">
+              <div class="action-icon-wrap">📰</div>
+              <div class="action-name">Tin tức</div>
+              <div class="action-desc">Sân mới, giải đấu & kỹ thuật</div>
+            </div>
+            <!-- Chi nhánh -->
+            <div class="action-card branch" onclick="alert('Module chi nhánh: 3 cụm sân đang hoạt động')">
+              <div class="action-icon-wrap">🏢</div>
+              <div class="action-name">Chi nhánh</div>
+              <div class="action-desc">Cơ sở, hotline và giờ mở cửa</div>
+            </div>
+          </div>
+
+          <!-- Section: Sản phẩm nổi bật (Khớp featured_products_section.dart) -->
+          <div class="section-header-row">
+            <div class="section-title">Sản phẩm nổi bật ⭐</div>
+            <span class="section-see-all" onclick="switchScreen('products-view')">Xem tất cả ›</span>
+          </div>
+
+          <div class="horizontal-scroll-row">
+            <!-- Vợt Yonex Astrox 88D Pro -->
+            <div class="mini-product-card" onclick="switchScreen('products-view')">
+              <div class="mini-prod-img">
+                <img src="./assets/racket_astrox.jpg" alt="Vợt Yonex Astrox 88D Pro">
+                <span class="brand-tag-floating">Yonex</span>
+              </div>
+              <div class="mini-prod-info">
+                <div class="mini-prod-name">Vợt Yonex Astrox 88D Pro</div>
+                <div class="mini-prod-price">4.200.000 đ</div>
+              </div>
+            </div>
+
+            <!-- Giày Yonex Power Cushion -->
+            <div class="mini-product-card" onclick="switchScreen('products-view')">
+              <div class="mini-prod-img">
+                <img src="./assets/shoes_yonex.jpg" alt="Giày Yonex Power Cushion">
+                <span class="brand-tag-floating">Yonex</span>
+              </div>
+              <div class="mini-prod-info">
+                <div class="mini-prod-name">Giày Yonex Power Cushion</div>
+                <div class="mini-prod-price">2.200.000 đ</div>
+              </div>
+            </div>
+
+            <!-- Vợt Li-Ning Axforce 80 -->
+            <div class="mini-product-card" onclick="switchScreen('products-view')">
+              <div class="mini-prod-img">
+                <img src="./assets/racket_shuttlecock.jpg" alt="Vợt Li-Ning Axforce 80">
+                <span class="brand-tag-floating" style="color: #EA580C;">Li-Ning</span>
+              </div>
+              <div class="mini-prod-info">
+                <div class="mini-prod-name">Vợt Li-Ning Axforce 80</div>
+                <div class="mini-prod-price">3.900.000 đ</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===================================================
+             VIEW 2: PRODUCT LIST (Khớp ProductListPage & product_card.dart)
+             =================================================== -->
+        <div id="products-view" class="screen-view">
+          
+          <div class="section-header-row">
+            <div class="section-title">Cửa Hàng Thể Thao Pro Shop</div>
+            <span style="font-size: 12px; color: var(--text-secondary);">4 sản phẩm mẫu</span>
+          </div>
+
+          <!-- Category Filter Pills (Từ bảng category) -->
+          <div class="filter-pills-row">
+            <div class="pill-filter-item active">Tất cả</div>
+            <div class="pill-filter-item">Vợt cầu lông</div>
+            <div class="pill-filter-item">Giày cầu lông</div>
+            <div class="pill-filter-item">Áo cầu lông</div>
+            <div class="pill-filter-item">Phụ kiện</div>
+          </div>
+
+          <!-- Brand Filter Pills (Từ bảng brand) -->
+          <div class="filter-pills-row">
+            <div class="pill-filter-item active" style="font-size: 11px;">Mọi thương hiệu</div>
+            <div class="pill-filter-item" style="font-size: 11px;">Yonex</div>
+            <div class="pill-filter-item" style="font-size: 11px;">Li-Ning</div>
+            <div class="pill-filter-item" style="font-size: 11px;">Victor</div>
+          </div>
+
+          <!-- Product Cards List (Đúng chuẩn cấu trúc product_card.dart) -->
+          <div class="product-list-column">
+            
+            <!-- Sản phẩm 1: Vợt Yonex Astrox 88D Pro -->
+            <div class="flutter-product-card" onclick="openVariantDetail('Vợt Yonex Astrox 88D Pro', 'Yonex', '4.200.000 đ', ['3UG5 - 4.300.000 đ', '4UG5 - 4.200.000 đ'], 'Dòng vợt tấn công đỉnh cao, thân cứng, đập cầu uy lực.')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/racket_astrox.jpg" alt="Vợt Yonex Astrox 88D Pro">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Vợt Yonex Astrox 88D Pro</div>
+                <div class="flutter-prod-brand">Yonex</div>
+                <div class="flutter-prod-cat">Vợt cầu lông • 2 biến thể (3U/4U)</div>
+                <div class="flutter-prod-desc">Dòng vợt tấn công chuyên nghiệp, thân vợt cứng, điểm cân bằng nặng đầu.</div>
+                <div class="flutter-prod-price-badge">Từ 4.200.000 đ</div>
+              </div>
+              <div class="chevron-icon">›</div>
+            </div>
+
+            <!-- Sản phẩm 2: Vợt Li-Ning Axforce 80 -->
+            <div class="flutter-product-card" onclick="openVariantDetail('Vợt Li-Ning Axforce 80', 'Li-Ning', '3.900.000 đ', ['4UG5 - 3.900.000 đ', '3UG5 - 4.000.000 đ'], 'Cây vợt gắn liền với Chen Long, kiểm soát cầu chính xác và smash hiểm hóc.')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/racket_shuttlecock.jpg" alt="Vợt Li-Ning Axforce 80">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Vợt Li-Ning Axforce 80</div>
+                <div class="flutter-prod-brand">Li-Ning</div>
+                <div class="flutter-prod-cat">Vợt cầu lông • 2 biến thể</div>
+                <div class="flutter-prod-desc">Vợt tấn công toàn diện, cảm giác đầm tay, độ thoát cầu cực nhanh.</div>
+                <div class="flutter-prod-price-badge">Từ 3.900.000 đ</div>
+              </div>
+              <div class="chevron-icon">›</div>
+            </div>
+
+            <!-- Sản phẩm 3: Giày Yonex Power Cushion -->
+            <div class="flutter-product-card" onclick="openVariantDetail('Giày Yonex Power Cushion 65Z3', 'Yonex', '2.200.000 đ', ['Size 39', 'Size 40', 'Size 41', 'Size 42', 'Size 43'], 'Đệm khí Power Cushion giảm chấn tuyệt đối, bảo vệ khớp gối khi bật nhảy tiếp đất.')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/shoes_yonex.jpg" alt="Giày Yonex Power Cushion">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Giày Yonex Power Cushion 65Z3</div>
+                <div class="flutter-prod-brand">Yonex</div>
+                <div class="flutter-prod-cat">Giày cầu lông • Size 39 - 43</div>
+                <div class="flutter-prod-desc">Đệm khí Power Cushion độc quyền chống lật cổ chân, đế cao su bám sân xuất sắc.</div>
+                <div class="flutter-prod-price-badge">2.200.000 đ</div>
+              </div>
+              <div class="chevron-icon">›</div>
+            </div>
+
+            <!-- Sản phẩm 4: Giày Victor A970 -->
+            <div class="flutter-product-card" onclick="openVariantDetail('Giày Victor A970 NitroLite', 'Victor', '2.500.000 đ', ['Size 40', 'Size 41', 'Size 42'], 'Dòng giày thi đấu cao cấp của Victor với công nghệ bọt khí NitroLite siêu nhẹ.')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/shoes_yonex.jpg" alt="Giày Victor A970">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Giày Victor A970 NitroLite</div>
+                <div class="flutter-prod-brand">Victor</div>
+                <div class="flutter-prod-cat">Giày cầu lông • Size 40 - 42</div>
+                <div class="flutter-prod-desc">Siêu nhẹ, êm ái và trợ lực bứt tốc vượt trội khi di chuyển phòng thủ.</div>
+                <div class="flutter-prod-price-badge">2.500.000 đ</div>
+              </div>
+              <div class="chevron-icon">›</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===================================================
+             VIEW 3: COURT BOOKING MATRIX (Ma trận Sân x Giờ)
+             =================================================== -->
+        <div id="court-view" class="screen-view">
+          
+          <!-- Branch Info Header -->
+          <div class="branch-card-header">
+            <h3>🏸 Chi Nhánh Sân&Cầu Quận 7</h3>
+            <p>📍 128 Nguyễn Thị Thập, P. Tân Phú, Q.7 • 📞 0909 123 456</p>
+            <p style="margin-top: 4px; color: var(--status-free); font-weight: 700;">● Mở cửa: 05:00 - 23:30 hàng ngày</p>
+          </div>
+
+          <!-- Date Selector -->
+          <div class="date-scroller-row">
+            <div class="date-chip active">
+              <span class="day-name">Hôm nay</span>
+              <span class="day-num">20</span>
+            </div>
+            <div class="date-chip">
+              <span class="day-name">Thứ 2</span>
+              <span class="day-num">21</span>
+            </div>
+            <div class="date-chip">
+              <span class="day-name">Thứ 3</span>
+              <span class="day-num">22</span>
+            </div>
+            <div class="date-chip">
+              <span class="day-name">Thứ 4</span>
+              <span class="day-num">23</span>
+            </div>
+            <div class="date-chip">
+              <span class="day-name">Thứ 5</span>
+              <span class="day-num">24</span>
+            </div>
+          </div>
+
+          <!-- Ghi chú màu sắc -->
+          <div style="display: flex; gap: 14px; font-size: 11px; font-weight: 700;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 12px; height: 12px; background: #DCFCE7; border: 1px solid #86EFAC; border-radius: 3px;"></span>
+              <span>Còn trống</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 12px; height: 12px; background: var(--primary); border-radius: 3px;"></span>
+              <span>Đang chọn</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 12px; height: 12px; background: #E2E8F0; border-radius: 3px;"></span>
+              <span style="color: var(--text-muted);">Đã kín lịch</span>
+            </div>
+          </div>
+
+          <!-- Ma trận Sân (Court) x Khung Giờ (TimeSlot) -->
+          <div class="matrix-wrap">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Khung giờ</th>
+                  <th>Sân 1<br><span style="font-size: 9px; font-weight: 500;">Thảm Yonex</span></th>
+                  <th>Sân 2<br><span style="font-size: 9px; font-weight: 500;">Thảm Yonex</span></th>
+                  <th>Sân 3<br><span style="font-size: 9px; font-weight: 500;">Thảm Victor</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 15:00 - 16:00 -->
+                <tr>
+                  <td class="time-col">15:00 - 16:00</td>
+                  <td>
+                    <div class="cell-slot booked" title="Đã có khách đặt">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">90k</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 2', '15:00 - 16:00', 90000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">90.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 3', '15:00 - 16:00', 90000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">90.000đ</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 16:00 - 17:00 -->
+                <tr>
+                  <td class="time-col">16:00 - 17:00</td>
+                  <td>
+                    <div class="cell-slot booked">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">90k</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot booked">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">90k</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 3', '16:00 - 17:00', 90000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">90.000đ</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 17:00 - 18:00 (Giờ vàng) -->
+                <tr>
+                  <td class="time-col">17:00 - 18:00 ⚡</td>
+                  <td>
+                    <div class="cell-slot selected" onclick="toggleMatrixSlot(this, 'Sân 1', '17:00 - 18:00', 120000)">
+                      <span>Đang chọn</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot booked">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">120k</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 3', '17:00 - 18:00', 120000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 18:00 - 19:00 (Giờ vàng) -->
+                <tr>
+                  <td class="time-col">18:00 - 19:00 ⚡</td>
+                  <td>
+                    <div class="cell-slot selected" onclick="toggleMatrixSlot(this, 'Sân 1', '18:00 - 19:00', 120000)">
+                      <span>Đang chọn</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 2', '18:00 - 19:00', 120000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot booked">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">120k</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 19:00 - 20:00 (Giờ vàng) -->
+                <tr>
+                  <td class="time-col">19:00 - 20:00 ⚡</td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 1', '19:00 - 20:00', 120000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 2', '19:00 - 20:00', 120000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">120.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot booked">
+                      <span>Đã đặt</span>
+                      <span class="slot-vnd">120k</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 20:00 - 21:00 -->
+                <tr>
+                  <td class="time-col">20:00 - 21:00</td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 1', '20:00 - 21:00', 100000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">100.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 2', '20:00 - 21:00', 100000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">100.000đ</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-slot available" onclick="toggleMatrixSlot(this, 'Sân 3', '20:00 - 21:00', 100000)">
+                      <span>Trống</span>
+                      <span class="slot-vnd">100.000đ</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sticky Real-time Calculation Bar -->
+          <div class="sticky-booking-bar">
+            <div class="calc-info">
+              <h4 id="matrix-count">Đã chọn: 2 khung giờ</h4>
+              <p id="matrix-total">Tổng tiền: 240.000 đ</p>
+            </div>
+            <button class="btn-checkout-red" onclick="alert('Xác nhận tạo đơn đặt sân Sân 1 (17:00 - 19:00) thành công!')">
+              Đặt sân ngay 👉
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Bottom Navigation Bar (Khớp main_shell.dart: 5 Destinations) -->
+      <div class="phone-bottom-nav">
+        <div class="nav-item active" onclick="switchScreen('home-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>Trang chủ</span>
+        </div>
+        <div class="nav-item" onclick="switchScreen('products-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z"/></svg>
+          <span>Sản phẩm</span>
+        </div>
+        <div class="nav-item" onclick="switchScreen('court-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+          <span>Đặt sân</span>
+        </div>
+        <div class="nav-item" onclick="alert('Tab Giỏ hàng: Đang có 2 sản phẩm chờ thanh toán')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <span>Giỏ hàng</span>
+        </div>
+        <div class="nav-item" onclick="alert('Tab Tài khoản: Tyson - Customer ID #128')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>Tài khoản</span>
+        </div>
+      </div>
+
+      <!-- Variant Selector Sheet Popup -->
+      <div class="variant-sheet" id="variant-modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 id="sheet-title" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">Chi Tiết Biến Thể</h3>
+          <span style="font-size: 20px; cursor: pointer; color: var(--text-muted);" onclick="closeVariantDetail()">✕</span>
+        </div>
+        <p id="sheet-desc" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;"></p>
+        
+        <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Chọn phiên bản / Size:</div>
+        <div class="filter-pills-row" id="sheet-variants" style="margin-bottom: 16px;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Đơn giá niêm yết</div>
+            <div id="sheet-price" style="font-size: 18px; font-weight: 800; color: var(--primary);"></div>
+          </div>
+          <button class="btn-checkout-red" onclick="alert('Đã thêm sản phẩm vào giỏ hàng!'); closeVariantDetail();">
+            Thêm vào giỏ 🛒
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // Tab Switching giữa Home, Products và Court Matrix
+    function switchScreen(viewId) {
+      document.querySelectorAll('.screen-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => 
+        (viewId === 'home-view' && b.innerText.includes('Trang Chủ')) ||
+        (viewId === 'products-view' && b.innerText.includes('Sản Phẩm')) ||
+        (viewId === 'court-view' && b.innerText.includes('Đặt Sân'))
+      );
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Đồng bộ Bottom Nav bar
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      const navItems = document.querySelectorAll('.nav-item');
+      if (viewId === 'home-view' && navItems[0]) navItems[0].classList.add('active');
+      if (viewId === 'products-view' && navItems[1]) navItems[1].classList.add('active');
+      if (viewId === 'court-view' && navItems[2]) navItems[2].classList.add('active');
+    }
+
+    // View Mode Switcher (Mobile vs Desktop)
+    function setViewMode(mode) {
+      const frame = document.getElementById('mockup-frame');
+      const btnMobile = document.getElementById('btn-mobile');
+      const btnDesktop = document.getElementById('btn-desktop');
+
+      if (mode === 'desktop') {
+        frame.classList.add('expanded');
+        btnDesktop.classList.add('active');
+        btnMobile.classList.remove('active');
+      } else {
+        frame.classList.remove('expanded');
+        btnMobile.classList.add('active');
+        btnDesktop.classList.remove('active');
+      }
+    }
+
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    // Court Matrix Slot Selection & Total Calculation
+    let matrixTotal = 240000;
+    let matrixSlots = 2;
+
+    function toggleMatrixSlot(element, courtName, timeSlot, price) {
+      if (element.classList.contains('booked')) return;
+
+      element.classList.toggle('selected');
+      const isSelected = element.classList.contains('selected');
+
+      const spanText = element.querySelector('span:first-child');
+
+      if (isSelected) {
+        matrixTotal += price;
+        matrixSlots++;
+        if (spanText) spanText.innerText = "Đang chọn";
+      } else {
+        matrixTotal -= price;
+        matrixSlots--;
+        if (spanText) spanText.innerText = "Trống";
+      }
+
+      const countEl = document.getElementById('matrix-count');
+      const totalEl = document.getElementById('matrix-total');
+
+      if (matrixSlots === 0) {
+        countEl.innerText = "Chưa chọn khung giờ nào";
+        totalEl.innerText = "Tổng tiền: 0 đ";
+      } else {
+        countEl.innerText = `Đã chọn: ${matrixSlots} khung giờ`;
+        totalEl.innerText = `Tổng tiền: ${matrixTotal.toLocaleString('vi-VN')} đ`;
+      }
+    }
+
+    // Modal Chi tiết Biến Thể Sản Phẩm
+    function openVariantDetail(name, brand, price, variants, desc) {
+      document.getElementById('sheet-title').innerText = name;
+      document.getElementById('sheet-desc').innerText = desc;
+      document.getElementById('sheet-price').innerText = price;
+
+      const vContainer = document.getElementById('sheet-variants');
+      vContainer.innerHTML = '';
+      variants.forEach((v, idx) => {
+        const item = document.createElement('div');
+        item.className = 'pill-filter-item' + (idx === 0 ? ' active' : '');
+        item.innerText = v;
+        item.onclick = function() {
+          vContainer.querySelectorAll('.pill-filter-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+        };
+        vContainer.appendChild(item);
+      });
+
+      document.getElementById('variant-modal').style.display = 'block';
+    }
+
+    function closeVariantDetail() {
+      document.getElementById('variant-modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

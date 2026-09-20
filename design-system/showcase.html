@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sân&Cầu - Design System & UI Specification Showroom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Brand Color Tokens (Đồng bộ AppColors.dart) */
+      --primary: #DC2626;         /* Đỏ Yonex / Crimson */
+      --primary-dark: #991B1B;
+      --primary-soft: #FCE7E7;
+      --border-color: #FECACA;
+      --bg-main: #FFFBFB;
+      --surface: #FFFFFF;
+      --surface-subtle: #F8FAFC;
+      --text-primary: #1F2937;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+
+      /* Status Colors */
+      --status-free: #16A34A;
+      --status-free-soft: #DCFCE7;
+      --status-booked: #94A3B8;
+      --accent-blue: #2563EB;
+      --accent-purple: #7C3AED;
+      --accent-gold: #F59E0B;
+
+      /* Radius & Shadows */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 4px 16px -2px rgba(220, 38, 38, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+      --shadow-hero: 0 10px 24px -4px rgba(220, 38, 38, 0.25);
+      --shadow-hover: 0 12px 24px -4px rgba(220, 38, 38, 0.14);
+      --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    body.dark {
+      --bg-main: #0B1120;
+      --surface: #1E293B;
+      --surface-subtle: #334155;
+      --border-color: #475569;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --primary-soft: #450A0A;
+      --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Top Bar */
+    header.showcase-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text h1 span.tag {
+      font-size: 11px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Tabs */
+    .screen-tabs {
+      display: flex;
+      background: var(--surface-subtle);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+    }
+
+    .header-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mode-pill {
+      display: flex;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 2px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Layout */
+    main.main-viewport {
+      flex: 1;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone-container {
+      width: 400px;
+      height: 840px;
+      background: var(--surface);
+      border-radius: 46px;
+      border: 12px solid #1E293B;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .phone-container.expanded {
+      width: 100%;
+      max-width: 1100px;
+      height: auto;
+      min-height: 800px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+    }
+
+    .phone-container.expanded .phone-status-bar,
+    .phone-container.expanded .phone-bottom-nav {
+      display: none;
+    }
+
+    .phone-status-bar {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 50;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .island-notch {
+      width: 105px;
+      height: 22px;
+      background: #111827;
+      border-radius: 20px;
+    }
+
+    .phone-scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg-main);
+      position: relative;
+    }
+
+    .phone-scroll-body::-webkit-scrollbar { width: 4px; }
+    .phone-scroll-body::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    /* Views */
+    .screen-view {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .screen-view.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===================================================
+       1. HOME COMPONENTS
+       =================================================== */
+    .app-top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .branch-selector-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .home-hero-card {
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: white;
+      box-shadow: var(--shadow-hero);
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .hero-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-hero-primary {
+      flex: 1;
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-hero-outlined {
+      flex: 1;
+      background: transparent;
+      color: white;
+      border: 1.5px solid white;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .action-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .action-card:hover { transform: translateY(-2px); }
+
+    .action-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    .action-card.court .action-icon-wrap { background: #DCFCE7; color: #16A34A; }
+    .action-card.shop .action-icon-wrap { background: var(--primary-soft); color: var(--primary); }
+    .action-card.news .action-icon-wrap { background: #DBEAFE; color: #2563EB; }
+    .action-card.branch .action-icon-wrap { background: #F3E8FF; color: #7C3AED; }
+
+    /* ===================================================
+       2. PRODUCT COMPONENTS
+       =================================================== */
+    .filter-pills-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .filter-pills-row::-webkit-scrollbar { display: none; }
+
+    .pill-filter-item {
+      white-space: nowrap;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .pill-filter-item.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .flutter-product-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+    }
+
+    .flutter-prod-img-box {
+      width: 82px;
+      height: 82px;
+      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.08);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .flutter-prod-img-box img { width: 100%; height: 100%; object-fit: cover; }
+
+    .flutter-prod-content { flex: 1; }
+    .flutter-prod-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .flutter-prod-brand { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+    .flutter-prod-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.35; }
+    .flutter-prod-price-badge { font-size: 13px; font-weight: 800; color: var(--primary); margin-top: 6px; }
+
+    /* ===================================================
+       3. COURT MATRIX COMPONENTS
+       =================================================== */
+    .date-scroller-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .date-scroller-row::-webkit-scrollbar { display: none; }
+
+    .date-chip {
+      min-width: 68px;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+    .date-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .date-chip .day-name { font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .date-chip .day-num { font-size: 16px; font-weight: 800; }
+
+    .matrix-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+    }
+
+    table.matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 340px;
+    }
+
+    table.matrix-table th {
+      background: var(--primary-soft);
+      padding: 10px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      border: 1px solid var(--border-color);
+    }
+
+    table.matrix-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .time-col {
+      background: var(--surface-subtle);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .cell-slot {
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cell-slot.available {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+    }
+
+    .cell-slot.selected {
+      background: var(--primary) !important;
+      border: 1px solid var(--primary-dark) !important;
+      color: white !important;
+    }
+    .cell-slot.selected .slot-vnd { color: #FEE2E2 !important; }
+
+    .cell-slot.booked {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+
+    .sticky-booking-bar {
+      background: var(--surface);
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-checkout-red {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* ===================================================
+       4. COMPONENT LIBRARY SPECIFICATION (VIEW 4)
+       =================================================== */
+    .component-spec-block {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .spec-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 6px;
+    }
+
+    /* Vector Icons Collection */
+    .icon-catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .icon-box-item {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .icon-box-item:hover {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .icon-box-item svg { width: 26px; height: 26px; color: var(--primary); }
+    .icon-box-item span { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-align: center; }
+
+    /* Search & Inputs */
+    .app-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+    .app-input-group:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+    }
+    .app-input-group input, .app-input-group select {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    /* Buttons row */
+    .btn-row-showcase {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-std {
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+    }
+    .btn-std.primary { background: var(--primary); color: white; }
+    .btn-std.primary:hover { background: var(--primary-dark); }
+    .btn-std.outlined { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+    .btn-std.outlined:hover { background: var(--primary-soft); }
+    .btn-std.ghost { background: transparent; color: var(--text-secondary); }
+    .btn-std.disabled { background: #E2E8F0; color: #94A3B8; cursor: not-allowed; }
+
+    /* Switch, Checkbox, Radio */
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #CBD5E1;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Skeleton Loading Animation */
+    .skeleton-box {
+      background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 380px;
+      padding: 24px;
+      box-shadow: var(--shadow-modal);
+      animation: scaleIn 0.2s ease-out;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Splash Screen Mockup */
+    .splash-mockup {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
+      color: white;
+      z-index: 90;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      animation: fadeIn 0.3s;
+    }
+
+    .phone-bottom-nav {
+      height: 60px;
+      background: var(--surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="showcase-header">
+    <a href="#" class="brand">
+      <div class="brand-logo">🏸</div>
+      <div class="brand-text">
+        <h1>Sân&Cầu <span class="tag">Design Standard v1.0</span></h1>
+        <p>Quy chuẩn thiết kế toàn diện dùng chung cho WebApp & Flutter Mobile (Tông Đỏ Yonex #DC2626)</p>
+      </div>
+    </a>
+
+    <!-- Screen Tabs Switcher -->
+    <div class="screen-tabs">
+      <button class="tab-btn active" onclick="switchScreen('home-view')">
+        🏠 1. Trang Chủ
+      </button>
+      <button class="tab-btn" onclick="switchScreen('products-view')">
+        🛍️ 2. Sản Phẩm
+      </button>
+      <button class="tab-btn" onclick="switchScreen('court-view')">
+        🏸 3. Ma Trận Đặt Sân
+      </button>
+      <button class="tab-btn" onclick="switchScreen('components-view')">
+        🧩 4. Thư Viện Components
+      </button>
+    </div>
+
+    <!-- Header Tools -->
+    <div class="header-tools">
+      <div class="mode-pill">
+        <button class="mode-btn active" id="btn-mobile" onclick="setViewMode('mobile')">📱 Mobile</button>
+        <button class="mode-btn" id="btn-desktop" onclick="setViewMode('desktop')">💻 Web View</button>
+      </div>
+      <button class="theme-btn" onclick="toggleDarkMode()" title="Sáng / Tối">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="main-viewport">
+
+    <div class="phone-container" id="mockup-frame">
+      
+      <!-- Status bar -->
+      <div class="phone-status-bar">
+        <span>9:41</span>
+        <div class="island-notch"></div>
+        <span>5G 🔋</span>
+      </div>
+
+      <!-- Splash Screen Simulation -->
+      <div class="splash-mockup" id="splash-layer">
+        <div style="width: 80px; height: 80px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 44px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          🏸
+        </div>
+        <h2 style="font-size: 26px; font-weight: 800; letter-spacing: 0.5px;">Sân&Cầu</h2>
+        <p style="font-size: 13px; opacity: 0.9;">Đặt sân nhanh • Mua đồ cầu lông dễ dàng</p>
+        <div style="margin-top: 24px; font-size: 12px; opacity: 0.8;">Đang tải dữ liệu chi nhánh...</div>
+        <button class="btn-std" style="background: white; color: var(--primary); margin-top: 16px;" onclick="closeSplash()">
+          Đóng Splash Screen
+        </button>
+      </div>
+
+      <!-- Scrollable Phone Screen -->
+      <div class="phone-scroll-body">
+
+        <!-- ===================================================
+             VIEW 1: TRANG CHỦ (Khớp HomeHeroSection, etc.)
+             =================================================== -->
+        <div id="home-view" class="screen-view active">
+          
+          <div class="app-top-header">
+            <div class="branch-selector-pill" onclick="switchScreen('court-view')">
+              <span style="color: var(--primary);">📍</span>
+              <span>CN Q7 - 128 Nguyễn Thị Thập</span>
+              <span style="font-size: 10px;">▼</span>
+            </div>
+            <div style="font-size: 20px; cursor: pointer;">🔔</div>
+          </div>
+
+          <!-- Hero Banner Section -->
+          <div class="home-hero-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700;">SanVaCau App</span>
+              <span style="font-size: 20px;">🏸</span>
+            </div>
+            <div class="hero-title">Đặt sân nhanh,<br>mua đồ cầu lông dễ dàng</div>
+            <p style="font-size: 12px; opacity: 0.9; margin-bottom: 16px;">Sân cầu và cửa hàng thể thao trong một ứng dụng.</p>
+            <div class="hero-btn-row">
+              <button class="btn-hero-primary" onclick="switchScreen('court-view')">
+                📅 Đặt sân
+              </button>
+              <button class="btn-hero-outlined" onclick="switchScreen('products-view')">
+                🛍️ Sản phẩm
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Actions 2x2 Grid -->
+          <div style="font-size: 15px; font-weight: 800; margin-top: 4px;">Khám phá nhanh</div>
+          <div class="quick-actions-grid">
+            <div class="action-card court" onclick="switchScreen('court-view')">
+              <div class="action-icon-wrap">🏸</div>
+              <div class="action-name">Đặt sân</div>
+              <div class="action-desc">Tìm sân và đặt lịch trực tuyến</div>
+            </div>
+            <div class="action-card shop" onclick="switchScreen('products-view')">
+              <div class="action-icon-wrap">🛍️</div>
+              <div class="action-name">Sản phẩm</div>
+              <div class="action-desc">Vợt, giày, phụ kiện chính hãng</div>
+            </div>
+            <div class="action-card news" onclick="alert('Tin tức giải đấu và kỹ thuật')">
+              <div class="action-icon-wrap">📰</div>
+              <div class="action-name">Tin tức</div>
+              <div class="action-desc">Sân mới, giải đấu & kỹ thuật</div>
+            </div>
+            <div class="action-card branch" onclick="alert('Chi nhánh: 3 cơ sở đang mở cửa')">
+              <div class="action-icon-wrap">🏢</div>
+              <div class="action-name">Chi nhánh</div>
+              <div class="action-desc">Cơ sở, hotline và giờ mở cửa</div>
+            </div>
+          </div>
+
+          <!-- Featured Products Section -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <div style="font-size: 15px; font-weight: 800;">Sản phẩm nổi bật ⭐</div>
+            <span style="font-size: 12px; font-weight: 700; color: var(--primary); cursor: pointer;" onclick="switchScreen('products-view')">Xem tất cả ›</span>
+          </div>
+
+          <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;">
+            <div style="min-width: 160px; background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; padding: 10px; cursor: pointer;" onclick="switchScreen('products-view')">
+              <img src="./assets/images/racket_astrox.jpg" style="width: 100%; height: 110px; object-fit: cover; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 6px;">Yonex</div>
+              <div style="font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Astrox 88D Pro</div>
+              <div style="font-size: 14px; font-weight: 800; color: var(--primary); margin-top: 2px;">4.200.000 đ</div>
+            </div>
+            <div style="min-width: 160px; background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; padding: 10px; cursor: pointer;" onclick="switchScreen('products-view')">
+              <img src="./assets/images/shoes_yonex.jpg" style="width: 100%; height: 110px; object-fit: cover; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 6px;">Yonex</div>
+              <div style="font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Power Cushion 65Z3</div>
+              <div style="font-size: 14px; font-weight: 800; color: var(--primary); margin-top: 2px;">2.200.000 đ</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===================================================
+             VIEW 2: PRODUCT LIST (Khớp ProductListPage)
+             =================================================== -->
+        <div id="products-view" class="screen-view">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 16px; font-weight: 800;">Sản Phẩm Cầu Lông Pro Shop</div>
+            <span style="font-size: 12px; color: var(--text-secondary);">4 sản phẩm</span>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="app-input-group">
+            <span>🔍</span>
+            <input type="text" placeholder="Tìm vợt, giày, phụ kiện...">
+          </div>
+
+          <!-- Category Filters -->
+          <div class="filter-pills-row">
+            <div class="pill-filter-item active">Tất cả</div>
+            <div class="pill-filter-item">Vợt cầu lông</div>
+            <div class="pill-filter-item">Giày cầu lông</div>
+            <div class="pill-filter-item">Áo cầu lông</div>
+            <div class="pill-filter-item">Phụ kiện</div>
+          </div>
+
+          <!-- Product Cards List -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="flutter-product-card" onclick="openConfirmModal('Vợt Yonex Astrox 88D Pro', 'Yonex', '4.200.000 đ')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/images/racket_astrox.jpg">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Vợt Yonex Astrox 88D Pro</div>
+                <div class="flutter-prod-brand">Yonex</div>
+                <div class="flutter-prod-desc">Dòng vợt tấn công chuyên nghiệp, điểm cân bằng nặng đầu, đập cầu cắm sân.</div>
+                <div class="flutter-prod-price-badge">Từ 4.200.000 đ</div>
+              </div>
+              <div style="color: var(--text-muted); font-size: 20px; align-self: center;">›</div>
+            </div>
+
+            <div class="flutter-product-card" onclick="openConfirmModal('Giày Yonex Power Cushion 65Z3', 'Yonex', '2.200.000 đ')">
+              <div class="flutter-prod-img-box">
+                <img src="./assets/images/shoes_yonex.jpg">
+              </div>
+              <div class="flutter-prod-content">
+                <div class="flutter-prod-title">Giày Yonex Power Cushion 65Z3</div>
+                <div class="flutter-prod-brand">Yonex</div>
+                <div class="flutter-prod-desc">Đệm khí chống lật cổ chân, bảo vệ khớp gối, đế bám thảm chuẩn BWF.</div>
+                <div class="flutter-prod-price-badge">2.200.000 đ</div>
+              </div>
+              <div style="color: var(--text-muted); font-size: 20px; align-self: center;">›</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===================================================
+             VIEW 3: COURT MATRIX (Ma trận Đặt sân)
+             =================================================== -->
+        <div id="court-view" class="screen-view">
+          
+          <div style="background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+            <h3 style="font-size: 14px; font-weight: 800; color: var(--text-primary);">🏸 Chi Nhánh Sân&Cầu Quận 7</h3>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">128 Nguyễn Thị Thập, P. Tân Phú, Q.7</p>
+          </div>
+
+          <!-- Date Scroller -->
+          <div class="date-scroller-row">
+            <div class="date-chip active">
+              <div class="day-name">Hôm nay</div>
+              <div class="day-num">20</div>
+            </div>
+            <div class="date-chip">
+              <div class="day-name">Thứ 2</div>
+              <div class="day-num">21</div>
+            </div>
+            <div class="date-chip">
+              <div class="day-name">Thứ 3</div>
+              <div class="day-num">22</div>
+            </div>
+            <div class="date-chip">
+              <div class="day-name">Thứ 4</div>
+              <div class="day-num">23</div>
+            </div>
+          </div>
+
+          <!-- Matrix Table -->
+          <div class="matrix-wrap">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Giờ</th>
+                  <th>Sân 1<br><span style="font-size: 9px; font-weight: 500;">Yonex</span></th>
+                  <th>Sân 2<br><span style="font-size: 9px; font-weight: 500;">Yonex</span></th>
+                  <th>Sân 3<br><span style="font-size: 9px; font-weight: 500;">Victor</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="time-col">16:00 - 17:00</td>
+                  <td><div class="cell-slot booked"><span>Đã đặt</span></div></td>
+                  <td><div class="cell-slot available" onclick="toggleSlot(this, 90000)"><span>Trống</span><span style="font-size: 9px;">90k</span></div></td>
+                  <td><div class="cell-slot available" onclick="toggleSlot(this, 90000)"><span>Trống</span><span style="font-size: 9px;">90k</span></div></td>
+                </tr>
+                <tr>
+                  <td class="time-col">17:00 - 18:00 ⚡</td>
+                  <td><div class="cell-slot selected" onclick="toggleSlot(this, 120000)"><span>Đang chọn</span><span style="font-size: 9px;">120k</span></div></td>
+                  <td><div class="cell-slot booked"><span>Đã đặt</span></div></td>
+                  <td><div class="cell-slot available" onclick="toggleSlot(this, 120000)"><span>Trống</span><span style="font-size: 9px;">120k</span></div></td>
+                </tr>
+                <tr>
+                  <td class="time-col">18:00 - 19:00 ⚡</td>
+                  <td><div class="cell-slot selected" onclick="toggleSlot(this, 120000)"><span>Đang chọn</span><span style="font-size: 9px;">120k</span></div></td>
+                  <td><div class="cell-slot available" onclick="toggleSlot(this, 120000)"><span>Trống</span><span style="font-size: 9px;">120k</span></div></td>
+                  <td><div class="cell-slot booked"><span>Đã đặt</span></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Real-time Calculation Sticky Bar -->
+          <div class="sticky-booking-bar">
+            <div>
+              <div id="booking-count" style="font-size: 13px; font-weight: 800;">Đã chọn: 2 khung giờ</div>
+              <div id="booking-price" style="font-size: 11px; font-weight: 700; color: var(--primary);">Tổng: 240.000 đ</div>
+            </div>
+            <button class="btn-checkout-red" onclick="openBookingConfirm()">Đặt sân 👉</button>
+          </div>
+
+        </div>
+
+        <!-- ===================================================
+             VIEW 4: COMPONENT DESIGN SPECIFICATION (Thư viện chuẩn)
+             =================================================== -->
+        <div id="components-view" class="screen-view">
+          
+          <div style="font-size: 16px; font-weight: 800; color: var(--primary);">
+            🧩 Hệ Thống Chuẩn Thiết Kế (UI Design Specs)
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary);">
+            Toàn bộ component chuẩn hóa cho nhà phát triển và Agent khi sinh mã.
+          </p>
+
+          <!-- 1. Icon Vector Thể Thao -->
+          <div class="component-spec-block">
+            <div class="spec-title">1. Icon Vector Riêng (Badminton Sport SVG)</div>
+            <div class="icon-catalog-grid">
+              <div class="icon-box-item" title="Vợt cầu lông">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="15" cy="9" r="6"/><line x1="12" y1="9" x2="18" y2="9"/><line x1="15" y1="6" x2="15" y2="12"/><line x1="10.5" y1="13.5" x2="3" y2="21"/><line x1="2" y1="20" x2="4" y2="22" stroke-width="2.5"/></svg>
+                <span>Vợt</span>
+              </div>
+              <div class="icon-box-item" title="Quả cầu lông">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 18a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="currentColor" fill-opacity="0.2"/><path d="M9.5 18.5L5 4h14l-4.5 14.5"/><path d="M7 10h10"/><path d="M6 6h12"/><path d="M12 4v14"/></svg>
+                <span>Cầu</span>
+              </div>
+              <div class="icon-box-item" title="Sân cầu lông">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="12" x2="21" y2="12" stroke-width="2.5"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="6" y1="4" x2="6" y2="20" stroke-dasharray="1 1"/><line x1="18" y1="4" x2="18" y2="20" stroke-dasharray="1 1"/></svg>
+                <span>Sân</span>
+              </div>
+              <div class="icon-box-item" title="Giày cầu lông">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17V13l3-2 3-5 5 1v6l6 1 1 3H3z"/><path d="M3 17h18v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3z" fill="currentColor" fill-opacity="0.15"/></svg>
+                <span>Giày</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Hệ Thống Nút Bấm (Button System) -->
+          <div class="component-spec-block">
+            <div class="spec-title">2. Hệ Thống Nút Bấm (Button System)</div>
+            <div class="btn-row-showcase">
+              <button class="btn-std primary">Primary Red (#DC2626)</button>
+              <button class="btn-std outlined">Outlined Button</button>
+              <button class="btn-std ghost">Ghost Button</button>
+              <button class="btn-std disabled" disabled>Disabled</button>
+            </div>
+          </div>
+
+          <!-- 3. Combobox, Switch Box, Checkbox, Radio -->
+          <div class="component-spec-block">
+            <div class="spec-title">3. Điều Khiển Nhập Liệu (Inputs, Select & Toggles)</div>
+            
+            <!-- Combobox -->
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">Combobox chọn Chi nhánh / Size:</div>
+            <div class="app-input-group">
+              <select>
+                <option>Chi nhánh Sân&Cầu Quận 7 (128 Nguyễn Thị Thập)</option>
+                <option>Chi nhánh Sân&Cầu Quận 2 (Mai Chí Thọ)</option>
+                <option>Chi nhánh Sân&Cầu Bình Thạnh (Điện Biên Phủ)</option>
+              </select>
+            </div>
+
+            <!-- Switch Box -->
+            <div class="control-row">
+              <span style="font-size: 13px; font-weight: 600;">Ưu tiên sân có máy lạnh</span>
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="control-row">
+              <span style="font-size: 13px; font-weight: 600;">Thông báo khi có sân trống giờ vàng</span>
+              <label class="switch">
+                <input type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Radio Group Phương thức thanh toán -->
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-top: 6px;">Phương thức thanh toán:</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <input type="radio" name="payment" checked accent-color="#DC2626"> Thanh toán tiền mặt tại quầy chi nhánh
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <input type="radio" name="payment" accent-color="#DC2626"> Chuyển khoản QR ngân hàng (Tự động duyệt)
+              </label>
+            </div>
+          </div>
+
+          <!-- 4. Loading States & Shimmer Skeletons -->
+          <div class="component-spec-block">
+            <div class="spec-title">4. Trạng Thái Tải (Loading Skeleton Shimmer)</div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div class="skeleton-box" style="width: 60px; height: 60px; border-radius: 8px;"></div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                <div class="skeleton-box" style="height: 14px; width: 70%;"></div>
+                <div class="skeleton-box" style="height: 12px; width: 40%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Thử Nghiệm FlashScreen & Modal Confirm -->
+          <div class="component-spec-block">
+            <div class="spec-title">5. Trải Nghiệm Màn Hình Động</div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-std primary" onclick="showSplash()">
+                ⚡ Thử FlashScreen
+              </button>
+              <button class="btn-std outlined" onclick="openBookingConfirm()">
+                💬 Thử Modal Confirm
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Phone Bottom Nav Bar -->
+      <div class="phone-bottom-nav">
+        <div class="nav-item active" onclick="switchScreen('home-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>Trang chủ</span>
+        </div>
+        <div class="nav-item" onclick="switchScreen('products-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z"/></svg>
+          <span>Sản phẩm</span>
+        </div>
+        <div class="nav-item" onclick="switchScreen('court-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+          <span>Đặt sân</span>
+        </div>
+        <div class="nav-item" onclick="switchScreen('components-view')">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+          <span>Design UI</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal Confirm Component -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-card">
+      <div style="font-size: 28px; text-align: center;">🏸</div>
+      <h3 style="font-size: 16px; font-weight: 800; text-align: center;" id="modal-heading">Xác Nhận Đặt Sân</h3>
+      <p style="font-size: 13px; color: var(--text-secondary); text-align: center; line-height: 1.5;" id="modal-body">
+        Bạn có chắc chắn muốn đặt Sân 1 (17:00 - 19:00) tại Chi nhánh Quận 7?
+      </p>
+      <div style="display: flex; gap: 10px; margin-top: 8px;">
+        <button class="btn-std" style="flex: 1; background: #E2E8F0; color: var(--text-primary);" onclick="closeConfirmModal()">Hủy bỏ</button>
+        <button class="btn-std primary" style="flex: 1;" onclick="alert('Đã xác nhận thành công!'); closeConfirmModal();">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchScreen(id) {
+      document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      const target = document.getElementById(id);
+      if (target) target.classList.add('active');
+
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => 
+        (id === 'home-view' && b.innerText.includes('Trang Chủ')) ||
+        (id === 'products-view' && b.innerText.includes('Sản Phẩm')) ||
+        (id === 'court-view' && b.innerText.includes('Ma Trận')) ||
+        (id === 'components-view' && b.innerText.includes('Components'))
+      );
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function setViewMode(mode) {
+      const frame = document.getElementById('mockup-frame');
+      const bMob = document.getElementById('btn-mobile');
+      const bDesk = document.getElementById('btn-desktop');
+
+      if (mode === 'desktop') {
+        frame.classList.add('expanded');
+        bDesk.classList.add('active');
+        bMob.classList.remove('active');
+      } else {
+        frame.classList.remove('expanded');
+        bMob.classList.add('active');
+        bDesk.classList.remove('active');
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    let currentSlots = 2;
+    let currentTotal = 240000;
+
+    function toggleSlot(el, price) {
+      if (el.classList.contains('booked')) return;
+      el.classList.toggle('selected');
+
+      const isSelected = el.classList.contains('selected');
+      const span = el.querySelector('span:first-child');
+
+      if (isSelected) {
+        currentTotal += price;
+        currentSlots++;
+        if (span) span.innerText = "Đang chọn";
+      } else {
+        currentTotal -= price;
+        currentSlots--;
+        if (span) span.innerText = "Trống";
+      }
+
+      document.getElementById('booking-count').innerText = `Đã chọn: ${currentSlots} khung giờ`;
+      document.getElementById('booking-price').innerText = `Tổng: ${currentTotal.toLocaleString('vi-VN')} đ`;
+    }
+
+    function showSplash() {
+      document.getElementById('splash-layer').style.display = 'flex';
+    }
+    function closeSplash() {
+      document.getElementById('splash-layer').style.display = 'none';
+    }
+
+    function openConfirmModal(title, brand, price) {
+      document.getElementById('modal-heading').innerText = "Thêm Sản Phẩm";
+      document.getElementById('modal-body').innerText = `Bạn muốn thêm ${title} (${brand}) với giá ${price} vào giỏ hàng?`;
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function openBookingConfirm() {
+      document.getElementById('modal-heading').innerText = "Xác Nhận Đặt Sân";
+      document.getElementById('modal-body').innerText = `Xác nhận giữ chỗ 2 khung giờ (17:00 - 19:00) tại CN Quận 7 với tổng tiền 240.000 đ?`;
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
