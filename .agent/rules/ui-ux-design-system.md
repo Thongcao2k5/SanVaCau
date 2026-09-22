@@ -220,12 +220,14 @@ Mọi màn hình trên Mobile App và Web đều phải tuân thủ 1 trong 4 nh
     );
     ```
 
-### 3. Nhóm 3: Full-Width Single Action CTA (Nút Đơn Lẻ Cuối Màn Hình)
-* **Áp dụng:** 02 Onboarding, 03 Login, 15 Register, 16 Reset Password, 18 Chi Tiết Đơn Hàng, 19 Sửa Hồ Sơ, 20 Sổ Địa Chỉ.
-* **Quy cách:**
-  - Nút cao `48px` (Touch target chuẩn Apple HIG), bo góc `14px` (`--r-md`).
-  - Nếu là thanh dính đáy (Màn 18, 20): Nền trắng, đệm đáy `28px` kèm Home Indicator.
-  - Nếu là nút nằm trong form cuộn (Màn 03, 15, 16): Cách mép chân màn hình tối thiểu `24px - 32px`.
+### 3. Nhóm 3: Full-Width Single Action CTA (Nút Đơn Lẻ Cuối Màn Hình & Form Cuộn)
+* **Áp dụng:** 06 Chi Tiết Sản Phẩm (Mua ngay), 15 Đăng Ký (Đăng ký tài khoản), 16 Quên Mật Khẩu (Xác nhận & đổi MK), 18 Chi Tiết Đơn Hàng (Xem vị trí tài xế), 19 Sửa Hồ Sơ (Lưu thay đổi), 20 Sổ Địa Chỉ (Thêm địa chỉ nhận hàng).
+* **Quy cách Chuẩn:**
+  - **BẮT BUỘC PHẢI ĐƯỢC NEO LẠI (STICKY BOTTOM)** khi người dùng cuộn: `position: sticky; bottom: 0; margin-top: auto; z-index: 40;`.
+  - Thanh neo đáy luôn có **nền trắng**, viền trên `1px solid var(--border)`, đổ bóng nhẹ phía trên `box-shadow: 0 -8px 24px rgba(0,0,0,0.08)`, đệm đáy an toàn `calc(24px + env(safe-area-inset-bottom))` tích hợp Home Indicator thanh xám mảnh (`#CBD5E1`).
+  - Nút bấm chính full-width cao `46px - 48px` (Touch target chuẩn Apple HIG), bo góc `14px` (`--r-md`), chữ đậm 800, icon sắc nét.
+  - Form cuộn bên trên phải có khoảng đệm cuối (`padding-bottom: 12px - 16px`) để nội dung trường nhập liệu cuối cùng không bao giờ bị che khuất sau thanh neo đáy.
+  - *Ngoại lệ duy nhất:* Màn 03 Đăng nhập hoặc Màn 02 Onboarding nếu toàn bộ nội dung nằm vừa trọn vẹn trong 1 viewport không phát sinh thanh cuộn.
 
 ### 4. Nhóm 4: Scrollable Card List (Màn Hình Cuộn Không Nút Đáy)
 * **Áp dụng:** 11 Vé QR, 21 Ví Voucher.
