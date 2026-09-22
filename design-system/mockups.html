@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sân&Cầu — Toàn Bộ 21 Màn Hình Mockup App (Design System v2.1)</title>
+  <title>SVC Badminton — Toàn Bộ 21 Màn Hình Mockup App (Design System v2.1)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -122,13 +122,12 @@
       width: 40px;
       height: 40px;
       border-radius: 12px;
-      background: linear-gradient(135deg, var(--red), var(--red-dark));
+      background: white;
       display: grid;
       place-items: center;
-      color: white;
       box-shadow: 0 4px 16px rgba(220,38,38,0.4);
     }
-    .brand-icon svg { width: 22px; height: 22px; }
+    .brand-icon img { width: 34px; height: 26px; display: block; object-fit: contain; }
 
     .brand-title {
       font-size: 18px;
@@ -596,7 +595,7 @@
       width: 96px;
       height: 96px;
       border-radius: 28px;
-      background: rgba(255,255,255,0.14);
+      background: white;
       backdrop-filter: blur(12px);
       border: 1.5px solid rgba(255,255,255,0.3);
       display: grid;
@@ -605,7 +604,7 @@
       margin-bottom: 20px;
       position: relative;
     }
-    .splash-logo-circle svg { width: 48px; height: 48px; color: white; }
+    .splash-logo-circle .svc-brand-mark { width: 78px; height: 58px; display: block; object-fit: contain; }
     .splash-shuttle-sub {
       position: absolute;
       bottom: -6px;
@@ -688,7 +687,7 @@
       font-weight: 800;
       color: var(--red);
     }
-    .ob-brand-pill svg { width: 18px; height: 18px; }
+    .ob-brand-pill .svc-brand-mark { width: 30px; height: 20px; display: block; object-fit: contain; }
     .ob-skip {
       border: none;
       background: transparent;
@@ -822,11 +821,13 @@
       color: var(--red);
       background: var(--red-soft);
       border: 1px solid var(--red-border);
-      display: inline-block;
+      display: inline-flex;
       padding: 4px 10px;
       border-radius: var(--r-full);
       margin-bottom: 10px;
     }
+    .auth-logo-badge .svc-brand-mark { width: 30px; height: 20px; display: block; object-fit: contain; }
+    .auth-logo-badge { align-items: center; gap: 7px; }
     .auth-header h2 {
       font-size: 24px;
       font-weight: 800;
@@ -2676,9 +2677,10 @@
 
     /* 13. HISTORY */
     .history-screen {
-      padding: 16px;
-      gap: 12px;
+      padding: 14px 14px 0;
+      gap: 10px;
     }
+    .hist-topbar { display: flex; justify-content: space-between; align-items: center; min-height: 36px; }
     .hist-topbar h2 { font-size: 16px; font-weight: 800; color: var(--txt-1); }
     .hist-tabs {
       display: flex;
@@ -2688,32 +2690,52 @@
     }
     .h-tab {
       flex: 1;
-      padding: 7px;
+      min-width: 0;
+      padding: 8px 6px;
       border-radius: var(--r-full);
       border: none;
       background: transparent;
-      font-size: 12px;
+      font-size: 10.5px;
       font-weight: 700;
       color: var(--txt-2);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
     }
+    .h-tab svg { width: 14px; height: 14px; flex: 0 0 auto; }
     .h-tab.active {
       background: white;
       color: var(--txt-1);
       box-shadow: var(--shadow-sm);
     }
-    .hist-filter-chips { display: flex; gap: 6px; }
+    .hist-filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      padding: 2px 0 4px;
+      position: relative;
+      z-index: 2;
+    }
     .hf-chip {
+      flex: 0 0 auto;
       font-size: 10.5px;
       font-weight: 700;
-      padding: 4px 10px;
+      line-height: 1;
+      white-space: nowrap;
+      padding: 6px 10px;
       border-radius: var(--r-full);
       background: white;
       border: 1px solid var(--border);
       color: var(--txt-2);
     }
     .hf-chip.active { background: var(--txt-1); color: white; border-color: var(--txt-1); }
-    .hist-list { display: flex; flex-direction: column; gap: 12px; }
+    .hist-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
     .hist-card {
       background: white;
       border: 1px solid var(--border);
@@ -2721,10 +2743,11 @@
       padding: 12px;
       box-shadow: var(--shadow-sm);
     }
-    .hc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .hc-type { font-size: 9.5px; font-weight: 800; color: var(--red); display: flex; align-items: center; gap: 4px; }
-    .hc-type svg { width: 14px; height: 14px; }
+    .hc-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .hc-type { min-width: 0; font-size: 9.5px; font-weight: 800; color: var(--red); display: flex; align-items: center; gap: 4px; line-height: 1.35; }
+    .hc-type svg { width: 14px; height: 14px; flex: 0 0 auto; }
     .hc-badge {
+      flex: 0 0 auto;
       font-size: 10px;
       font-weight: 800;
       padding: 3px 8px;
@@ -2732,9 +2755,9 @@
     }
     .hc-badge.upcoming { background: var(--green-soft); color: var(--green); }
     .hc-badge.done { background: var(--surface-3); color: var(--txt-3); }
-    .hc-title { font-size: 13.5px; font-weight: 800; color: var(--txt-1); }
-    .hc-sub { font-size: 11px; color: var(--txt-2); margin: 2px 0 6px; }
-    .hc-price { font-size: 11.5px; color: var(--txt-3); }
+    .hc-title { font-size: 13px; font-weight: 800; color: var(--txt-1); line-height: 1.35; overflow-wrap: anywhere; }
+    .hc-sub { font-size: 10.5px; line-height: 1.45; color: var(--txt-2); margin: 3px 0 6px; overflow-wrap: anywhere; }
+    .hc-price { font-size: 10.5px; line-height: 1.4; color: var(--txt-3); overflow-wrap: anywhere; }
     .hc-price strong { color: var(--txt-1); }
     .hc-actions { display: flex; gap: 8px; margin-top: 10px; }
     .hc-btn-primary {
@@ -2751,6 +2774,8 @@
       justify-content: center;
       gap: 5px;
       cursor: pointer;
+      min-width: 0;
+      white-space: nowrap;
     }
     .hc-btn-primary svg { width: 14px; height: 14px; }
     .hc-btn-ghost {
@@ -2767,6 +2792,8 @@
       justify-content: center;
       gap: 5px;
       cursor: pointer;
+      min-width: 0;
+      white-space: nowrap;
     }
     .hc-btn-ghost svg { width: 14px; height: 14px; color: var(--red); }
 
@@ -3285,8 +3312,9 @@
       padding-bottom: 24px;
     }
     .checkout-screen {
-      padding-bottom: 16px;
+      padding-bottom: 0;
     }
+    .checkout-screen > * { flex-shrink: 0; }
     .delivery-tabs {
       display: flex;
       margin: 10px 16px;
@@ -3510,22 +3538,35 @@
     .checkout-bottom-bar {
       position: sticky;
       bottom: 0;
+      width: 100%;
+      min-width: 0;
+      flex: 0 0 auto;
       background: #FFFFFF !important;
       border-top: 1px solid var(--border);
-      padding: 12px 16px;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
       z-index: 50;
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-      margin-top: 14px;
+      margin-top: 4px;
     }
-    .cbb-label { font-size: 11px; color: var(--txt-3); }
-    .cbb-price { font-size: 17px; font-weight: 900; color: var(--red); }
+    .cbb-summary { flex: 1 1 auto; min-width: 0; }
+    .cbb-label { font-size: 10px; line-height: 1.25; color: var(--txt-3); white-space: nowrap; }
+    .cbb-price { font-size: 16px; line-height: 1.25; font-weight: 900; color: var(--red); white-space: nowrap; }
     .cbb-order-btn {
-      padding: 10px 20px;
-      font-size: 13px;
+      flex: 0 0 154px;
+      min-width: 0;
+      min-height: 46px;
+      padding: 8px 11px;
+      justify-content: space-between;
+      white-space: nowrap;
     }
+    .cbb-order-btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
+    .cbb-btn-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+    .cbb-btn-title { font-size: 12.5px; font-weight: 800; }
+    .cbb-btn-sub { margin-top: 2px; font-size: 8.5px; font-weight: 600; opacity: 0.82; }
 
     /* Screen 18 Order Detail Tracking */
     .order-status-banner {
@@ -3967,11 +4008,9 @@
   <header>
     <div class="header-inner">
       <div class="brand-group">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="14.5" cy="8.5" rx="5.8" ry="7.2"/><line x1="9" y1="5.8" x2="20" y2="5.8" stroke-width="0.8" opacity=".6"/><line x1="8.8" y1="8.5" x2="20.2" y2="8.5" stroke-width="0.8" opacity=".6"/><line x1="9" y1="11.2" x2="20" y2="11.2" stroke-width="0.8" opacity=".6"/><line x1="11.8" y1="1.8" x2="11.8" y2="15.2" stroke-width="0.8" opacity=".6"/><line x1="14.5" y1="1.3" x2="14.5" y2="15.7" stroke-width="0.8" opacity=".6"/><line x1="17.2" y1="1.8" x2="17.2" y2="15.2" stroke-width="0.8" opacity=".6"/><path d="M10 17.5 L4.5 23" stroke-width="2.2"/></svg>
-        </div>
+        <div class="brand-icon"><img src="./assets/icons/svc-badminton-logo.png" alt="Logo SVC"></div>
         <div>
-          <div class="brand-title">SÂN&CẦU <span>MOCKUPS</span></div>
+          <div class="brand-title">SVC BADMINTON <span>MOCKUPS</span></div>
         </div>
         <span class="brand-badge">Full Ecosystem • 21 Screens</span>
       </div>
@@ -4019,7 +4058,7 @@
   <!-- Main Gallery -->
   <main>
     <div class="gallery-intro">
-      <h1>Hệ Thống Màn Hình Ứng Dụng Sân&Cầu (21 Màn)</h1>
+      <h1>Hệ Thống Màn Hình Ứng Dụng SVC Badminton (21 Màn)</h1>
       <p>Tổng hợp mockup tương tác hoàn chỉnh cho toàn bộ 21 màn hình cốt lõi của ứng dụng theo quy chuẩn thiết kế Yonex Crimson v2.1. Phân định rõ MVP, Giai đoạn 2 và Định hướng. Click vào bất kỳ điện thoại nào để phóng to hoặc tương tác.</p>
     </div>
 
@@ -4056,11 +4095,10 @@
       <div class="splash-brand-core">
         <div class="splash-logo-circle">
           <div class="splash-logo-inner">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="14.5" cy="8.5" rx="5.8" ry="7.2"/><line x1="9" y1="5.8" x2="20" y2="5.8" stroke-width="0.8" opacity=".6"/><line x1="8.8" y1="8.5" x2="20.2" y2="8.5" stroke-width="0.8" opacity=".6"/><line x1="9" y1="11.2" x2="20" y2="11.2" stroke-width="0.8" opacity=".6"/><line x1="11.8" y1="1.8" x2="11.8" y2="15.2" stroke-width="0.8" opacity=".6"/><line x1="14.5" y1="1.3" x2="14.5" y2="15.7" stroke-width="0.8" opacity=".6"/><line x1="17.2" y1="1.8" x2="17.2" y2="15.2" stroke-width="0.8" opacity=".6"/><path d="M10 17.5 L4.5 23" stroke-width="2.2"/></svg>
-            <div class="splash-shuttle-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18.5 C10 17.1 11.1 16 12.5 16 C13.9 16 15 17.1 15 18.5 C15 19.9 13.9 21 12.5 21 C11.1 21 10 19.9 10 18.5Z" fill="currentColor"/><path d="M12.5 16 C11 13 9.5 9 10 5"/><path d="M12.5 16 C10.5 13.5 8 10.5 7 7"/><path d="M12.5 16 C12 12.5 11 8 13 4"/><path d="M12.5 16 C13 13 14.5 9.5 14 5"/><path d="M12.5 16 C14.5 13.5 17 10.5 18 7"/><path d="M7.5 6.5 C8.5 5 10 4 12.5 3.5 C15 4 16.5 5 17.5 6.5"/></svg></div>
+            <img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt="Logo SVC">
           </div>
         </div>
-        <div class="splash-title">SÂN & CẦU</div>
+        <div class="splash-title">SVC BADMINTON</div>
         <div class="splash-badge">ECOSYSTEM v2.1</div>
         <div class="splash-tagline">Hệ Sinh Thái Thể Thao Cầu Lông #1</div>
       </div>
@@ -4074,7 +4112,7 @@
           </div>
 
           <div class="sc-footer">
-            <p class="sc-desc">Logo Yonex đỏ thể thao, nhận diện thương hiệu số 1 thể thao cầu lông, thanh nạp dữ liệu mượt mà.</p>
+            <p class="sc-desc">Logo monogram ghép ba chữ SVC trong khối đỏ thể thao, tên đầy đủ SVC Badminton và thanh nạp dữ liệu mượt mà.</p>
           </div>
         </div>
         
@@ -4105,7 +4143,7 @@
             
     <div class="screen-content onboarding-screen">
       <div class="ob-header">
-        <span class="ob-brand-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18.5 C10 17.1 11.1 16 12.5 16 C13.9 16 15 17.1 15 18.5 C15 19.9 13.9 21 12.5 21 C11.1 21 10 19.9 10 18.5Z" fill="currentColor"/><path d="M12.5 16 C11 13 9.5 9 10 5"/><path d="M12.5 16 C10.5 13.5 8 10.5 7 7"/><path d="M12.5 16 C12 12.5 11 8 13 4"/><path d="M12.5 16 C13 13 14.5 9.5 14 5"/><path d="M12.5 16 C14.5 13.5 17 10.5 18 7"/><path d="M7.5 6.5 C8.5 5 10 4 12.5 3.5 C15 4 16.5 5 17.5 6.5"/></svg> Sân&Cầu</span>
+        <span class="ob-brand-pill"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</span>
         <button class="ob-skip">Bỏ qua</button>
       </div>
 
@@ -4178,7 +4216,7 @@
       </div>
 
       <div class="auth-header">
-        <div class="auth-logo-badge">🏸 Sân&Cầu</div>
+        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</div>
         <h2>Đăng Nhập Tài Khoản</h2>
         <p>Đăng nhập để đặt sân nhanh và mua dụng cụ cầu lông chính hãng</p>
       </div>
@@ -4233,7 +4271,7 @@
         </div>
 
         <div class="auth-footer-prompt">
-          Chưa có tài khoản Sân&Cầu? <a href="#" class="register-link">Đăng ký ngay</a>
+          Chưa có tài khoản SVC? <a href="#" class="register-link">Đăng ký ngay</a>
         </div>
       </div>
     </div>
@@ -5528,24 +5566,24 @@
       </div>
 
       <!-- 2 Segmented Tabs -->
-      <div class="segmented-tabs-2">
-        <button class="seg-tab active">
+      <div class="hist-tabs">
+        <button class="h-tab active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke-width="2"/><line x1="6" y1="3" x2="6" y2="21" opacity=".5"/><line x1="18" y1="3" x2="18" y2="21" opacity=".5"/><line x1="6" y1="7.5" x2="18" y2="7.5" opacity=".5"/><line x1="6" y1="16.5" x2="18" y2="16.5" opacity=".5"/><line x1="12" y1="7.5" x2="12" y2="16.5" opacity=".6"/></svg>
           <span>Sân đã đặt (2)</span>
         </button>
-        <button class="seg-tab">
+        <button class="h-tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span>Đơn mua hàng (1)</span>
         </button>
       </div>
 
       <!-- Filter status pills -->
-      <div class="status-filter-pills">
-        <span class="sub-pill active">Tất cả</span>
-        <span class="sub-pill">Sắp diễn ra</span>
-        <span class="sub-pill">Đang giao</span>
-        <span class="sub-pill">Hoàn tất</span>
-        <span class="sub-pill">Đã hủy</span>
+      <div class="hist-filter-chips">
+        <span class="hf-chip active">Tất cả</span>
+        <span class="hf-chip">Sắp diễn ra</span>
+        <span class="hf-chip">Đang giao</span>
+        <span class="hf-chip">Hoàn tất</span>
+        <span class="hf-chip">Đã hủy</span>
       </div>
 
       <div class="hist-list">
@@ -5662,7 +5700,7 @@
       <!-- VIP Card -->
       <div class="vip-membership-card">
         <div class="vmc-top">
-          <span class="vmc-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> SÂN&CẦU REWARDS</span>
+          <span class="vmc-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> SVC REWARDS</span>
           <span class="vmc-tier">GOLD MEMBER</span>
         </div>
         <div class="vmc-points-box">
@@ -5801,9 +5839,9 @@
       </div>
 
       <div class="auth-header">
-        <div class="auth-logo-badge">🏸 Sân&Cầu</div>
+        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</div>
         <h2>Đăng Ký Tài Khoản</h2>
-        <p>Gia nhập hệ sinh thái Sân&Cầu để đặt sân ưu đãi và tích điểm</p>
+        <p>Gia nhập hệ sinh thái SVC Badminton để đặt sân ưu đãi và tích điểm</p>
       </div>
 
       <div class="auth-form">
@@ -6139,7 +6177,7 @@
           <span>-200.000đ</span>
         </div>
         <div class="pb-row text-red">
-          <span>Điểm thưởng Sân&Cầu (500 pts)</span>
+          <span>Điểm thưởng SVC (500 pts)</span>
           <span>-50.000đ</span>
         </div>
         <div class="pb-divider"></div>
@@ -6151,12 +6189,15 @@
 
       <!-- Sticky Place Order Bar -->
       <div class="checkout-bottom-bar">
-        <div>
+        <div class="cbb-summary">
           <div class="cbb-label">Tổng thanh toán:</div>
           <div class="cbb-price">6.990.000đ</div>
         </div>
         <button class="btn-primary cbb-order-btn">
-          Đặt Hàng Ngay
+          <span class="cbb-btn-copy">
+            <span class="cbb-btn-title">Đặt hàng</span>
+            <span class="cbb-btn-sub">Thanh toán VietQR</span>
+          </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -6308,7 +6349,7 @@
 
       <!-- Action Buttons -->
       <div class="order-detail-actions">
-        <button class="btn-ghost-full"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Chat hỗ trợ đơn hàng</button>
+        <button class="btn-ghost-full"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Hỗ trợ</button>
         <button class="btn-primary-full"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Xem vị trí tài xế</button>
       </div>
     </div>
@@ -6612,7 +6653,7 @@
       <!-- Loyalty Card Hero -->
       <div class="points-hero-card">
         <div class="phc-top">
-          <span class="phc-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> SÂN&CẦU REWARDS</span>
+          <span class="phc-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> SVC REWARDS</span>
           <span class="phc-badge">HẠNG VÀNG</span>
         </div>
         <div class="phc-val">1.850</div>
