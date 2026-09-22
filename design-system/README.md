@@ -1,5 +1,7 @@
 # Hệ Thống Thiết Kế Sân&Cầu (Design System)
 
+**Bắt đầu thiết kế App:** đọc [APP_UI_RULES.md](./APP_UI_RULES.md), sau đó mở [app-ui-preview.html](./app-ui-preview.html). [APP_UI_PLAN.md](./APP_UI_PLAN.md) ghi phạm vi thiết kế và bước triển khai sau này. Đợt này chỉ tạo tài liệu và preview trong `design-system/`.
+
 Thư mục này chứa toàn bộ tài nguyên, quy chuẩn và công cụ xem trước giao diện cho hệ thống **Sân&Cầu** (dùng chung cho cả **Flutter Mobile App** và **Web App**).
 
 ---
