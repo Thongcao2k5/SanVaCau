@@ -100,3 +100,133 @@ Hệ sinh thái **Sân&Cầu** là sự kết hợp giữa **Hệ thống Đặt
    - Giá bán lấy theo `product_variant.price`.
    - Sân cầu thuộc `branch`, giá sân lấy theo `court_price` ứng với `time_slot`.
 3. **Định dạng tiền tệ chuẩn:** Mọi mức giá hiển thị phải định dạng tiền tệ VNĐ (VD: `4.200.000 đ` hoặc `120.000 đ/giờ`).
+4. **Quy Chuẩn Tiêu Đề & Nút Back (Topbar / AppBar Navigation Spec):**
+   - **Màn hình KHÔNG NÊN CÓ nút Back (Root / Top-level Screens):**
+     - *Splash & Onboarding (Màn 01, 02):* Tự chuyển cảnh hoặc dùng nút "Bỏ qua".
+     - *6 Tab điều hướng chính (Màn 04 Trang chủ, 05 Pro Shop, 08 Chọn sân, 12 Ghép kèo, 13 Lịch sử, 14 Tài khoản):* Đây là các màn hình cấp cao nhất (Root Views) được chuyển đổi qua Bottom Navigation Bar. Tuyệt đối không đặt nút Back ở các màn hình này; Header chỉ hiển thị Brand Logo, Vị trí chi nhánh, Thanh tìm kiếm, Chuông thông báo hoặc Cài đặt.
+   - **Màn hình BẮT BUỘC PHẢI CÓ nút Back (Child / Flow / Detail Screens):**
+     - *Màn hình xác thực (Màn 03 Đăng nhập, 15 Đăng ký, 16 Quên mật khẩu):* Nút Back góc trái để quay về màn hình trước đó.
+     - *Màn hình con & Luồng thao tác (Màn 06 Chi tiết SP, 07 Giỏ hàng, 09 Ma trận giờ, 10 Đặt sân, 11 Vé QR, 17 Thanh toán, 18 Chi tiết đơn, 19 Sửa hồ sơ, 20 Sổ địa chỉ, 21 Ví voucher):* Bắt buộc có nút Back để người dùng quay lại mà không bị kẹt luồng.
+   - **Quy tắc Neo Cố Định (Sticky Topbar Pinning):**
+     - Mọi Topbar chứa nút Back ở các màn hình con có nội dung cuộn (Đặc biệt: Màn 06, 07, 09, 10, 11, 17, 18, 19, 20, 21) **BẮT BUỘC PHẢI NEO CỐ ĐỊNH Ở ĐỈNH** (`position: sticky; top: 0; z-index: 30 / 40; background: white` hoặc glassmorphism `rgba(255,255,255,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border)`).
+     - Khi người dùng cuộn nội dung dài (lưới ma trận 17 khung giờ sân, gallery ảnh, thông số kỹ thuật, vé QR), **nút Back và Tiêu đề KHÔNG ĐƯỢC trôi mất** mà luôn giữ cố định ở đỉnh để bấm quay về tức thì.
+   - **Định dạng Tiêu đề:**
+     - Tiêu đề màn hình luôn là 1 dòng duy nhất (`white-space: nowrap`), không chèn các tag rườm rà (mã đơn, tag shop) gây tràn dòng.
+     - Nút Back chuẩn: Class `.icon-round-btn`, touch target 36×36px, icon mũi tên `line x1="19" y1="12" x2="5" y2="12"`, viền tròn tinh tế.
+5. **Khung chứa & Khoảng đệm màn hình con (Secondary / Commerce Screens):**
+   - Thẻ container `.screen-content`: Tuyệt đối không đặt `padding` toàn khung (`padding: 0`) ở các màn hình có Topbar sticky hoặc Bottom Bar dính đáy.
+   - Topbar đặt chuẩn: `position: sticky; top: 0; z-index: 30; padding: 14px 16px 10px; background: white; border-bottom: 1px solid var(--border);`.
+   - Các khối thẻ card / tabs / danh sách con: Luôn căn lề đều `margin: 0 16px 12px;` để canh lề 16px hai bên đồng bộ tuyệt đối với Topbar và khung nhìn chuẩn.
+6. **Bộ lọc Sản phẩm Pro Shop (`ProductFilterSheet`):**
+   - Không dàn trải các chip filter phụ dài ngắn khác nhau (`sub-filter-row`) trực tiếp trên feed chính của màn hình Pro Shop để tránh rối mắt và chiếm diện tích hiển thị sản phẩm.
+   - Các tiêu chí lọc chuyên sâu (Thương hiệu, Khoảng giá, Độ cứng thân vợt, Điểm cân bằng) được gom gọn gàng trong `ModalBottomSheet` (hoặc Bottom Sheet vuốt lên).
+   - Nút mở bộ lọc cạnh thanh tìm kiếm hiển thị huy hiệu số lượng tiêu chí đang kích hoạt (VD: badge `2`).
+7. **Quy Chuẩn Ghim Đáy Cho Thanh Thanh Toán & Hành Động (Sticky Bottom Checkout / Action Bar):**
+   - **Bắt buộc ghim dính đáy (`margin-top: auto`):** Đối với các màn hình thanh toán hoặc có thanh tác vụ đáy (Màn 06, 07, 10, 17, 18), thanh đáy PHẢI LUÔN LUÔN nằm sát mép dưới màn hình.
+     - *Lý do kỹ thuật (Web/CSS):* Trong flexbox column, khi nội dung ngắn (VD: giỏ hàng 1-2 món ở Màn 07, form xác nhận ở Màn 10), `position: sticky; bottom: 0` chỉ có tác dụng khi cuộn, dẫn đến việc thanh bị kéo lên lơ lửng giữa màn hình tạo khoảng trống hở đáy. Thuộc tính `margin-top: auto;` hấp thụ toàn bộ khoảng trống thừa theo chiều dọc và đẩy thanh sát đáy tuyệt đối.
+     - *Trong Flutter:* Luôn đặt thanh hành động trong thuộc tính `bottomNavigationBar: SafeArea(...)` của `Scaffold`, hoặc bọc nội dung cuộn trong `Expanded(child: SingleChildScrollView(...))` và đặt thanh cố định bên dưới trong `Column`.
+   - **Khung chứa tràn viền (`padding: 0`):** Container `.screen-content` phải đặt `padding: 0` để thanh đáy và Topbar chạm sát viền màn hình (Edge-to-Edge 100% width), không để padding toàn khung làm thanh đáy bị co lọt thỏm tạo viền trắng thừa xung quanh.
+   - **Chống co rúm card (`flex-shrink: 0`):** Tất cả các card/khối con trong container (`.screen-content > *`) phải khai báo `flex-shrink: 0;` để không bị ép co dẹp chiều cao khi màn hình ngắn hoặc nội dung nở rộng.
+   - **Đồng bộ bố cục 2 khối chuẩn:**
+     - Trái: Nhãn phụ (`Tổng thanh toán:`) + Số tiền VNĐ nổi bật (Đỏ Yonex `#DC2626`, font 16.5px Bold 900).
+     - Phải: Nút CTA chính cao 46px, bo R14 (`--r-md`), nhãn 2 dòng (Dòng 1: Tiêu đề hành động 12.5px Bold 800; Dòng 2: Chi tiết 8.5px opacity 85%), icon điều hướng 17px.
+     - Home Indicator: Thanh capsule xám `#CBD5E1` (124px × 4.5px) tại `bottom: 7px` căn giữa chuẩn iOS HIG.
+
+---
+
+## 5. Quy Chuẩn Đáy Màn Hình & Vùng An Toàn (Bottom Margins & Safe Area Spec)
+
+Mọi màn hình trên Mobile App và Web đều phải tuân thủ 1 trong 4 nhóm quy chuẩn đáy:
+
+### 1. Nhóm 1: Floating Bottom Navigation (6 Tab chính)
+* **Áp dụng:** 04 Dashboard, 05 Pro Shop, 08 Chi Nhánh, 12 Ghép Kèo, 13 Lịch Sử, 14 Tài Khoản.
+* **Quy cách:**
+  - Thanh capsule nổi: Cao `52px`, bo góc `9999px`, nền glassmorphism `rgba(255,255,255,0.92)` blur 20px.
+  - **Khoảng cách đáy cố định:** Đúng `12px` (`bottom: 12px; margin-bottom: 0;`).
+  - Container cuộn phải có `padding-bottom: 12px;` kèm khoảng đệm an toàn `68px` cho nội dung cuối cùng.
+
+### 2. Nhóm 2: Sticky Edge-to-Edge Bottom Checkout Bar (Thanh Thanh Toán Dính Đáy)
+* **Áp dụng:** 06 Chi Tiết SP, 07 Giỏ Hàng, 10 Đặt Sân, 17 Mua Hàng Pro Shop, 18 Chi Tiết Đơn Hàng.
+* **Quy cách:**
+  - Trải dài 100% mép-đến-mép (`width: 100%`), nền trắng `#FFFFFF`, viền trên `1px solid var(--border)`, bóng đổ `0 -8px 24px rgba(31,41,55,0.1)`.
+  - **Luôn đẩy dính đáy (`margin-top: auto;`):** Đảm bảo thanh luôn nằm áp sát mép dưới màn hình ngay cả khi nội dung ngắn (như Màn 07 ít món, Màn 10 ít dịch vụ), không trôi lơ lửng ở giữa khung nhìn.
+  - **Khoảng đệm đáy Safe Area:** `padding: 10px 14px calc(22px + env(safe-area-inset-bottom));`.
+  - **Thanh Home Indicator:** `124px × 4.5px`, bo tròn, màu `#CBD5E1`, đặt tại `bottom: 7px; left: 50%; transform: translateX(-50%)`.
+  - **Layout 2 khối:**
+    - Trái: `Tổng thanh toán:` (10.5px) + Số tiền (16.5px, Bold 900, đỏ Yonex `#DC2626`).
+    - Phải: Nút CTA chính (Cao 46px, bo R14, nhãn 2 dòng: Tiêu đề 12.5px + Chi tiết 8.5px, icon mũi tên 17px).
+  - **Mã mẫu chuẩn CSS (Web):**
+    ```css
+    .screen-content {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .screen-content > * {
+      flex-shrink: 0;
+    }
+    .checkout-bottom-bar {
+      position: sticky;
+      bottom: 0;
+      margin-top: auto;
+      width: 100%;
+      background: #FFFFFF !important;
+      border-top: 1px solid var(--border);
+      padding: 10px 14px calc(22px + env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      z-index: 50;
+      box-shadow: 0 -8px 24px rgba(31,41,55,0.1);
+    }
+    ```
+  - **Mã mẫu chuẩn Dart (Flutter):**
+    ```dart
+    Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(...),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: AppColors.border)),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, -8)),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tổng thanh toán:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  Text('600.000đ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                ],
+              ),
+              ElevatedButton(...),
+            ],
+          ),
+        ),
+      ),
+    );
+    ```
+
+### 3. Nhóm 3: Full-Width Single Action CTA (Nút Đơn Lẻ Cuối Màn Hình)
+* **Áp dụng:** 02 Onboarding, 03 Login, 15 Register, 16 Reset Password, 18 Chi Tiết Đơn Hàng, 19 Sửa Hồ Sơ, 20 Sổ Địa Chỉ.
+* **Quy cách:**
+  - Nút cao `48px` (Touch target chuẩn Apple HIG), bo góc `14px` (`--r-md`).
+  - Nếu là thanh dính đáy (Màn 18, 20): Nền trắng, đệm đáy `28px` kèm Home Indicator.
+  - Nếu là nút nằm trong form cuộn (Màn 03, 15, 16): Cách mép chân màn hình tối thiểu `24px - 32px`.
+
+### 4. Nhóm 4: Scrollable Card List (Màn Hình Cuộn Không Nút Đáy)
+* **Áp dụng:** 11 Vé QR, 21 Ví Voucher.
+* **Quy cách:** Thẻ card cuối cùng luôn có `margin-bottom: 24px` hoặc container có `padding-bottom: 24px`. Tuyệt đối không để card dính sát mép đáy `0px`.
