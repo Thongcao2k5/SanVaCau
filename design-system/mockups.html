@@ -2130,7 +2130,8 @@
       padding: 12px 16px 28px;
       display: flex;
       gap: 8px;
-      position: relative;
+      z-index: 40;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
     }
     .pd-bottom-bar::after {
       content: '';
@@ -2511,9 +2512,10 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
       z-index: 40;
     }
-    .mfs-title { font-size: 12.5px; font-weight: 800; }
-    .mfs-sub { font-size: 10.5px; opacity: 0.8; margin-top: 2px; }
-    .mfs-sub strong { color: #FECACA; }
+    .mfs-title { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.25; }
+    .mfs-time { font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.88); line-height: 1.3; margin-top: 2px; }
+    .mfs-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; line-height: 1.3; }
+    .mfs-sub strong { color: #FECACA; font-weight: 800; }
     .mfs-btn { padding: 8px 14px; font-size: 12px; }
 
     /* 10. BOOKING CHECKOUT */
@@ -3020,21 +3022,71 @@
     }
     .vmc-progress-fill { width: 85%; height: 100%; background: linear-gradient(90deg, #F59E0B, #FDE047); }
     .vmc-footer { display: flex; justify-content: space-between; font-size: 9.5px; opacity: 0.8; }
-    .user-info-row { display: flex; align-items: center; gap: 12px; }
+    .user-info-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 12px 14px;
+      box-shadow: var(--shadow-xs);
+    }
     .user-avatar-box {
       width: 48px;
       height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: var(--red);
+      background: linear-gradient(135deg, var(--red) 0%, #991B1B 100%);
       color: white;
       display: grid;
       place-items: center;
       font-size: 16px;
       font-weight: 800;
-      box-shadow: var(--shadow-sm);
+      border: 2px solid white;
+      box-shadow: 0 3px 8px rgba(220,38,38,0.25);
+      position: relative;
     }
-    .user-name { font-size: 15px; font-weight: 800; color: var(--txt-1); }
-    .user-phone { font-size: 11.5px; color: var(--txt-3); margin-top: 2px; }
+    .user-avatar-box .user-avatar-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #F59E0B;
+      color: #1C1917;
+      border: 1.5px solid white;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .user-avatar-box .user-avatar-badge svg {
+      width: 8px;
+      height: 8px;
+    }
+    .user-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .user-name {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--txt-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-phone {
+      font-size: 11px;
+      color: var(--txt-3);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .user-stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -3478,14 +3530,20 @@
 
     /* Profile Hub Additional */
     .edit-prof-pill-btn {
+      flex-shrink: 0;
       border: 1px solid var(--border);
-      background: white;
+      background: var(--surface-2);
       color: var(--txt-1);
       font-size: 11px;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: var(--r-full);
       cursor: pointer;
+      transition: all .2s var(--ease);
+    }
+    .edit-prof-pill-btn:hover {
+      background: var(--surface-3);
+      border-color: var(--txt-3);
     }
 
     /* Secondary & Commerce Screens (17-21) Layout Standardization */
@@ -3494,8 +3552,124 @@
       padding: 0;
       padding-bottom: 24px;
     }
-    .order-checkout-screen, .order-detail-screen, .checkout-screen, .cart-screen, .matrix-screen, .ticket-screen { padding-bottom: 0; }
-    .order-checkout-screen > *, .order-detail-screen > *, .checkout-screen > *, .cart-screen > *, .matrix-screen > *, .ticket-screen > * { flex-shrink: 0; }
+    .order-checkout-screen, .order-detail-screen, .checkout-screen, .cart-screen, .matrix-screen, .ticket-screen, .profile-edit-screen, .address-screen { padding-bottom: 0; }
+    .order-checkout-screen > *, .order-detail-screen > *, .checkout-screen > *, .cart-screen > *, .matrix-screen > *, .ticket-screen > *, .profile-edit-screen > *, .address-screen > * { flex-shrink: 0; }
+    
+    /* Sticky Bottom Action Bars for Forms (Screen 15, 16, 19) */
+    .form-sticky-bottom {
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      flex-shrink: 0;
+      padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+      background: white;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
+      z-index: 40;
+      margin-top: auto;
+    }
+    .form-sticky-bottom::after {
+      content: '';
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 4.5px;
+      background: #CBD5E1;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+    .form-sticky-bottom .btn-primary {
+      width: 100%;
+      height: 46px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .register-screen, .reset-screen {
+      padding: 0;
+      padding-bottom: 0;
+    }
+    .register-screen > .auth-top,
+    .reset-screen > .auth-top {
+      padding: 14px 20px 0;
+      margin-bottom: 10px;
+    }
+    .register-screen > .auth-header,
+    .reset-screen > .auth-header {
+      padding: 0 20px;
+      margin-bottom: 12px;
+    }
+    .register-screen > .auth-header h2,
+    .reset-screen > .auth-header h2 {
+      font-size: 17px;
+      margin-bottom: 3px;
+    }
+    .register-screen > .auth-header p,
+    .reset-screen > .auth-header p {
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+    .register-screen .form-group,
+    .reset-screen .form-group {
+      margin-bottom: 9px;
+    }
+    .register-screen .form-label,
+    .reset-screen .form-label {
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+    .register-screen .styled-input,
+    .reset-screen .styled-input {
+      height: 38px;
+      font-size: 12.5px;
+    }
+    .register-screen > .auth-form,
+    .reset-screen > .auth-form {
+      padding: 0 20px 28px;
+    }
+
+    .auth-sticky-bottom {
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      margin-top: auto;
+      padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+      background: white;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
+      z-index: 40;
+      flex-shrink: 0;
+    }
+    .auth-sticky-bottom::after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 4.5px;
+      background: #CBD5E1;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+    .auth-sticky-bottom .auth-submit-btn {
+      width: 100%;
+      height: 44px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     
     .delivery-tabs {
       display: flex;
@@ -4212,8 +4386,41 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .address-bottom-wrap { padding: 0 16px; }
-    .add-addr-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .address-bottom-wrap {
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      flex-shrink: 0;
+      padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+      background: white;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
+      z-index: 40;
+      margin-top: auto;
+    }
+    .address-bottom-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 4.5px;
+      background: #CBD5E1;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+    .add-addr-btn {
+      width: 100%;
+      height: 46px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
 
     /* Screen 21 Vouchers & Loyalty Points */
     .points-hero-card {
@@ -4735,7 +4942,6 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--red);flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span>CLB Thống Nhất • Q.10</span>
           </div>
-          <div class="qc-live-badge"><span class="live-dot"></span> Còn 8 sân trống</div>
         </div>
         <div class="qc-date-strip">
           <div class="qc-date-pill active">
@@ -5498,7 +5704,7 @@
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
         <div class="matrix-title-box">
           <h2>Sơ Đồ Ma Trận Sân</h2>
-          <span class="matrix-sub">Sân Thống Nhất • Thứ Hai, 21/09</span>
+          <span class="matrix-sub">Sân Thống Nhất • 21/09</span>
         </div>
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
       </div>
@@ -5576,8 +5782,9 @@
       <!-- Floating Summary Sheet -->
       <div class="matrix-floating-summary">
         <div class="mfs-details">
-          <div class="mfs-title">Sân số 2 • 18:00 - 20:00 (2 giờ)</div>
-          <div class="mfs-sub">Thứ Hai 21/09 • Tạm tính: <strong>340.000đ</strong></div>
+          <div class="mfs-title">Sân số 2</div>
+          <div class="mfs-time">18:00 - 20:00 (2 giờ)</div>
+          <div class="mfs-sub">21/09 • Tạm tính: <strong>340.000đ</strong></div>
         </div>
         <button class="btn-primary mfs-btn">
           Tiếp tục
@@ -6120,10 +6327,13 @@
 
       <!-- User Info Row -->
       <div class="user-info-row">
-        <div class="user-avatar-box">TA</div>
+        <div class="user-avatar-box">
+          <span>TA</span>
+          <span class="user-avatar-badge" title="Gold Member"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+        </div>
         <div class="user-meta">
           <div class="user-name">Nguyễn Tuấn Anh</div>
-          <div class="user-phone">tuananh.nguyen@email.com • 0988 654 321</div>
+          <div class="user-phone">0988 654 321 • tuananh.nguyen@email.com</div>
         </div>
         <button class="edit-prof-pill-btn">Sửa</button>
       </div>
@@ -6234,7 +6444,7 @@
       </div>
     </div>
             
-    <div class="screen-content auth-screen">
+    <div class="screen-content auth-screen register-screen">
       <div class="auth-top">
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
         <span class="auth-tag">Tạo tài khoản mới</span>
@@ -6296,7 +6506,7 @@
           </div>
         </div>
 
-        <div class="remember-row">
+        <div class="remember-row" style="margin: 8px 0 10px;">
           <label class="custom-checkbox">
             <input type="checkbox" checked>
             <span class="checkbox-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
@@ -6304,14 +6514,17 @@
           </label>
         </div>
 
+        <div class="auth-footer-prompt" style="margin-top: 8px; margin-bottom: 8px;">
+          Đã có tài khoản? <a href="#" class="register-link">Đăng nhập</a>
+        </div>
+      </div>
+
+      <!-- Sticky Bottom Action Bar -->
+      <div class="auth-sticky-bottom">
         <button class="btn-primary auth-submit-btn">
           Đăng Ký Tài Khoản
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
-
-        <div class="auth-footer-prompt">
-          Đã có tài khoản? <a href="#" class="register-link">Đăng nhập</a>
-        </div>
       </div>
     </div>
     
@@ -6347,7 +6560,7 @@
       </div>
     </div>
             
-    <div class="screen-content auth-screen">
+    <div class="screen-content auth-screen reset-screen">
       <div class="auth-top">
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
         <span class="auth-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L10 10l1.5 1.5L9 14l-1.5-1.5L5 15l1.5 1.5L2 21l3-3 1.5 1.5L9 17l-1.5-1.5L10 13l1.5 1.5 2.5-2.5-1.5-1.5 2.5-2.5L21 2z"/></svg> Khôi phục tài khoản</span>
@@ -6412,15 +6625,17 @@
             <input type="password" value="NewPass@2026" class="styled-input" placeholder="Nhập lại mật khẩu mới...">
           </div>
         </div>
+        <div class="auth-footer-prompt" style="margin-top: 10px; margin-bottom: 8px;">
+          Nhớ mật khẩu? <a href="#" class="register-link">Quay lại Đăng nhập</a>
+        </div>
+      </div>
 
+      <!-- Sticky Bottom Action Bar -->
+      <div class="auth-sticky-bottom">
         <button class="btn-primary auth-submit-btn">
           Xác Nhận & Đổi Mật Khẩu
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
-
-        <div class="auth-footer-prompt">
-          Nhớ mật khẩu? <a href="#" class="register-link">Quay lại Đăng nhập</a>
-        </div>
       </div>
     </div>
     
@@ -6903,10 +7118,14 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
+      </div>
 
-        <div style="margin: 16px 0 20px;">
-          <button class="btn-primary" style="width: 100%;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Lưu Thay Đổi</button>
-        </div>
+      <!-- Sticky Bottom Action Bar -->
+      <div class="form-sticky-bottom">
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Lưu Thay Đổi
+        </button>
       </div>
     </div>
     
