@@ -438,15 +438,16 @@
       position: sticky;
       bottom: 12px;
       margin-top: auto;
+      margin-bottom: 0;
       left: 16px;
       right: 16px;
       align-self: center;
       width: calc(100% - 32px);
       height: 52px;
-      background: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.92);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.7);
       border-radius: 999px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05);
       display: flex;
@@ -958,8 +959,8 @@
 
     /* 04. HOME */
     .home-screen {
-      padding: 16px;
-      gap: 16px;
+      padding: 16px 16px 12px;
+      gap: 14px;
       display: flex;
       flex-direction: column;
     }
@@ -1629,7 +1630,7 @@
 
     /* 05. SHOP */
     .shop-screen {
-      padding: 16px;
+      padding: 16px 16px 12px;
       gap: 12px;
     }
     .shop-top {
@@ -1709,23 +1710,121 @@
       color: white;
       border-color: var(--red);
     }
-    .sub-filter-row {
+    /* Filter Bottom Sheet in Screen 05 */
+    .shop-filter-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 80;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s var(--ease);
       display: flex;
-      gap: 6px;
-      overflow-x: auto;
+      flex-direction: column;
+      justify-content: flex-end;
     }
-    .sub-pill {
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 4px 9px;
-      border-radius: var(--r-full);
-      background: var(--surface-3);
-      color: var(--txt-2);
+    .shop-filter-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
     }
-    .sub-pill.active {
-      background: var(--red-soft);
+    .shop-filter-sheet {
+      background: #FFFFFF;
+      border-radius: 24px 24px 0 0;
+      padding: 12px 16px 20px;
+      max-height: 82%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .shop-filter-backdrop.open .shop-filter-sheet {
+      transform: translateY(0);
+    }
+    .sfs-handle {
+      width: 36px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 2px;
+      margin: 0 auto 10px;
+      flex-shrink: 0;
+    }
+    .sfs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sfs-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--txt-1);
+    }
+    .sfs-reset-btn {
+      background: none;
+      border: none;
       color: var(--red);
-      border: 1px solid var(--red-border);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .sfs-body {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-width: none;
+    }
+    .sfs-body::-webkit-scrollbar { display: none; }
+    .sfs-group-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--txt-1);
+      margin-bottom: 8px;
+    }
+    .sfs-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .sfs-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--r-full);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--txt-2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sfs-chip.active {
+      background: var(--red-soft);
+      border-color: var(--red);
+      color: var(--red);
+      font-weight: 800;
+    }
+    .sfs-footer {
+      padding-top: 12px;
+      margin-top: 6px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sfs-apply-btn {
+      width: 100%;
+      height: 44px;
+      font-size: 13px;
+      font-weight: 800;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .product-grid {
       display: grid;
@@ -1829,7 +1928,14 @@
       background: white;
     }
     .pd-topbar {
-      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -2018,11 +2124,25 @@
     .pd-bottom-bar {
       position: sticky;
       bottom: 0;
+      margin-top: auto;
       background: white;
       border-top: 1px solid var(--border);
-      padding: 12px 16px;
+      padding: 12px 16px 28px;
       display: flex;
       gap: 8px;
+      position: relative;
+    }
+    .pd-bottom-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 4.5px;
+      background: #CBD5E1;
+      border-radius: 999px;
+      pointer-events: none;
     }
     .pd-chat-btn, .pd-cart-btn {
       width: 44px;
@@ -2039,25 +2159,45 @@
 
     /* 07. CART */
     .cart-screen {
-      padding: 16px;
-      background: white;
+      padding: 0;
+      background: var(--surface-2);
+      display: flex;
+      flex-direction: column;
     }
     .cart-topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
       margin-bottom: 16px;
     }
-    .cart-topbar h2 { font-size: 16px; font-weight: 800; color: var(--txt-1); }
-    .clear-btn { border: none; background: transparent; color: var(--txt-3); font-size: 12px; font-weight: 700; }
-    .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .cart-topbar h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--txt-1);
+      white-space: nowrap;
+      margin: 0;
+    }
+    .cart-topbar .clear-btn,
+    .cart-topbar .topbar-save-btn,
+    .cart-topbar .icon-round-btn:last-child:not(:first-child) {
+      margin-left: auto;
+    }
+    .clear-btn { border: none; background: transparent; color: var(--txt-3); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 0 16px 12px;
+    }
     .cart-item {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 10px;
+      background: white;
       border: 1px solid var(--border);
       border-radius: var(--r-md);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .ci-img {
       width: 60px;
@@ -2101,19 +2241,23 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      background: white;
       border: 1.5px dashed var(--border);
       border-radius: var(--r-md);
       padding: 10px 12px;
-      margin-bottom: 16px;
+      margin: 0 16px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .vb-icon svg { width: 18px; height: 18px; color: var(--red); }
-    .vb-input { border: none; outline: none; font-size: 12px; font-weight: 800; color: var(--txt-1); flex: 1; }
+    .vb-input { border: none; outline: none; font-size: 12px; font-weight: 800; color: var(--txt-1); flex: 1; background: transparent; }
     .vb-badge { font-size: 10px; font-weight: 800; color: var(--green); background: var(--green-soft); padding: 3px 6px; border-radius: 4px; }
     .order-summary-box {
-      background: var(--surface-2);
+      background: white;
+      border: 1px solid var(--border);
       border-radius: var(--r-md);
-      padding: 12px;
-      margin-bottom: 16px;
+      padding: 12px 14px;
+      margin: 0 16px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .os-row {
       display: flex;
@@ -2131,7 +2275,7 @@
 
     /* 08. BRANCH & SCHEDULE */
     .branch-screen {
-      padding: 14px 16px;
+      padding: 14px 16px 12px;
       gap: 10px;
     }
     .branch-topbar {
@@ -2265,14 +2409,22 @@
 
     /* 09. COURT MATRIX */
     .matrix-screen {
-      padding: 16px;
+      padding: 0;
       background: white;
+      display: flex;
+      flex-direction: column;
     }
     .matrix-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      padding: 14px 16px 10px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      margin-bottom: 10px;
     }
     .matrix-title-box h2 { font-size: 15px; font-weight: 800; color: var(--txt-1); }
     .matrix-sub { font-size: 11px; color: var(--txt-2); }
@@ -2282,7 +2434,7 @@
       background: var(--surface-2);
       border-radius: var(--r-md);
       padding: 8px 10px;
-      margin-bottom: 12px;
+      margin: 0 16px 12px;
     }
     .leg-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: var(--txt-2); }
     .leg-box { width: 12px; height: 12px; border-radius: 3px; }
@@ -2294,7 +2446,7 @@
       border: 1px solid var(--border);
       border-radius: var(--r-md);
       overflow: hidden;
-      margin-bottom: 16px;
+      margin: 0 16px 14px;
     }
     .matrix-header-row {
       display: grid;
@@ -2346,6 +2498,9 @@
     }
     .slot-cell.selected-slot svg { width: 14px; height: 14px; }
     .matrix-floating-summary {
+      position: sticky;
+      bottom: 12px;
+      margin: auto 16px 12px;
       background: #1C1C1E;
       color: white;
       border-radius: var(--r-lg);
@@ -2354,6 +2509,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      z-index: 40;
     }
     .mfs-title { font-size: 12.5px; font-weight: 800; }
     .mfs-sub { font-size: 10.5px; opacity: 0.8; margin-top: 2px; }
@@ -2362,14 +2518,22 @@
 
     /* 10. BOOKING CHECKOUT */
     .checkout-screen {
-      padding: 16px;
-      background: white;
+      padding: 0;
+      background: var(--surface-2);
+      display: flex;
+      flex-direction: column;
     }
     .co-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      padding: 14px 16px 10px;
+      margin-bottom: 12px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
     }
     .co-topbar h2 { font-size: 16px; font-weight: 800; color: var(--txt-1); }
     .co-countdown {
@@ -2381,11 +2545,12 @@
       border-radius: var(--r-full);
     }
     .co-summary-card {
-      background: var(--surface-2);
+      background: white;
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
       padding: 12px;
-      margin-bottom: 14px;
+      margin: 0 16px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .cos-head {
       display: flex;
@@ -2408,24 +2573,26 @@
       gap: 8px;
     }
     .cos-item {
-      background: white;
+      background: var(--surface-2);
       padding: 8px;
       border-radius: var(--r-sm);
       border: 1px solid var(--border);
     }
     .cos-k { font-size: 9px; font-weight: 700; color: var(--txt-3); display: block; }
     .cos-v { font-size: 12px; font-weight: 800; color: var(--txt-1); margin-top: 2px; display: block; }
-    .co-section { margin-bottom: 14px; }
+    .co-section { margin: 0 16px 14px; }
     .cos-sec-title { font-size: 10.5px; font-weight: 800; color: var(--txt-3); letter-spacing: 0.5px; margin-bottom: 8px; }
     .addon-card {
       display: flex;
       align-items: center;
       gap: 10px;
+      background: white;
       border: 1.5px solid var(--border);
       border-radius: var(--r-md);
       padding: 10px;
       margin-bottom: 8px;
       cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .addon-card.selected {
       border-color: var(--red);
@@ -2449,11 +2616,13 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      background: white;
       border: 1.5px solid var(--border);
       border-radius: var(--r-md);
       padding: 10px 12px;
       margin-bottom: 8px;
       cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .pay-option.selected {
       border-color: var(--red);
@@ -2495,13 +2664,21 @@
 
     /* 11. E-TICKET */
     .ticket-screen {
-      padding: 16px;
+      padding: 0;
       background: var(--surface-2);
+      display: flex;
+      flex-direction: column;
     }
     .ticket-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 14px 16px 10px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
       margin-bottom: 14px;
     }
     .ticket-topbar h2 { font-size: 16px; font-weight: 800; color: var(--txt-1); }
@@ -2510,7 +2687,7 @@
       border-radius: var(--r-xl);
       box-shadow: var(--shadow-md);
       overflow: hidden;
-      margin-bottom: 14px;
+      margin: 0 16px 14px;
     }
     .bp-top {
       padding: 16px 16px 12px;
@@ -2584,7 +2761,12 @@
     .qr-pin-code { font-size: 13px; font-weight: 700; color: var(--txt-2); margin-bottom: 6px; }
     .qr-pin-code strong { color: var(--red); font-size: 15px; }
     .qr-instruction { font-size: 10px; color: var(--txt-3); max-width: 240px; margin: 0 auto; line-height: 1.4; }
-    .ticket-actions-row { display: flex; flex-direction: column; gap: 8px; }
+    .ticket-actions-row {
+      margin: 0 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .t-act-btn {
       width: 100%;
       padding: 11px;
@@ -2604,7 +2786,7 @@
 
     /* 12. MATCHMAKING */
     .match-screen {
-      padding: 16px;
+      padding: 16px 16px 12px;
       gap: 12px;
     }
     .match-topbar { display: flex; justify-content: space-between; align-items: center; }
@@ -2677,7 +2859,7 @@
 
     /* 13. HISTORY */
     .history-screen {
-      padding: 14px 14px 0;
+      padding: 14px 14px 12px;
       gap: 10px;
     }
     .hist-topbar { display: flex; justify-content: space-between; align-items: center; min-height: 36px; }
@@ -2799,8 +2981,8 @@
 
     /* 14. PROFILE */
     .profile-screen {
-      padding: 16px;
-      gap: 14px;
+      padding: 16px 16px 12px;
+      gap: 12px;
     }
     .prof-topbar { display: flex; justify-content: space-between; align-items: center; }
     .prof-topbar h2 { font-size: 16px; font-weight: 800; color: var(--txt-1); }
@@ -3306,15 +3488,15 @@
       cursor: pointer;
     }
 
-    /* Checkout Screen 17 Styles */
-    .checkout-screen, .order-detail-screen, .profile-edit-screen, .address-screen, .vouchers-screen {
+    /* Secondary & Commerce Screens (17-21) Layout Standardization */
+    .order-checkout-screen, .order-detail-screen, .profile-edit-screen, .address-screen, .vouchers-screen {
       background: var(--surface-2);
+      padding: 0;
       padding-bottom: 24px;
     }
-    .checkout-screen {
-      padding-bottom: 0;
-    }
-    .checkout-screen > * { flex-shrink: 0; }
+    .order-checkout-screen, .order-detail-screen, .checkout-screen, .cart-screen, .matrix-screen, .ticket-screen { padding-bottom: 0; }
+    .order-checkout-screen > *, .order-detail-screen > *, .checkout-screen > *, .cart-screen > *, .matrix-screen > *, .ticket-screen > * { flex-shrink: 0; }
+    
     .delivery-tabs {
       display: flex;
       margin: 10px 16px;
@@ -3322,7 +3504,8 @@
     }
     .d-tab {
       flex: 1;
-      padding: 10px;
+      min-width: 0;
+      padding: 9px 10px;
       border: 1.5px solid var(--border);
       border-radius: var(--r-md);
       background: white;
@@ -3332,12 +3515,16 @@
       color: var(--txt-2);
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 6px;
       cursor: pointer;
       transition: all .2s;
     }
-    .d-tab svg { width: 16px; height: 16px; }
+    .d-tab svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .d-tab-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
+    .d-tab-title { font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+    .d-tab-sub { margin-top: 2px; font-size: 8.5px; font-weight: 600; color: var(--txt-3); white-space: nowrap; }
+    .d-tab.active .d-tab-sub { color: var(--red); opacity: .75; }
     .d-tab.active {
       border-color: var(--red);
       background: var(--red-soft);
@@ -3350,6 +3537,13 @@
       margin: 0 16px 12px;
       padding: 12px 14px;
       text-align: left;
+    }
+    .order-checkout-screen .checkout-card,
+    .order-detail-screen .checkout-card,
+    .order-detail-screen .tracking-card {
+      margin-left: 16px;
+      margin-right: 16px;
+      margin-bottom: 12px;
     }
     .cb-header {
       display: flex;
@@ -3531,7 +3725,10 @@
       font-size: 11.5px;
       color: var(--txt-2);
       margin-bottom: 5px;
+      gap: 12px;
     }
+    .price-breakdown .pb-row > :first-child { min-width: 0; }
+    .price-breakdown .pb-row > :last-child { flex: 0 0 auto; text-align: right; }
     .pb-divider { height: 1px; background: var(--border); margin: 8px 0; }
     .total-row { font-size: 14px !important; color: var(--txt-1) !important; }
 
@@ -3543,64 +3740,162 @@
       flex: 0 0 auto;
       background: #FFFFFF !important;
       border-top: 1px solid var(--border);
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      padding: 10px 14px calc(22px + env(safe-area-inset-bottom));
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
       z-index: 50;
-      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-      margin-top: 4px;
+      box-shadow: 0 -8px 24px rgba(31,41,55,0.1);
+      margin-top: auto;
+    }
+    .checkout-bottom-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 4.5px;
+      background: #CBD5E1;
+      border-radius: 999px;
+      pointer-events: none;
     }
     .cbb-summary { flex: 1 1 auto; min-width: 0; }
-    .cbb-label { font-size: 10px; line-height: 1.25; color: var(--txt-3); white-space: nowrap; }
-    .cbb-price { font-size: 16px; line-height: 1.25; font-weight: 900; color: var(--red); white-space: nowrap; }
+    .cbb-label { font-size: 10.5px; font-weight: 600; line-height: 1.25; color: var(--txt-3); white-space: nowrap; }
+    .cbb-price { font-size: 16.5px; line-height: 1.25; font-weight: 900; color: var(--red); white-space: nowrap; }
     .cbb-order-btn {
-      flex: 0 0 154px;
-      min-width: 0;
+      flex: 0 0 auto;
+      min-width: 148px;
       min-height: 46px;
-      padding: 8px 11px;
+      padding: 8px 14px;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
       justify-content: space-between;
+      gap: 10px;
       white-space: nowrap;
     }
     .cbb-order-btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
     .cbb-btn-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
     .cbb-btn-title { font-size: 12.5px; font-weight: 800; }
-    .cbb-btn-sub { margin-top: 2px; font-size: 8.5px; font-weight: 600; opacity: 0.82; }
+    .cbb-btn-sub { margin-top: 2px; font-size: 8.5px; font-weight: 600; opacity: 0.85; }
 
-    /* Screen 18 Order Detail Tracking */
+    /* Screen 18 Order Detail Tracking Hero */
     .order-status-banner {
-      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      background: linear-gradient(145deg, #0F172A 0%, #1E293B 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: white;
       padding: 14px 16px;
-      margin: 0 16px 12px;
+      margin: 10px 16px 12px;
       border-radius: var(--r-lg);
+      box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.25);
+    }
+    .osb-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
-    .osb-left { display: flex; align-items: center; gap: 12px; }
+    .osb-icon-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
     .osb-icon {
       width: 40px;
       height: 40px;
-      border-radius: 50%;
-      background: rgba(220,38,38,0.25);
-      border: 1.5px solid var(--red);
+      border-radius: 12px;
+      background: rgba(220, 38, 38, 0.16);
+      border: 1.5px solid rgba(220, 38, 38, 0.35);
       display: grid;
       place-items: center;
-      color: white;
+      color: #EF4444;
+      flex-shrink: 0;
     }
     .osb-icon svg { width: 20px; height: 20px; }
-    .osb-title { font-size: 13.5px; font-weight: 900; letter-spacing: 0.5px; color: #F8FAFC; }
-    .osb-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
-    .osb-badge {
-      font-size: 10.5px;
+    .osb-info { min-width: 0; }
+    .osb-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13.5px;
       font-weight: 800;
-      background: var(--red);
-      padding: 4px 10px;
+      color: #FFFFFF;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .osb-pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 8px #22C55E;
+      flex-shrink: 0;
+      animation: osbPulse 2s infinite;
+    }
+    @keyframes osbPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+    .osb-ord-code {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94A3B8;
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+    .osb-carrier-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: #F8FAFC;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 4px 9px;
       border-radius: var(--r-full);
       white-space: nowrap;
       flex-shrink: 0;
+      letter-spacing: 0.3px;
+    }
+    .osb-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 12px 0 10px;
+    }
+    .osb-eta-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .osb-eta-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #F59E0B;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .osb-eta-icon svg { width: 15px; height: 15px; }
+    .osb-eta-copy { min-width: 0; line-height: 1.25; }
+    .osb-eta-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #94A3B8;
+      letter-spacing: 0.4px;
+    }
+    .osb-eta-val {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #F8FAFC;
+      margin-top: 1px;
+      white-space: nowrap;
     }
     .tracking-card {
       background: white;
@@ -3616,6 +3911,15 @@
       flex-direction: column;
       gap: 12px;
       position: relative;
+    }
+    .tracking-timeline::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 9px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--green) 0 46%, var(--red) 46% 72%, var(--border) 72% 100%);
     }
     .tl-item {
       display: flex;
@@ -3642,24 +3946,52 @@
       color: white;
       box-shadow: 0 0 0 3px rgba(220,38,38,0.2);
     }
-    .tl-title { font-size: 12px; font-weight: 700; color: var(--txt-1); }
-    .tl-time { font-size: 10px; color: var(--txt-3); margin-top: 2px; }
+    .tl-body { min-width: 0; }
+    .tl-title { font-size: 11.5px; line-height: 1.35; font-weight: 700; color: var(--txt-1); }
+    .tl-time { font-size: 9.5px; line-height: 1.4; color: var(--txt-3); margin-top: 2px; overflow-wrap: anywhere; }
     .courier-row {
       display: flex;
-      justify-content: space-between;
-      font-size: 11.5px;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10.5px;
       background: var(--surface-2);
-      padding: 6px 10px;
-      border-radius: 6px;
+      padding: 8px 10px;
+      border-radius: var(--r-sm);
       margin-top: 8px;
     }
+    .payment-paid { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .payment-paid strong { color: var(--green); font-size: 9px; text-transform: uppercase; letter-spacing: .3px; }
+    .payment-paid b { color: var(--txt-1); font-size: 12px; }
     .order-detail-actions {
-      padding: 8px 16px;
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      flex: 0 0 auto;
+      padding: 10px 14px calc(22px + env(safe-area-inset-bottom));
       display: flex;
       gap: 8px;
+      background: white;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px rgba(31,41,55,0.1);
+      z-index: 50;
+      margin-top: auto;
+    }
+    .order-detail-actions::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 7px;
+      width: 124px;
+      height: 4.5px;
+      border-radius: var(--r-full);
+      background: #CBD5E1;
+      transform: translateX(-50%);
+      pointer-events: none;
     }
     .btn-ghost-full {
       flex: 1;
+      min-width: 0;
+      min-height: 44px;
       padding: 10px;
       border: 1.5px solid var(--border);
       background: white;
@@ -3673,10 +4005,13 @@
       justify-content: center;
       gap: 5px;
       cursor: pointer;
+      white-space: nowrap;
     }
     .btn-ghost-full svg { width: 14px; height: 14px; }
     .btn-primary-full {
-      flex: 1.2;
+      flex: 1.45;
+      min-width: 0;
+      min-height: 44px;
       padding: 10px;
       border: none;
       background: var(--red);
@@ -3691,6 +4026,7 @@
       gap: 5px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(220,38,38,0.25);
+      white-space: nowrap;
     }
     .btn-primary-full svg { width: 14px; height: 14px; }
 
@@ -3756,13 +4092,19 @@
       background: var(--red-soft);
       color: var(--red);
     }
-    .checkout-screen .cart-topbar,
+    .order-checkout-screen .cart-topbar,
     .order-detail-screen .cart-topbar,
     .profile-edit-screen .cart-topbar,
     .address-screen .cart-topbar,
-    .vouchers-screen .cart-topbar {
+    .vouchers-screen .cart-topbar,
+    .cart-screen .cart-topbar {
       padding: 14px 16px 10px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
     }
     .topbar-save-btn {
       border: 1px solid var(--red-border);
@@ -4010,7 +4352,7 @@
       <div class="brand-group">
         <div class="brand-icon"><img src="./assets/icons/svc-badminton-logo.png" alt="Logo SVC"></div>
         <div>
-          <div class="brand-title">SVC BADMINTON <span>MOCKUPS</span></div>
+          <div class="brand-title">BADMINTON <span>DESIGN SYSTEM</span></div>
         </div>
         <span class="brand-badge">Full Ecosystem • 21 Screens</span>
       </div>
@@ -4098,7 +4440,7 @@
             <img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt="Logo SVC">
           </div>
         </div>
-        <div class="splash-title">SVC BADMINTON</div>
+        <div class="splash-title">BADMINTON</div>
         <div class="splash-badge">ECOSYSTEM v2.1</div>
         <div class="splash-tagline">Hệ Sinh Thái Thể Thao Cầu Lông #1</div>
       </div>
@@ -4143,7 +4485,7 @@
             
     <div class="screen-content onboarding-screen">
       <div class="ob-header">
-        <span class="ob-brand-pill"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</span>
+        <span class="ob-brand-pill"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt="SVC"> Badminton</span>
         <button class="ob-skip">Bỏ qua</button>
       </div>
 
@@ -4216,7 +4558,7 @@
       </div>
 
       <div class="auth-header">
-        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</div>
+        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt="SVC"> Badminton</div>
         <h2>Đăng Nhập Tài Khoản</h2>
         <p>Đăng nhập để đặt sân nhanh và mua dụng cụ cầu lông chính hãng</p>
       </div>
@@ -4586,7 +4928,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Tìm kiếm vợt, giày, cước, cầu..." readonly value="Yonex Astrox">
         </div>
-        <button class="filter-icon-btn active">
+        <button class="filter-icon-btn active" onclick="toggleShopFilter(event)" title="Mở bộ lọc nâng cao">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
           <span class="filter-count">2</span>
         </button>
@@ -4599,14 +4941,6 @@
         <div class="cat-chip">Giày thi đấu</div>
         <div class="cat-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18.5 C10 17.1 11.1 16 12.5 16 C13.9 16 15 17.1 15 18.5 C15 19.9 13.9 21 12.5 21 C11.1 21 10 19.9 10 18.5Z" fill="currentColor"/><path d="M12.5 16 C11 13 9.5 9 10 5"/><path d="M12.5 16 C10.5 13.5 8 10.5 7 7"/><path d="M12.5 16 C12 12.5 11 8 13 4"/><path d="M12.5 16 C13 13 14.5 9.5 14 5"/><path d="M12.5 16 C14.5 13.5 17 10.5 18 7"/><path d="M7.5 6.5 C8.5 5 10 4 12.5 3.5 C15 4 16.5 5 17.5 6.5"/></svg> Quả cầu</div>
         <div class="cat-chip">Túi & Balo</div>
-      </div>
-
-      <!-- Sub Filter Tags -->
-      <div class="sub-filter-row">
-        <span class="sub-pill active">Yonex ×</span>
-        <span class="sub-pill active">Dưới 5 triệu ×</span>
-        <span class="sub-pill">Thân cứng</span>
-        <span class="sub-pill">Nặng đầu</span>
       </div>
 
       <!-- Product Grid 2 cols -->
@@ -4684,10 +5018,67 @@
 </div>
     </div>
     
+    <!-- Interactive Filter Bottom Sheet (Mở khi bấm nút Filter) -->
+    <div class="shop-filter-backdrop" id="shop-filter-sheet" onclick="closeShopFilter(event)">
+      <div class="shop-filter-sheet" onclick="event.stopPropagation()">
+        <div class="sfs-handle"></div>
+        <div class="sfs-header">
+          <div class="sfs-title">Bộ Lọc Sản Phẩm</div>
+          <button class="sfs-reset-btn" onclick="resetShopFilter(event)">Thiết lập lại</button>
+        </div>
+        <div class="sfs-body">
+          <!-- Filter Group: Thương hiệu -->
+          <div class="sfs-group">
+            <div class="sfs-group-title">Thương hiệu</div>
+            <div class="sfs-chips">
+              <span class="sfs-chip active">Yonex</span>
+              <span class="sfs-chip">Lining</span>
+              <span class="sfs-chip">Victor</span>
+              <span class="sfs-chip">Mizuno</span>
+            </div>
+          </div>
+
+          <!-- Filter Group: Khoảng giá -->
+          <div class="sfs-group">
+            <div class="sfs-group-title">Khoảng giá</div>
+            <div class="sfs-chips">
+              <span class="sfs-chip">Dưới 1 triệu</span>
+              <span class="sfs-chip">1 - 3 triệu</span>
+              <span class="sfs-chip active">Dưới 5 triệu</span>
+              <span class="sfs-chip">Trên 5 triệu</span>
+            </div>
+          </div>
+
+          <!-- Filter Group: Độ cứng thân vợt -->
+          <div class="sfs-group">
+            <div class="sfs-group-title">Độ cứng thân vợt</div>
+            <div class="sfs-chips">
+              <span class="sfs-chip">Dẻo (Hi-Flex)</span>
+              <span class="sfs-chip">Trung bình</span>
+              <span class="sfs-chip active">Thân cứng</span>
+              <span class="sfs-chip">Siêu cứng</span>
+            </div>
+          </div>
+
+          <!-- Filter Group: Điểm cân bằng -->
+          <div class="sfs-group">
+            <div class="sfs-group-title">Điểm cân bằng</div>
+            <div class="sfs-chips">
+              <span class="sfs-chip">Nhẹ đầu (Thủ)</span>
+              <span class="sfs-chip">Cân bằng</span>
+              <span class="sfs-chip active">Nặng đầu (Công)</span>
+            </div>
+          </div>
+        </div>
+        <div class="sfs-footer">
+          <button class="btn-primary sfs-apply-btn" onclick="closeShopFilter(event)">Áp dụng (2 bộ lọc)</button>
+        </div>
+      </div>
+    </div>
           </div>
 
           <div class="sc-footer">
-            <p class="sc-desc">Thanh tìm kiếm, bộ lọc đa tầng (Thương hiệu, Giá, Loại), thẻ sản phẩm 2 cột kèm nút thêm giỏ nổi.</p>
+            <p class="sc-desc">Thanh tìm kiếm kèm nút mở Filter Bottom Sheet (Lọc Thương hiệu, Giá, Độ cứng), Category Tabs ngang và thẻ sản phẩm 2 cột.</p>
           </div>
         </div>
         
@@ -4921,9 +5312,17 @@
         </div>
       </div>
 
-      <div class="cart-bottom-action">
-        <button class="btn-primary cart-checkout-btn">
-          Tiến hành đặt hàng (7.040.000đ)
+      <!-- Sticky Cart Checkout Bar -->
+      <div class="checkout-bottom-bar">
+        <div class="cbb-summary">
+          <div class="cbb-label">Tổng thanh toán:</div>
+          <div class="cbb-price">7.040.000đ</div>
+        </div>
+        <button class="btn-primary cbb-order-btn">
+          <span class="cbb-btn-copy">
+            <span class="cbb-btn-title">Mua hàng ngay</span>
+            <span class="cbb-btn-sub">2 món • Miễn phí ship</span>
+          </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -5295,13 +5694,16 @@
       </div>
 
       <!-- Bottom Checkout Bar -->
-      <div class="co-bottom-bar">
-        <div class="cob-price">
-          <span class="cob-label">TỔNG CỘNG</span>
-          <span class="cob-num">600.000đ</span>
+      <div class="checkout-bottom-bar">
+        <div class="cbb-summary">
+          <div class="cbb-label">Tổng thanh toán:</div>
+          <div class="cbb-price">600.000đ</div>
         </div>
-        <button class="btn-primary cob-pay-btn">
-          Thanh toán ngay
+        <button class="btn-primary cbb-order-btn">
+          <span class="cbb-btn-copy">
+            <span class="cbb-btn-title">Thanh toán ngay</span>
+            <span class="cbb-btn-sub">VietQR giữ chỗ 10p</span>
+          </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -5839,7 +6241,7 @@
       </div>
 
       <div class="auth-header">
-        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt=""> SVC</div>
+        <div class="auth-logo-badge"><img class="svc-brand-mark" src="./assets/icons/svc-badminton-logo.png" alt="SVC"> Badminton</div>
         <h2>Đăng Ký Tài Khoản</h2>
         <p>Gia nhập hệ sinh thái SVC Badminton để đặt sân ưu đãi và tích điểm</p>
       </div>
@@ -6054,22 +6456,21 @@
       </div>
     </div>
             
-    <div class="screen-content checkout-screen">
+    <div class="screen-content order-checkout-screen">
       <div class="cart-topbar">
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
-        <h2>Thanh Toán Đơn Hàng</h2>
-        <span class="auth-tag">Pro Shop</span>
+        <h2>Thanh toán đơn hàng</h2>
       </div>
 
       <!-- Delivery Method Switcher -->
       <div class="delivery-tabs">
         <button class="d-tab active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          <span>Giao tận nơi (2-3 ngày)</span>
+          <span class="d-tab-copy"><span class="d-tab-title">Giao tận nơi</span><span class="d-tab-sub">Dự kiến 2–3 ngày</span></span>
         </button>
         <button class="d-tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke-width="2"/><line x1="6" y1="3" x2="6" y2="21" opacity=".5"/><line x1="18" y1="3" x2="18" y2="21" opacity=".5"/><line x1="6" y1="7.5" x2="18" y2="7.5" opacity=".5"/><line x1="6" y1="16.5" x2="18" y2="16.5" opacity=".5"/><line x1="12" y1="7.5" x2="12" y2="16.5" opacity=".6"/></svg>
-          <span>Nhận tại sân CLB</span>
+          <span class="d-tab-copy"><span class="d-tab-title">Nhận tại sân</span><span class="d-tab-sub">Không mất phí</span></span>
         </button>
       </div>
 
@@ -6120,7 +6521,7 @@
       <div class="checkout-card">
         <div class="voucher-input-row">
           <div class="vb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
-          <input type="text" value="SANCAU200K" class="vb-input" readonly>
+          <input type="text" value="SVC200K" class="vb-input" readonly>
           <span class="voucher-applied-tag">-200.000đ</span>
         </div>
         <div class="points-redeem-row">
@@ -6129,7 +6530,7 @@
             <span class="checkbox-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
             <span class="checkbox-text">Dùng <strong>500 điểm thưởng</strong> (-50.000đ)</span>
           </label>
-          <span class="points-balance">Còn 1.350đ</span>
+          <span class="points-balance">Còn 1.350 điểm</span>
         </div>
       </div>
 
@@ -6173,7 +6574,7 @@
           <span>-30.000đ</span>
         </div>
         <div class="pb-row text-red">
-          <span>Voucher SANCAU200K</span>
+          <span>Voucher SVC200K</span>
           <span>-200.000đ</span>
         </div>
         <div class="pb-row text-red">
@@ -6195,7 +6596,7 @@
         </div>
         <button class="btn-primary cbb-order-btn">
           <span class="cbb-btn-copy">
-            <span class="cbb-btn-title">Đặt hàng</span>
+            <span class="cbb-btn-title">Đặt hàng ngay</span>
             <span class="cbb-btn-sub">Thanh toán VietQR</span>
           </span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -6238,20 +6639,34 @@
     <div class="screen-content order-detail-screen">
       <div class="cart-topbar">
         <button class="icon-round-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
-        <h2>Chi Tiết Đơn Hàng</h2>
-        <span class="auth-tag">#SC-ORD-8821</span>
+        <h2>Chi tiết đơn hàng</h2>
       </div>
 
       <!-- Order Status Hero Banner -->
       <div class="order-status-banner">
-        <div class="osb-left">
+        <div class="osb-top-row">
+          <div class="osb-icon-wrap">
           <div class="osb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
-          <div>
-            <div class="osb-title">ĐANG GIAO HÀNG</div>
-            <div class="osb-sub">Dự kiến giao: Chiều nay, 22/09/2026</div>
+            <div class="osb-info">
+              <div class="osb-status-pill">
+                <span class="osb-pulse-dot"></span>
+                <span>Đang giao hàng</span>
+              </div>
+              <div class="osb-ord-code">Đơn hàng: #SC-ORD-8821</div>
+            </div>
+          </div>
+          <span class="osb-carrier-badge">GHN Express</span>
+        </div>
+
+        <div class="osb-divider"></div>
+
+        <div class="osb-eta-box">
+          <div class="osb-eta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="osb-eta-copy">
+            <div class="osb-eta-label">DỰ KIẾN NHẬN HÀNG</div>
+            <div class="osb-eta-val">Chiều nay, 22/09 • 14:00 - 18:00</div>
           </div>
         </div>
-        <span class="osb-badge">Đang đi</span>
       </div>
 
       <!-- Stepper Tracking Timeline -->
@@ -6343,7 +6758,7 @@
         </div>
         <div class="pb-row">
           <span>Trạng thái thanh toán</span>
-          <span class="text-green"><strong>ĐÃ THANH TOÁN (6.990.000đ)</strong></span>
+          <span class="payment-paid"><strong>Đã thanh toán</strong><b>6.990.000đ</b></span>
         </div>
       </div>
 
@@ -6845,7 +7260,7 @@
     }
 
     // Screens Data Dictionary for Modal
-    const screenData = {"splash": {"num": "01", "name": "Màn Hình Khởi Động (Splash)", "cat": "Khởi động & Xác thực", "desc": "Màn hình xuất hiện khi người dùng mở ứng dụng. Tải các token xác thực lưu trong SharedPreferences / Flutter Secure Storage.", "tech": "• Flutter: SplashScreen widget (lib/features/auth/presentation/splash_page.dart)\\n• Check Auth State -> Router (AutoRoute / GoRouter)\\n• Hiệu ứng: FadeTransition & Scale logo Yonex"}, "onboarding": {"num": "02", "name": "Giới Thiệu Ứng Dụng (Onboarding)", "cat": "Khởi động & Xác thực", "desc": "Hiển thị lần đầu tiên tải app. Cho phép người dùng lướt xem 3 tính năng cốt lõi hoặc bấm Bỏ qua để vào ngay.", "tech": "• Flutter: PageView.builder kết hợp AnimatedSmoothIndicator\\n• Lưu cờ `has_seen_onboarding = true`"}, "auth": {"num": "03", "name": "Đăng Nhập Tài Khoản", "cat": "Khởi động & Xác thực", "desc": "Xác thực tài khoản khách hàng bằng Email/SĐT và Mật khẩu. Hỗ trợ ghi nhớ đăng nhập, chuyển tới Đăng ký (Màn 15) và Quên mật khẩu (Màn 16).", "tech": "• Backend API: POST /api/auth/login (email, password)\\n• Prisma: Model `app_user` (email, password_hash, status)\\n• JWT Token & Refresh Token bảo mật"}, "home": {"num": "04", "name": "Trang Chủ (Dashboard)", "cat": "Trang chủ & Đặt sân", "desc": "Trung tâm thông tin người dùng: Chọn vị trí cụm sân gần nhất, banner khuyến mãi động từ Backend, vé sắp tới.", "tech": "• Backend API: GET /api/home/summary, GET /api/banners\\n• Flutter: CustomScrollView với SliverAppBar, SliverToBoxAdapter"}, "shop": {"num": "05", "name": "Cửa Hàng Thể Thao Pro Shop", "cat": "Cửa hàng & Mua sắm", "desc": "Danh mục dụng cụ cầu lông chính hãng: Vợt, Giày, Quả cầu, Túi & Phụ kiện. Lọc theo thương hiệu và khoảng giá.", "tech": "• Backend API: GET /api/products?category_id=&brand_id=&min_price=&max_price=\\n• Prisma: Model `product`, `product_variant`, `brand`\\n• Flutter: MasonryGridView.count"}, "product-detail": {"num": "06", "name": "Chi Tiết Sản Phẩm & Gallery", "cat": "Cửa hàng & Mua sắm", "desc": "Bộ sưu tập ảnh đa góc độ, dải thumbnail tương tác, chọn biến thể trọng lượng/cán vợt (4U/3U), thông số kỹ thuật.", "tech": "• Backend API: GET /api/products/:id\\n• Prisma: Model `product_variant` (price, sku, weight_grip)\\n• Flutter: CarouselSlider, Hero animation"}, "cart": {"num": "07", "name": "Giỏ Hàng Pro Shop", "cat": "Cửa hàng & Mua sắm", "desc": "Quản lý danh sách sản phẩm chờ mua, thay đổi số lượng, xóa món, nhập voucher và bấm Tiến hành đặt hàng sang Màn 17.", "tech": "• Backend API: GET /api/cart, PUT /api/cart/items, DELETE /api/cart/items/:id\\n• Prisma: Model `cart`, `cart_item`\\n• Flutter: Dismissible swipe-to-delete"}, "branch-picker": {"num": "08", "name": "Chọn Chi Nhánh & Ngày Đặt", "cat": "Trang chủ & Đặt sân", "desc": "Duyệt danh sách cụm sân với khoảng cách, 4 tiện ích hiển thị trọn vẹn, dải cuộn chọn ngày thi đấu trong tuần.", "tech": "• Backend API: GET /api/branches?lat=...&lng=...\\n• Flutter: Geolocator tính khoảng cách, Horizontal DatePicker ListView"}, "court-matrix": {"num": "09", "name": "Ma Trận Khung Giờ Sân (Core UX)", "cat": "Trang chủ & Đặt sân", "desc": "Trái tim của trải nghiệm đặt sân: Lưới hiển thị trạng thái Trống/Đang chọn/Kín của từng sân theo từng mốc 30 phút.", "tech": "• Backend API: GET /api/courts/availability?branch_id=&date=\\n• Prisma: Model `court`, `court_price`, `time_slot`, `booking_slot`\\n• Flutter: InteractiveViewer hoặc GridView 2 chiều"}, "booking-checkout": {"num": "10", "name": "Xác Nhận & Đặt Sân", "cat": "Trang chủ & Đặt sân", "desc": "Kiểm tra lại thời gian đặt sân, chọn thêm dịch vụ (ống cầu, nước uống) và thanh toán tự động VietQR đếm ngược 10 phút.", "tech": "• Backend API: POST /api/bookings (court_id, booking_date, slot_ids, addons)\\n• Prisma: Model `booking`, `booking_slot` (status: PENDING_PAYMENT)\\n• Tích hợp SePay / VietQR webhook"}, "e-ticket": {"num": "11", "name": "Vé Sân Điện Tử (QR)", "cat": "Tài khoản & Tiện ích", "desc": "Thẻ vé điện tử dạng Boarding Pass với mã QR động chống gian lận. Quét tại quầy lễ tân để bật hệ thống đèn sân tự động.", "tech": "• Backend API: GET /api/bookings/:id/ticket\\n• Mã hóa QR: JWT signed token với timestamp chống chụp màn hình\\n• Flutter: QrImageView, Add-to-Apple-Wallet passkit"}, "matchmaking": {"num": "12", "name": "Sàn Ghép Kèo Giao Lưu", "cat": "Ghép kèo & Cộng đồng", "desc": "Kết nối những người chơi cùng trình độ (Elo 5.0 - 6.5). Hiển thị số slot còn trống, chi phí chia đều theo đầu người.", "tech": "• Roadmap: Định hướng phát triển cộng đồng thể thao\\n• Socket.IO realtime thông báo khi có người tham gia kèo\\n• Flutter: Shimmer loading, animated badge"}, "history": {"num": "13", "name": "Lịch Sử Hoạt Động (2 Tabs)", "cat": "Tài khoản & Tiện ích", "desc": "Quản lý lịch sử toàn diện với 2 Tabs riêng biệt cho Vé Đặt Sân và Đơn Mua Hàng Pro Shop, xem chi tiết và mua lại.", "tech": "• Backend API: GET /api/bookings/my-history, GET /api/orders/my-orders\\n• Flutter: TabBar & TabBarView với PageStorageKey"}, "profile": {"num": "14", "name": "Hồ Sơ & Trung Tâm Tài Khoản", "cat": "Tài khoản & Tiện ích", "desc": "Menu Hub tài khoản: Thẻ thành viên VIP Gold, thống kê số giờ chơi và liên kết tới Thông tin cá nhân, Sổ địa chỉ, Voucher.", "tech": "• Backend API: GET /api/users/profile, GET /api/users/stats\\n• Flutter: SliverList cho danh mục menu setting"}, "register": {"num": "15", "name": "Đăng Ký Tài Khoản Mới", "cat": "Khởi động & Xác thực", "desc": "Form đăng ký tài khoản khách hàng mới bám sát schema Prisma `app_user` (full_name, email, phone, password_hash).", "tech": "• Backend API: POST /api/auth/register (full_name, email, phone, password)\\n• Prisma: Model `app_user` (role: CUSTOMER, status: ACTIVE)\\n• Password hashing: bcrypt salt 10 rounds"}, "forgot-password": {"num": "16", "name": "Quên & Đặt Lại Mật Khẩu", "cat": "Khởi động & Xác thực", "desc": "Luồng khôi phục tài khoản 3 bước an toàn: Gửi mã OTP xác thực qua Email/SĐT ➔ Xác nhận mã ➔ Cập nhật mật khẩu mới.", "tech": "• Backend API: POST /api/auth/forgot-password, POST /api/auth/reset-password\\n• Redis: Lưu trữ OTP key với TTL 5 phút chống brute-force\\n• Email Service: Nodemailer / SendGrid template"}, "order-checkout": {"num": "17", "name": "Thanh Toán Đơn Mua Hàng", "cat": "Cửa hàng & Mua sắm", "desc": "Hoàn tất chu trình mua sắm E-commerce: Chọn phương thức nhận hàng, sổ địa chỉ, áp voucher & điểm thưởng, chọn VietQR/COD.", "tech": "• Backend API: POST /api/orders/checkout (address_id, delivery_type, payment_method, voucher_code)\\n• Prisma: Model `customer_order`, `order_item`\\n• Shipping API: Giao Hàng Nhanh (GHN) tính cước tự động"}, "order-detail": {"num": "18", "name": "Chi Tiết & Tiến Độ Đơn Hàng", "cat": "Cửa hàng & Mua sắm", "desc": "Theo dõi tiến độ vận chuyển đơn hàng qua stepper timeline, thông tin bưu tá, danh sách sản phẩm và hỗ trợ trực tuyến.", "tech": "• Backend API: GET /api/orders/:id\\n• Webhook: Cập nhật trạng thái tự động từ đơn vị vận chuyển GHN\\n• Flutter: Custom Timeline Stepper Widget"}, "edit-profile": {"num": "19", "name": "Quản Lý Thông Tin Cá Nhân", "cat": "Tài khoản & Tiện ích", "desc": "Cập nhật avatar, họ tên, ngày sinh, số điện thoại, trình độ Elo tự đánh giá, đổi mật khẩu và bảo mật 2 lớp.", "tech": "• Backend API: PUT /api/users/profile, POST /api/users/change-password\\n• Upload Avatar: Multer / Cloudinary / S3 storage\\n• Flutter: ImagePicker plugin"}, "address-book": {"num": "20", "name": "Sổ Địa Chỉ Nhận Hàng", "cat": "Tài khoản & Tiện ích", "desc": "Quản lý danh sách địa chỉ nhận hàng Nhà riêng, Công ty, chọn địa chỉ mặc định phục vụ thanh toán nhanh.", "tech": "• Backend API: GET /api/users/addresses, POST /api/users/addresses, PUT /api/users/addresses/:id\\n• Flutter: ModalBottomSheet cho form thêm/sửa địa chỉ nhanh"}, "vouchers-points": {"num": "21", "name": "Kho Voucher & Điểm Thưởng", "cat": "Tài khoản & Tiện ích", "desc": "Trung tâm chăm sóc khách hàng thân thiết: Điểm thưởng tích lũy, điều kiện thăng hạng Bạch Kim, kho voucher ưu đãi sân & shop.", "tech": "• Backend API: GET /api/vouchers/my-vouchers, POST /api/points/redeem\\n• Điểm thưởng: Tích lũy 5% giá trị mỗi lượt đặt sân hoặc mua vợt\\n• Flutter: Staggered animated cards"}};
+    const screenData = {"splash": {"num": "01", "name": "Màn Hình Khởi Động (Splash)", "cat": "Khởi động & Xác thực", "desc": "Màn hình xuất hiện khi người dùng mở ứng dụng. Tải các token xác thực lưu trong SharedPreferences / Flutter Secure Storage.", "tech": "• Flutter: SplashScreen widget (lib/features/auth/presentation/splash_page.dart)\\n• Check Auth State -> Router (AutoRoute / GoRouter)\\n• Hiệu ứng: FadeTransition & Scale logo Yonex"}, "onboarding": {"num": "02", "name": "Giới Thiệu Ứng Dụng (Onboarding)", "cat": "Khởi động & Xác thực", "desc": "Hiển thị lần đầu tiên tải app. Cho phép người dùng lướt xem 3 tính năng cốt lõi hoặc bấm Bỏ qua để vào ngay.", "tech": "• Flutter: PageView.builder kết hợp AnimatedSmoothIndicator\\n• Lưu cờ `has_seen_onboarding = true`"}, "auth": {"num": "03", "name": "Đăng Nhập Tài Khoản", "cat": "Khởi động & Xác thực", "desc": "Xác thực tài khoản khách hàng bằng Email/SĐT và Mật khẩu. Hỗ trợ ghi nhớ đăng nhập, chuyển tới Đăng ký (Màn 15) và Quên mật khẩu (Màn 16).", "tech": "• Backend API: POST /api/auth/login (email, password)\\n• Prisma: Model `app_user` (email, password_hash, status)\\n• JWT Token & Refresh Token bảo mật"}, "home": {"num": "04", "name": "Trang Chủ (Dashboard)", "cat": "Trang chủ & Đặt sân", "desc": "Trung tâm thông tin người dùng: Chọn vị trí cụm sân gần nhất, banner khuyến mãi động từ Backend, vé sắp tới.", "tech": "• Backend API: GET /api/home/summary, GET /api/banners\\n• Flutter: CustomScrollView với SliverAppBar, SliverToBoxAdapter"}, "shop": {"num": "05", "name": "Cửa Hàng Thể Thao Pro Shop", "cat": "Cửa hàng & Mua sắm", "desc": "Danh mục dụng cụ cầu lông chính hãng. Bộ lọc chuyên sâu dạng Bottom Sheet tương tác (Thương hiệu, Khoảng giá, Độ cứng, Độ cân bằng), tối ưu diện tích hiển thị sản phẩm.", "tech": "• Backend API: GET /api/products?category_id=&brand_id=&min_price=&max_price=&flex=&balance=\\n• Filter UX: ModalBottomSheet tương tác chuẩn sàn TMĐT, gỡ bỏ chip filter dài ngắn rườm rà trên feed chính\\n• Flutter: MasonryGridView.count"}, "product-detail": {"num": "06", "name": "Chi Tiết Sản Phẩm & Gallery", "cat": "Cửa hàng & Mua sắm", "desc": "Bộ sưu tập ảnh đa góc độ, dải thumbnail tương tác, chọn biến thể trọng lượng/cán vợt (4U/3U), thông số kỹ thuật.", "tech": "• Backend API: GET /api/products/:id\\n• Prisma: Model `product_variant` (price, sku, weight_grip)\\n• Flutter: CarouselSlider, Hero animation"}, "cart": {"num": "07", "name": "Giỏ Hàng Pro Shop", "cat": "Cửa hàng & Mua sắm", "desc": "Quản lý danh sách sản phẩm chờ mua, thay đổi số lượng, xóa món, nhập voucher và bấm Tiến hành đặt hàng sang Màn 17.", "tech": "• Backend API: GET /api/cart, PUT /api/cart/items, DELETE /api/cart/items/:id\\n• Prisma: Model `cart`, `cart_item`\\n• Flutter: Dismissible swipe-to-delete"}, "branch-picker": {"num": "08", "name": "Chọn Chi Nhánh & Ngày Đặt", "cat": "Trang chủ & Đặt sân", "desc": "Duyệt danh sách cụm sân với khoảng cách, 4 tiện ích hiển thị trọn vẹn, dải cuộn chọn ngày thi đấu trong tuần.", "tech": "• Backend API: GET /api/branches?lat=...&lng=...\\n• Flutter: Geolocator tính khoảng cách, Horizontal DatePicker ListView"}, "court-matrix": {"num": "09", "name": "Ma Trận Khung Giờ Sân (Core UX)", "cat": "Trang chủ & Đặt sân", "desc": "Trái tim của trải nghiệm đặt sân: Lưới hiển thị trạng thái Trống/Đang chọn/Kín của từng sân theo từng mốc 30 phút.", "tech": "• Backend API: GET /api/courts/availability?branch_id=&date=\\n• Prisma: Model `court`, `court_price`, `time_slot`, `booking_slot`\\n• Flutter: InteractiveViewer hoặc GridView 2 chiều"}, "booking-checkout": {"num": "10", "name": "Xác Nhận & Đặt Sân", "cat": "Trang chủ & Đặt sân", "desc": "Kiểm tra lại thời gian đặt sân, chọn thêm dịch vụ (ống cầu, nước uống) và thanh toán tự động VietQR đếm ngược 10 phút.", "tech": "• Backend API: POST /api/bookings (court_id, booking_date, slot_ids, addons)\\n• Prisma: Model `booking`, `booking_slot` (status: PENDING_PAYMENT)\\n• Tích hợp SePay / VietQR webhook"}, "e-ticket": {"num": "11", "name": "Vé Sân Điện Tử (QR)", "cat": "Tài khoản & Tiện ích", "desc": "Thẻ vé điện tử dạng Boarding Pass với mã QR động chống gian lận. Quét tại quầy lễ tân để bật hệ thống đèn sân tự động.", "tech": "• Backend API: GET /api/bookings/:id/ticket\\n• Mã hóa QR: JWT signed token với timestamp chống chụp màn hình\\n• Flutter: QrImageView, Add-to-Apple-Wallet passkit"}, "matchmaking": {"num": "12", "name": "Sàn Ghép Kèo Giao Lưu", "cat": "Ghép kèo & Cộng đồng", "desc": "Kết nối những người chơi cùng trình độ (Elo 5.0 - 6.5). Hiển thị số slot còn trống, chi phí chia đều theo đầu người.", "tech": "• Roadmap: Định hướng phát triển cộng đồng thể thao\\n• Socket.IO realtime thông báo khi có người tham gia kèo\\n• Flutter: Shimmer loading, animated badge"}, "history": {"num": "13", "name": "Lịch Sử Hoạt Động (2 Tabs)", "cat": "Tài khoản & Tiện ích", "desc": "Quản lý lịch sử toàn diện với 2 Tabs riêng biệt cho Vé Đặt Sân và Đơn Mua Hàng Pro Shop, xem chi tiết và mua lại.", "tech": "• Backend API: GET /api/bookings/my-history, GET /api/orders/my-orders\\n• Flutter: TabBar & TabBarView với PageStorageKey"}, "profile": {"num": "14", "name": "Hồ Sơ & Trung Tâm Tài Khoản", "cat": "Tài khoản & Tiện ích", "desc": "Menu Hub tài khoản: Thẻ thành viên VIP Gold, thống kê số giờ chơi và liên kết tới Thông tin cá nhân, Sổ địa chỉ, Voucher.", "tech": "• Backend API: GET /api/users/profile, GET /api/users/stats\\n• Flutter: SliverList cho danh mục menu setting"}, "register": {"num": "15", "name": "Đăng Ký Tài Khoản Mới", "cat": "Khởi động & Xác thực", "desc": "Form đăng ký tài khoản khách hàng mới bám sát schema Prisma `app_user` (full_name, email, phone, password_hash).", "tech": "• Backend API: POST /api/auth/register (full_name, email, phone, password)\\n• Prisma: Model `app_user` (role: CUSTOMER, status: ACTIVE)\\n• Password hashing: bcrypt salt 10 rounds"}, "forgot-password": {"num": "16", "name": "Quên & Đặt Lại Mật Khẩu", "cat": "Khởi động & Xác thực", "desc": "Luồng khôi phục tài khoản 3 bước an toàn: Gửi mã OTP xác thực qua Email/SĐT ➔ Xác nhận mã ➔ Cập nhật mật khẩu mới.", "tech": "• Backend API: POST /api/auth/forgot-password, POST /api/auth/reset-password\\n• Redis: Lưu trữ OTP key với TTL 5 phút chống brute-force\\n• Email Service: Nodemailer / SendGrid template"}, "order-checkout": {"num": "17", "name": "Thanh Toán Đơn Mua Hàng", "cat": "Cửa hàng & Mua sắm", "desc": "Hoàn tất chu trình mua sắm E-commerce: Chọn phương thức nhận hàng, sổ địa chỉ, áp voucher & điểm thưởng, chọn VietQR/COD.", "tech": "• Backend API: POST /api/orders/checkout (address_id, delivery_type, payment_method, voucher_code)\\n• Prisma: Model `customer_order`, `order_item`\\n• Shipping API: Giao Hàng Nhanh (GHN) tính cước tự động"}, "order-detail": {"num": "18", "name": "Chi Tiết & Tiến Độ Đơn Hàng", "cat": "Cửa hàng & Mua sắm", "desc": "Theo dõi tiến độ vận chuyển đơn hàng qua stepper timeline, thông tin bưu tá, danh sách sản phẩm và hỗ trợ trực tuyến.", "tech": "• Backend API: GET /api/orders/:id\\n• Webhook: Cập nhật trạng thái tự động từ đơn vị vận chuyển GHN\\n• Flutter: Custom Timeline Stepper Widget"}, "edit-profile": {"num": "19", "name": "Quản Lý Thông Tin Cá Nhân", "cat": "Tài khoản & Tiện ích", "desc": "Cập nhật avatar, họ tên, ngày sinh, số điện thoại, trình độ Elo tự đánh giá, đổi mật khẩu và bảo mật 2 lớp.", "tech": "• Backend API: PUT /api/users/profile, POST /api/users/change-password\\n• Upload Avatar: Multer / Cloudinary / S3 storage\\n• Flutter: ImagePicker plugin"}, "address-book": {"num": "20", "name": "Sổ Địa Chỉ Nhận Hàng", "cat": "Tài khoản & Tiện ích", "desc": "Quản lý danh sách địa chỉ nhận hàng Nhà riêng, Công ty, chọn địa chỉ mặc định phục vụ thanh toán nhanh.", "tech": "• Backend API: GET /api/users/addresses, POST /api/users/addresses, PUT /api/users/addresses/:id\\n• Flutter: ModalBottomSheet cho form thêm/sửa địa chỉ nhanh"}, "vouchers-points": {"num": "21", "name": "Kho Voucher & Điểm Thưởng", "cat": "Tài khoản & Tiện ích", "desc": "Trung tâm chăm sóc khách hàng thân thiết: Điểm thưởng tích lũy, điều kiện thăng hạng Bạch Kim, kho voucher ưu đãi sân & shop.", "tech": "• Backend API: GET /api/vouchers/my-vouchers, POST /api/points/redeem\\n• Điểm thưởng: Tích lũy 5% giá trị mỗi lượt đặt sân hoặc mua vợt\\n• Flutter: Staggered animated cards"}};
 
     // Focus Modal Handler
     function openFocusModal(screenId) {
@@ -6916,6 +7331,29 @@
       if (pageInd && idx >= 0) {
         pageInd.textContent = (idx + 1) + ' / ' + thumbs.length;
       }
+    });
+
+    // Filter Sheet Handlers for Screen 05 (Pro Shop)
+    function toggleShopFilter(e) {
+      if (e) e.stopPropagation();
+      const sheet = document.getElementById('shop-filter-sheet');
+      if (sheet) sheet.classList.toggle('open');
+    }
+    function closeShopFilter(e) {
+      if (e) e.stopPropagation();
+      const sheet = document.getElementById('shop-filter-sheet');
+      if (sheet) sheet.classList.remove('open');
+    }
+    function resetShopFilter(e) {
+      if (e) e.stopPropagation();
+      const chips = document.querySelectorAll('.sfs-chip');
+      chips.forEach(c => c.classList.remove('active'));
+    }
+    document.addEventListener('click', function(e) {
+      const chip = e.target.closest('.sfs-chip');
+      if (!chip) return;
+      e.stopPropagation();
+      chip.classList.toggle('active');
     });
   </script>
 </body>
