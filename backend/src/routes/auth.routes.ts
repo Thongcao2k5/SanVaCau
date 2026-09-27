@@ -3,6 +3,7 @@ import { hashPassword, signAuthToken, verifyPassword } from "../lib/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
+import { authRateLimit } from "../middleware/rate-limit.middleware.js";
 import type { AuthUser } from "../types/auth.js";
 
 export const authRouter = Router();
@@ -22,7 +23,7 @@ const toAuthUser = (user: {
 const normalizeEmail = (email: unknown) =>
   typeof email === "string" ? email.trim().toLowerCase() : "";
 
-authRouter.post("/register", async (req, res, next) => {
+authRouter.post("/register", authRateLimit, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const password = typeof req.body?.password === "string" ? req.body.password : "";
@@ -100,7 +101,7 @@ authRouter.post("/register", async (req, res, next) => {
   }
 });
 
-authRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", authRateLimit, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const password = typeof req.body?.password === "string" ? req.body.password : "";
@@ -166,7 +167,11 @@ authRouter.post("/login", async (req, res, next) => {
 });
 
 
-authRouter.post("/dev/create-admin", async (req, res, next) => {
+authRouter.post("/dev/create-admin", authRateLimit, async (req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    res.status(404).json({ success: false, message: "Not Found" });
+    return;
+  }
   try {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     const fullName =

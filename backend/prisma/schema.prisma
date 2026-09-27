@@ -25,19 +25,37 @@ model app_user {
   cart                 cart?
   customer_order       customer_order[]
   news                 news[]
+  notification         notification[]
+  payment              payment[]
+  review               review[]
+  favorite             favorite[]
+  customer_address     customer_address[]
+  voucher_usage        voucher_usage[]
+  support_ticket_customer support_ticket[] @relation("support_ticket_customer")
+  support_ticket_assignee support_ticket[] @relation("support_ticket_assignee")
+  support_ticket_message support_ticket_message[]
+  contact_message      contact_message[]
 
   @@index([branch_id, role], map: "ix_app_user_branch")
 }
 
 model audit_log {
   id          BigInt   @id @default(autoincrement())
-  user_id     BigInt
+  actor_id    BigInt?
+  actor_role  String?  @db.VarChar(30)
   action      String   @db.VarChar(100)
   entity_type String   @db.VarChar(100)
   entity_id   BigInt?
-  description String?  @db.VarChar(1000)
+  before_data Json?
+  after_data  Json?
+  ip_address  String?  @db.VarChar(80)
+  user_agent  String?  @db.VarChar(500)
   created_at  DateTime @default(now()) @db.Timestamp(6)
-  app_user    app_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user    app_user? @relation(fields: [actor_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([actor_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -89,6 +107,7 @@ model booking_slot {
   time_slot        time_slot @relation(fields: [time_slot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([booking_id, time_slot_id])
+  @@unique([court_id, booking_date, time_slot_id])
   @@index([court_id, booking_date, time_slot_id], map: "ix_booking_slot_schedule")
 }
 
@@ -208,6 +227,7 @@ model customer_order {
   branch       branch       @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   app_user     app_user     @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   order_item   order_item[]
+  order_fulfillment order_fulfillment?
 
   @@index([branch_id, status], map: "ix_order_branch_status")
   @@index([customer_id, created_at], map: "ix_order_customer")
@@ -244,6 +264,21 @@ model news {
   branch         branch?   @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([status, published_at], map: "ix_news_status_published")
+}
+
+model notification {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  type       String    @db.VarChar(80)
+  title      String    @db.VarChar(200)
+  message    String    @db.VarChar(1000)
+  data       Json?
+  read_at    DateTime? @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  app_user   app_user  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, read_at, created_at])
+  @@index([type])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -313,4 +348,258 @@ model time_slot {
   court_price  court_price[]
 
   @@unique([start_time, end_time])
+}
+
+model payment {
+  id              BigInt    @id @default(autoincrement())
+  user_id         BigInt
+  target_type     String    @db.VarChar(30)
+  target_id       BigInt
+  provider        String    @db.VarChar(50)
+  amount          Decimal   @db.Decimal(18, 2)
+  status          String    @default("PENDING") @db.VarChar(30)
+  transaction_ref String?   @unique @db.VarChar(100)
+  paid_at         DateTime? @db.Timestamp(6)
+  failed_at       DateTime? @db.Timestamp(6)
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime  @default(now()) @db.Timestamp(6)
+
+  app_user app_user @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, created_at])
+  @@index([target_type, target_id])
+  @@index([status])
+}
+
+model review {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt
+  target_type String   @db.VarChar(30)
+  target_id   BigInt
+  rating      Int
+  comment     String?  @db.VarChar(1000)
+  status      String   @default("PUBLISHED") @db.VarChar(30)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+
+  app_user app_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, target_type, target_id])
+  @@index([target_type, target_id, status])
+  @@index([user_id, created_at])
+}
+
+model favorite {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt
+  target_type String   @db.VarChar(30)
+  target_id   BigInt
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+
+  app_user app_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, target_type, target_id])
+  @@index([user_id, created_at])
+  @@index([target_type, target_id])
+}
+
+model customer_address {
+  id            BigInt   @id @default(autoincrement())
+  customer_id   BigInt
+  recipient_name String  @db.VarChar(150)
+  phone         String   @db.VarChar(20)
+  address_line  String   @db.VarChar(300)
+  ward          String?  @db.VarChar(120)
+  district      String?  @db.VarChar(120)
+  city          String?  @db.VarChar(120)
+  note          String?  @db.VarChar(500)
+  is_default    Boolean  @default(false)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+
+  app_user app_user @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id, is_default])
+  @@index([customer_id, created_at])
+}
+
+model voucher {
+  id                 BigInt   @id @default(autoincrement())
+  code               String   @unique @db.VarChar(50)
+  title              String   @db.VarChar(200)
+  description        String?  @db.VarChar(1000)
+  discount_type      String   @db.VarChar(30)
+  discount_value     Decimal  @db.Decimal(18, 2)
+  max_discount_amount Decimal? @db.Decimal(18, 2)
+  min_order_amount   Decimal? @db.Decimal(18, 2)
+  target_type        String   @default("ALL") @db.VarChar(30)
+  usage_limit        Int?
+  used_count         Int      @default(0)
+  per_user_limit     Int?     @default(1)
+  start_at           DateTime? @db.Timestamp(6)
+  end_at             DateTime? @db.Timestamp(6)
+  status             String   @default("ACTIVE") @db.VarChar(30)
+  created_at         DateTime @default(now()) @db.Timestamp(6)
+  updated_at         DateTime @default(now()) @db.Timestamp(6)
+
+  voucher_usage voucher_usage[]
+
+  @@index([code])
+  @@index([status, start_at, end_at])
+  @@index([target_type])
+}
+
+model voucher_usage {
+  id          BigInt   @id @default(autoincrement())
+  voucher_id  BigInt
+  user_id     BigInt
+  target_type String   @db.VarChar(30)
+  target_id   BigInt
+  discount_amount Decimal @db.Decimal(18, 2)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+
+  voucher voucher @relation(fields: [voucher_id], references: [id], onDelete: Cascade)
+  app_user app_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([voucher_id, target_type, target_id])
+  @@index([user_id, voucher_id])
+  @@index([target_type, target_id])
+}
+
+model order_fulfillment {
+  id                  BigInt   @id @default(autoincrement())
+  order_id             BigInt   @unique
+  fulfillment_type     String   @db.VarChar(30)
+  status               String   @default("PENDING") @db.VarChar(30)
+  recipient_name       String?  @db.VarChar(150)
+  phone                String?  @db.VarChar(20)
+  address_line         String?  @db.VarChar(300)
+  ward                 String?  @db.VarChar(120)
+  district             String?  @db.VarChar(120)
+  city                 String?  @db.VarChar(120)
+  note                 String?  @db.VarChar(500)
+  shipping_fee         Decimal  @default(0) @db.Decimal(18, 2)
+  tracking_code        String?  @db.VarChar(100)
+  shipped_at           DateTime? @db.Timestamp(6)
+  delivered_at         DateTime? @db.Timestamp(6)
+  picked_up_at         DateTime? @db.Timestamp(6)
+  cancelled_at         DateTime? @db.Timestamp(6)
+  created_at           DateTime @default(now()) @db.Timestamp(6)
+  updated_at           DateTime @default(now()) @db.Timestamp(6)
+
+  customer_order customer_order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([fulfillment_type, status])
+  @@index([tracking_code])
+}
+
+model support_ticket {
+  id           BigInt   @id @default(autoincrement())
+  customer_id  BigInt
+  subject      String   @db.VarChar(200)
+  message      String   @db.VarChar(2000)
+  category     String   @db.VarChar(50)
+  status       String   @default("OPEN") @db.VarChar(30)
+  priority     String   @default("NORMAL") @db.VarChar(30)
+  target_type  String?  @db.VarChar(30)
+  target_id    BigInt?
+  assigned_to  BigInt?
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @default(now()) @db.Timestamp(6)
+  resolved_at  DateTime? @db.Timestamp(6)
+  closed_at    DateTime? @db.Timestamp(6)
+
+  customer app_user @relation("support_ticket_customer", fields: [customer_id], references: [id], onDelete: Cascade)
+  assignee app_user? @relation("support_ticket_assignee", fields: [assigned_to], references: [id], onDelete: SetNull)
+
+  support_ticket_message support_ticket_message[]
+
+  @@index([customer_id, created_at])
+  @@index([status, priority])
+  @@index([target_type, target_id])
+}
+
+model support_ticket_message {
+  id         BigInt   @id @default(autoincrement())
+  ticket_id  BigInt
+  sender_id  BigInt
+  message    String   @db.VarChar(2000)
+  is_staff   Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  support_ticket support_ticket @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  sender app_user @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@index([ticket_id, created_at])
+}
+
+model system_setting {
+  key         String   @id @db.VarChar(100)
+  value       Json
+  description String?  @db.VarChar(500)
+  is_public   Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([is_public])
+}
+
+model contact_message {
+  id          BigInt    @id @default(autoincrement())
+  user_id     BigInt?
+  full_name   String    @db.VarChar(150)
+  email       String?   @db.VarChar(150)
+  phone       String?   @db.VarChar(20)
+  type        String    @db.VarChar(30)
+  subject     String    @db.VarChar(200)
+  message     String    @db.VarChar(2000)
+  status      String    @default("NEW") @db.VarChar(30)
+  admin_note  String?   @db.VarChar(1000)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  resolved_at DateTime? @db.Timestamp(6)
+  archived_at DateTime? @db.Timestamp(6)
+
+  app_user app_user? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([status, created_at])
+  @@index([type, created_at])
+  @@index([user_id, created_at])
+}
+
+model faq_item {
+  id           BigInt    @id @default(autoincrement())
+  category     String    @db.VarChar(80)
+  question     String    @db.VarChar(250)
+  answer       String    @db.Text
+  status       String    @default("DRAFT") @db.VarChar(20)
+  sort_order   Int       @default(0)
+  view_count   Int       @default(0)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  published_at DateTime? @db.Timestamp(6)
+  archived_at  DateTime? @db.Timestamp(6)
+
+  @@index([status, category, sort_order])
+  @@index([category])
+  @@index([published_at])
+}
+
+model static_page {
+  id           BigInt    @id @default(autoincrement())
+  slug         String    @unique @db.VarChar(120)
+  title        String    @db.VarChar(250)
+  summary      String?   @db.VarChar(500)
+  content      String    @db.Text
+  type         String    @db.VarChar(50)
+  status       String    @default("DRAFT") @db.VarChar(20)
+  sort_order   Int       @default(0)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  published_at DateTime? @db.Timestamp(6)
+  archived_at  DateTime? @db.Timestamp(6)
+
+  @@index([status, type, sort_order])
+  @@index([slug])
+  @@index([published_at])
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
 
 export const newsRouter = Router();
@@ -104,7 +104,7 @@ const getAuthUserId = (user: unknown) => {
   return null;
 };
 
-newsRouter.get("/", async (req, res, next) => {
+newsRouter.get("/", optionalAuth, async (req, res, next) => {
   try {
     const limit = parseLimit(typeof req.query.limit === "string" ? req.query.limit : req.query.limit === undefined ? undefined : "");
 
@@ -140,6 +140,16 @@ newsRouter.get("/", async (req, res, next) => {
       return;
     }
 
+    if (status !== "PUBLISHED") {
+      if (!req.user || req.user.role !== "ADMIN") {
+        res.status(403).json({
+          success: false,
+          message: "Forbidden: Only ADMIN can view non-published news",
+        });
+        return;
+      }
+    }
+
     const news = await prisma.news.findMany({
       where: {
         status,
@@ -161,7 +171,7 @@ newsRouter.get("/", async (req, res, next) => {
   }
 });
 
-newsRouter.get("/:id", async (req, res, next) => {
+newsRouter.get("/:id", optionalAuth, async (req, res, next) => {
   try {
     const id = parseBigIntId(req.params.id);
 
@@ -178,12 +188,22 @@ newsRouter.get("/:id", async (req, res, next) => {
       select: newsSelect,
     });
 
-    if (!news || news.status !== "PUBLISHED") {
+    if (!news) {
       res.status(404).json({
         success: false,
         message: "news not found",
       });
       return;
+    }
+
+    if (news.status !== "PUBLISHED") {
+      if (!req.user || req.user.role !== "ADMIN") {
+        res.status(403).json({
+          success: false,
+          message: "Forbidden: Only ADMIN can view non-published news",
+        });
+        return;
+      }
     }
 
     res.json({

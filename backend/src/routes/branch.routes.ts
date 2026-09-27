@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
+import { createAuditLog } from "../lib/audit-log.js";
 
 export const branchRouter = Router();
 
@@ -9,7 +10,7 @@ const parseBigIntId = (value: string) => {
   return /^\d+$/.test(value) ? BigInt(value) : null;
 };
 
-const getParamValue = (value: string | string[] | undefined) => {
+const getParamValue = (value: unknown) => {
   return typeof value === "string" ? value : "";
 };
 
@@ -31,6 +32,16 @@ const parseTime = (value: unknown) => {
 
 const formatTime = (value: Date) => {
   return value.toISOString().slice(11, 19);
+};
+
+const parseDateOnly = (value: unknown) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  return date.toISOString().slice(0, 10) === value ? date : null;
 };
 
 const toBranchResponse = (branch: {
@@ -126,6 +137,198 @@ branchRouter.get("/:id", async (req, res, next) => {
   }
 });
 
+branchRouter.get("/:id/availability", async (req, res, next) => {
+  try {
+    const id = parseBigIntId(getParamValue(req.params.id));
+    const date = parseDateOnly(req.query.date);
+
+    if (!id) {
+      res.status(400).json({ success: false, message: "invalid branch id" });
+      return;
+    }
+
+    if (!date) {
+      res.status(400).json({ success: false, message: "invalid or missing date (YYYY-MM-DD)" });
+      return;
+    }
+
+    const branch = await prisma.branch.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        status: true,
+      },
+    });
+
+    if (!branch || branch.status !== "ACTIVE") {
+      res.status(404).json({ success: false, message: "branch not found or inactive" });
+      return;
+    }
+
+    const courts = await prisma.court.findMany({
+      where: {
+        branch_id: id,
+        status: "ACTIVE",
+      },
+      include: {
+        court_price: {
+          where: {
+            time_slot: {
+              is_active: true,
+            },
+          },
+          include: {
+            time_slot: true,
+          },
+          orderBy: {
+            time_slot: {
+              sort_order: "asc",
+            },
+          },
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    const bookingSlots = await prisma.booking_slot.findMany({
+      where: {
+        court: {
+          branch_id: id,
+        },
+        booking_date: date,
+        booking: {
+          status: {
+            not: "CANCELLED",
+          },
+        },
+      },
+      select: {
+        court_id: true,
+        time_slot_id: true,
+      },
+    });
+
+    const bookedSet = new Set(
+      bookingSlots.map((bs) => `${bs.court_id.toString()}-${bs.time_slot_id.toString()}`)
+    );
+
+    const formattedCourts = courts.map((court) => {
+      const slots = court.court_price.map((cp) => {
+        const timeSlotIdStr = cp.time_slot_id.toString();
+        const courtIdStr = court.id.toString();
+        const isBooked = bookedSet.has(`${courtIdStr}-${timeSlotIdStr}`);
+
+        return {
+          timeSlotId: timeSlotIdStr,
+          startTime: formatTime(cp.time_slot.start_time),
+          endTime: formatTime(cp.time_slot.end_time),
+          price: cp.price.toString(),
+          isBooked,
+        };
+      });
+
+      return {
+        id: court.id.toString(),
+        name: court.name,
+        description: court.description,
+        status: court.status,
+        slots,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        branch: {
+          id: branch.id.toString(),
+          name: branch.name,
+          address: branch.address,
+        },
+        date: date.toISOString().slice(0, 10),
+        courts: formattedCourts,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+branchRouter.get("/:id/services", async (req, res, next) => {
+  try {
+    const id = parseBigIntId(getParamValue(req.params.id));
+
+    if (!id) {
+      res.status(400).json({
+        success: false,
+        message: "invalid branch id",
+      });
+      return;
+    }
+
+    const branch = await prisma.branch.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!branch || branch.status !== "ACTIVE") {
+      res.status(404).json({
+        success: false,
+        message: "branch not found or inactive",
+      });
+      return;
+    }
+
+    const branchServices = await prisma.branch_service.findMany({
+      where: {
+        branch_id: id,
+        is_available: true,
+        racket_service: {
+          is_active: true,
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+      include: {
+        racket_service: true,
+      },
+    });
+
+    const formattedServices = branchServices.map((bs) => ({
+      id: bs.id.toString(),
+      branchId: bs.branch_id.toString(),
+      serviceId: bs.service_id.toString(),
+      referencePrice: bs.reference_price ? bs.reference_price.toString() : null,
+      description: bs.description,
+      estimatedDuration: bs.estimated_duration,
+      isAvailable: bs.is_available,
+      service: {
+        id: bs.racket_service.id.toString(),
+        name: bs.racket_service.name,
+        description: bs.racket_service.description,
+        imageUrl: bs.racket_service.image_url,
+      },
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        services: formattedServices,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 branchRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next) => {
   try {
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
@@ -168,6 +371,17 @@ branchRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next)
       data: {
         branch: toBranchResponse(branch),
       },
+    });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "BRANCH_CREATED",
+      entityType: "branch",
+      entityId: branch.id,
+      afterData: { name, address },
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
     });
   } catch (error) {
     next(error);
@@ -281,6 +495,17 @@ branchRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, n
         branch: toBranchResponse(branch),
       },
     });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "BRANCH_UPDATED",
+      entityType: "branch",
+      entityId: branch.id,
+      afterData: data as Record<string, unknown>,
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
+    });
   } catch (error) {
     next(error);
   }
@@ -313,6 +538,16 @@ branchRouter.patch("/:id/inactivate", requireAuth, requireRole("ADMIN"), async (
       data: {
         branch: toBranchResponse(branch),
       },
+    });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "BRANCH_INACTIVATED",
+      entityType: "branch",
+      entityId: branch.id,
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
     });
   } catch (error) {
     next(error);

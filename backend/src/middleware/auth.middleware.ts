@@ -24,3 +24,17 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   }
 };
 
+export const optionalAuth: RequestHandler = (req, res, next) => {
+  const authorization = req.header("authorization");
+
+  if (authorization?.startsWith("Bearer ")) {
+    try {
+      const token = authorization.slice("Bearer ".length);
+      req.user = verifyAuthToken(token);
+    } catch {
+      // Ignore invalid token, just proceed as unauthenticated
+    }
+  }
+
+  next();
+};

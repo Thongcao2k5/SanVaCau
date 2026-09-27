@@ -2,6 +2,7 @@ import { Router } from "express"; // Tạo router riêng cho category
 import { prisma } from "../lib/prisma.js"; // Query database bằng Prisma
 import { requireAuth } from "../middleware/auth.middleware.js"; // Kiểm tra đăng nhập
 import { requireRole } from "../middleware/role.middleware.js"; // Kiểm tra quyền ADMIN
+import { createAuditLog } from "../lib/audit-log.js";
 
 export const categoryRouter = Router(); // Router riêng cho category
 
@@ -203,6 +204,17 @@ categoryRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, nex
                 category: toCategoryResponse(category),
             },
         });
+
+        createAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: "CATEGORY_CREATED",
+          entityType: "category",
+          entityId: category.id,
+          afterData: { name, parentId: parentId?.toString() ?? null },
+          ipAddress: req.ip ?? null,
+          userAgent: req.headers["user-agent"] ?? null,
+        });
     } catch (error) {
         next(error);
     }
@@ -312,6 +324,16 @@ categoryRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res,
                 category: toCategoryResponse(category),
             },
         });
+
+        createAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: "CATEGORY_UPDATED",
+          entityType: "category",
+          entityId: category.id,
+          ipAddress: req.ip ?? null,
+          userAgent: req.headers["user-agent"] ?? null,
+        });
     } catch (error) {
         next(error);
     }
@@ -343,6 +365,16 @@ categoryRouter.patch("/:id/inactivate", requireAuth, requireRole("ADMIN"), async
             data: {
                 category: toCategoryResponse(category),
             },
+        });
+
+        createAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: "CATEGORY_INACTIVATED",
+          entityType: "category",
+          entityId: category.id,
+          ipAddress: req.ip ?? null,
+          userAgent: req.headers["user-agent"] ?? null,
         });
     } catch (error) {
         next(error);

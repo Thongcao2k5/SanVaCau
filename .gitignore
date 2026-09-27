@@ -18,6 +18,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+!backend/.env.test.example
 
 # Node.js
 node_modules/

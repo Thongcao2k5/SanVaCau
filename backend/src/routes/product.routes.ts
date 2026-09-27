@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
+import { createAuditLog } from "../lib/audit-log.js";
 
 export const productRouter = Router();
 
@@ -274,6 +275,17 @@ productRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next
         product: toProductResponse(product),
       },
     });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "PRODUCT_CREATED",
+      entityType: "product",
+      entityId: product.id,
+      afterData: { name, categoryId: categoryId.toString(), brandId: brandId?.toString() ?? null },
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
+    });
   } catch (error) {
     next(error);
   }
@@ -402,6 +414,17 @@ productRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, 
         product: toProductResponse(product),
       },
     });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "PRODUCT_UPDATED",
+      entityType: "product",
+      entityId: product.id,
+      afterData: data as Record<string, unknown>,
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
+    });
   } catch (error) {
     next(error);
   }
@@ -434,6 +457,16 @@ productRouter.patch("/:id/inactivate", requireAuth, requireRole("ADMIN"), async 
       data: {
         product: toProductResponse(product),
       },
+    });
+
+    createAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: "PRODUCT_INACTIVATED",
+      entityType: "product",
+      entityId: product.id,
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
     });
   } catch (error) {
     next(error);
