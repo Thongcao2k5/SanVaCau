@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../auth/pages/account_page.dart';
+import '../booking/pages/booking_page.dart';
+import '../branches/pages/branch_list_page.dart';
+import '../cart/pages/cart_page.dart';
 import '../home/home_page.dart';
+import '../news/pages/news_list_page.dart';
 import '../products/pages/product_list_page.dart';
 
 class MainShell extends StatefulWidget {
@@ -13,36 +18,39 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    ProductListPage(),
-    _PlaceholderPage(
-      title: 'Đặt sân',
-      message: 'Phần đặt sân sẽ được làm sau khi có Court API.',
-      icon: Icons.sports_tennis_outlined,
-    ),
-    _PlaceholderPage(
-      title: 'Giỏ hàng',
-      message: 'Giỏ hàng sẽ dùng khi khách chọn mua sản phẩm.',
-      icon: Icons.shopping_cart_outlined,
-    ),
-    _PlaceholderPage(
-      title: 'Tài khoản',
-      message: 'Đăng nhập, hồ sơ và lịch sử sẽ nằm ở đây.',
-      icon: Icons.person_outline,
-    ),
-  ];
-
   void _onTabSelected(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
+  void _openNewsPage() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const NewsListPage()));
+  }
+
+  void _openBranchPage() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const BranchListPage()));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomePage(
+        onBookCourtPressed: () => _onTabSelected(2),
+        onViewProductsPressed: () => _onTabSelected(1),
+        onViewNewsPressed: _openNewsPage,
+        onViewBranchesPressed: _openBranchPage,
+      ),
+      const ProductListPage(),
+      const BookingPage(),
+      const CartPage(),
+      const AccountPage(),
+    ];
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onTabSelected,
@@ -73,53 +81,6 @@ class _MainShellState extends State<MainShell> {
             label: 'Tài khoản',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({
-    required this.title,
-    required this.message,
-    required this.icon,
-  });
-
-  final String title;
-  final String message;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 52,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(height: 1.45),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

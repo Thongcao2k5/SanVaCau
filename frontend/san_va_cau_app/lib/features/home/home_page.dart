@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../products/pages/product_list_page.dart';
+import '../search/pages/search_page.dart';
 import 'data/home_api.dart';
 import 'models/home_data.dart';
 import 'widgets/featured_products_section.dart';
@@ -11,7 +11,18 @@ import 'widgets/home_quick_actions.dart';
 import 'widgets/latest_news_section.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.onBookCourtPressed,
+    required this.onViewProductsPressed,
+    required this.onViewNewsPressed,
+    required this.onViewBranchesPressed,
+    super.key,
+  });
+
+  final VoidCallback onBookCourtPressed;
+  final VoidCallback onViewProductsPressed;
+  final VoidCallback onViewNewsPressed;
+  final VoidCallback onViewBranchesPressed;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -37,25 +48,25 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SanVaCau')),
+      appBar: AppBar(
+        title: const Text('SanVaCau'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           HomeHeroSection(
-            onBookCourtPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Phần đặt sân sẽ được làm ở bước sau.'),
-                ),
-              );
-            },
-            onViewProductsPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ProductListPage(),
-                ),
-              );
-            },
+            onBookCourtPressed: widget.onBookCourtPressed,
+            onViewProductsPressed: widget.onViewProductsPressed,
           ),
           const SizedBox(height: 20),
           Text(
@@ -67,34 +78,10 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
           HomeQuickActions(
-            onBookCourtPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Phần đặt sân sẽ được làm ở bước sau.'),
-                ),
-              );
-            },
-            onViewProductsPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ProductListPage(),
-                ),
-              );
-            },
-            onViewNewsPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Phần tin tức sẽ được làm sau News API.'),
-                ),
-              );
-            },
-            onViewBranchesPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Phần chi nhánh sẽ được làm ở bước sau.'),
-                ),
-              );
-            },
+            onBookCourtPressed: widget.onBookCourtPressed,
+            onViewProductsPressed: widget.onViewProductsPressed,
+            onViewNewsPressed: widget.onViewNewsPressed,
+            onViewBranchesPressed: widget.onViewBranchesPressed,
           ),
           FutureBuilder<HomeData>(
             future: _homeDataFuture,
@@ -135,13 +122,7 @@ class _HomePageState extends State<HomePage> {
                     HomeBannerSection(banners: data.banners),
                     FeaturedProductsSection(
                       products: data.featuredProducts,
-                      onViewAllPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const ProductListPage(),
-                          ),
-                        );
-                      },
+                      onViewAllPressed: widget.onViewProductsPressed,
                     ),
                     LatestNewsSection(newsList: data.latestNews),
                   ],

@@ -33,11 +33,12 @@ class ApiClient {
 
   Future<Map<String, dynamic>> post(
     String path, {
+    Map<String, String>? queryParameters,
     Map<String, dynamic>? body,
     String? token,
   }) async {
     final response = await _httpClient.post(
-      _buildUri(path),
+      _buildUri(path, queryParameters),
       headers: _buildHeaders(token),
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
@@ -47,13 +48,27 @@ class ApiClient {
 
   Future<Map<String, dynamic>> patch(
     String path, {
+    Map<String, String>? queryParameters,
     Map<String, dynamic>? body,
     String? token,
   }) async {
     final response = await _httpClient.patch(
-      _buildUri(path),
+      _buildUri(path, queryParameters),
       headers: _buildHeaders(token),
       body: jsonEncode(body ?? <String, dynamic>{}),
+    );
+
+    return _decodeResponse(response);
+  }
+
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    Map<String, String>? queryParameters,
+    String? token,
+  }) async {
+    final response = await _httpClient.delete(
+      _buildUri(path, queryParameters),
+      headers: _buildHeaders(token),
     );
 
     return _decodeResponse(response);
@@ -78,10 +93,29 @@ class ApiClient {
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ApiException(
-          statusCode: response.statusCode,
-          message: decoded['message']?.toString() ?? 'Request failed',
-        );
+        var message = decoded['message']?.toString() ?? 'Yêu cầu thất bại';
+
+        if (response.statusCode == 401) {
+          if (message.contains('invalid email or password')) {
+            message = 'Email hoặc mật khẩu không chính xác';
+          } else if (message.contains('current password is incorrect')) {
+            message = 'Mật khẩu hiện tại không chính xác';
+          } else {
+            message = 'Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.';
+          }
+        } else if (response.statusCode == 403) {
+          if (message.contains('account is not active')) {
+            message = 'Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt.';
+          } else if (message.toLowerCase().contains('forbidden')) {
+            message = 'Bạn không có quyền thực hiện thao tác này.';
+          }
+        } else if (response.statusCode == 409) {
+          if (message.contains('email already exists')) {
+            message = 'Email đã được đăng ký, vui lòng sử dụng email khác.';
+          }
+        }
+
+        throw ApiException(statusCode: response.statusCode, message: message);
       }
 
       return decoded;

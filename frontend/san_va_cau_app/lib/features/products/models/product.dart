@@ -4,6 +4,7 @@ class Product {
     required this.categoryId,
     required this.name,
     required this.isActive,
+    required this.isFeatured,
     required this.createdAt,
     required this.updatedAt,
     required this.category,
@@ -20,6 +21,7 @@ class Product {
   final String? description;
   final String? imageUrl;
   final bool isActive;
+  final bool isFeatured;
   final DateTime createdAt;
   final DateTime updatedAt;
   final ProductCategory category;
@@ -34,12 +36,13 @@ class Product {
       description: json['description']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
       isActive: json['isActive'] == true,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'].toString())
-          : DateTime.now(),
+      isFeatured: json['isFeatured'] == true,
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
+          DateTime.now(),
       category: json['category'] != null
           ? ProductCategory.fromJson(json['category'] as Map<String, dynamic>)
           : const ProductCategory(id: '', name: ''),

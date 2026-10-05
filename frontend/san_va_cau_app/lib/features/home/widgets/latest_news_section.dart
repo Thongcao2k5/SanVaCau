@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../news/pages/news_detail_page.dart';
 import '../models/home_data.dart';
 
 class LatestNewsSection extends StatelessWidget {
@@ -50,8 +51,10 @@ class _NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chi tiết tin tức sẽ làm sau')),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => NewsDetailPage(newsId: news.id),
+          ),
         );
       },
       borderRadius: BorderRadius.circular(12),

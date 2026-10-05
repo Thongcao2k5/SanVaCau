@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/product_api.dart';
 import '../models/product.dart';
+import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
 
 class ProductListPage extends StatefulWidget {
@@ -81,9 +82,12 @@ class _ProductListPageState extends State<ProductListPage> {
                   key: ValueKey(product.id),
                   product: product,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Chi tiết ${product.name} sẽ làm tiếp.'),
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ProductDetailPage(
+                          productId: product.id,
+                          initialProduct: product,
+                        ),
                       ),
                     );
                   },
