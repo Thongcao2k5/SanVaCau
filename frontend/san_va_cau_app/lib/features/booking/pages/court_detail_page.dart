@@ -30,6 +30,22 @@ class _CourtDetailPageState extends State<CourtDetailPage> {
     });
   }
 
+  String _formatMoney(double value) {
+    final rounded = value.round().toString();
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < rounded.length; i++) {
+      final reverseIndex = rounded.length - i;
+      buffer.write(rounded[i]);
+
+      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return '${buffer.toString()} đ';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,36 +61,22 @@ class _CourtDetailPageState extends State<CourtDetailPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_city,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Chi nhánh: ${widget.court.branchId}',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
+          _InfoRow(
+            icon: Icons.location_city,
+            text:
+                'Chi nhánh: ${widget.court.branchName?.isNotEmpty == true ? widget.court.branchName! : widget.court.branchId}',
           ),
+          if (widget.court.branchAddress?.isNotEmpty == true) ...[
+            const SizedBox(height: 4),
+            _InfoRow(
+              icon: Icons.place_outlined,
+              text: widget.court.branchAddress!,
+            ),
+          ],
           const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(
-                Icons.info_outline,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Trạng thái: ${widget.court.status}',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
+          _InfoRow(
+            icon: Icons.info_outline,
+            text: 'Trạng thái: ${widget.court.status}',
           ),
           if (widget.court.description != null &&
               widget.court.description!.isNotEmpty) ...[
@@ -135,7 +137,7 @@ class _CourtDetailPageState extends State<CourtDetailPage> {
                     contentPadding: EdgeInsets.zero,
                     title: Text('$startTime - $endTime'),
                     trailing: Text(
-                      '${p.price.toInt()}đ',
+                      _formatMoney(p.price),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -165,6 +167,31 @@ class _CourtDetailPageState extends State<CourtDetailPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+      ],
     );
   }
 }

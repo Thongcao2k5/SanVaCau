@@ -190,6 +190,8 @@ class _SearchPageState extends State<SearchPage> {
           id: item.id,
           name: item.title,
           branchId: item.metadata['branchId']?.toString() ?? '',
+          branchName: item.metadata['branchName']?.toString(),
+          branchAddress: item.metadata['branchAddress']?.toString(),
           description: item.subtitle.isNotEmpty ? item.subtitle : null,
           status: item.metadata['status']?.toString() ?? 'ACTIVE',
         );

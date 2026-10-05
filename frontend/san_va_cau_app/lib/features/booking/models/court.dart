@@ -4,20 +4,28 @@ class Court {
     required this.branchId,
     required this.name,
     required this.status,
+    this.branchName,
+    this.branchAddress,
     this.description,
   });
 
   final String id;
   final String branchId;
   final String name;
+  final String? branchName;
+  final String? branchAddress;
   final String? description;
   final String status;
 
   factory Court.fromJson(Map<String, dynamic> json) {
+    final branch = json['branch'] as Map<String, dynamic>?;
+
     return Court(
       id: json['id']?.toString() ?? '',
       branchId: json['branchId']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
+      branchName: branch?['name']?.toString(),
+      branchAddress: branch?['address']?.toString(),
       description: json['description']?.toString(),
       status: json['status']?.toString() ?? '',
     );
