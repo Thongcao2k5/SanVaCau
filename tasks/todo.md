@@ -23,7 +23,7 @@
 
 ## Phase 2: Audit endpoint khach hang
 
-- [ ] Task 5: Tao `tasks/customer-endpoint-audit.md`.
+- [x] Task 5: Tao `tasks/customer-endpoint-audit.md`.
 - [ ] Review va duyet danh sach gap.
 - [ ] Task 6+: Sua tung gap da duoc duyet, moi gap mot vertical slice.
 
