@@ -9,6 +9,7 @@ import '../../help/pages/help_center_page.dart';
 import '../../notifications/pages/notifications_page.dart';
 import '../../orders/pages/order_history_page.dart';
 import '../../payments/pages/payment_history_page.dart';
+import '../../support/pages/support_ticket_list_page.dart';
 import '../data/auth_api.dart';
 import '../models/auth_user.dart';
 import 'change_password_page.dart';
@@ -245,6 +246,18 @@ class _ProfileView extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const FavoritesPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.forum_outlined,
+                title: 'Yêu cầu hỗ trợ',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const SupportTicketListPage(),
                     ),
                   );
                 },
