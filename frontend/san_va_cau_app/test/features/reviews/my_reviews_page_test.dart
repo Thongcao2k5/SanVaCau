@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
 import 'package:san_va_cau_app/features/auth/pages/account_page.dart';
@@ -11,9 +12,11 @@ import 'package:san_va_cau_app/features/reviews/models/review.dart';
 import 'package:san_va_cau_app/features/reviews/pages/my_reviews_page.dart';
 
 class _FakeReviewApi extends ReviewApi {
-  _FakeReviewApi(this.loader);
+  _FakeReviewApi(this.loader, {this.updater});
 
   final Future<ReviewPage> Function() loader;
+  final Future<Review> Function(String reviewId, int rating, String? comment)?
+  updater;
 
   @override
   Future<ReviewPage> getMyReviews({
@@ -23,6 +26,15 @@ class _FakeReviewApi extends ReviewApi {
     String? status,
   }) {
     return loader();
+  }
+
+  @override
+  Future<Review> updateReview({
+    required String reviewId,
+    required int rating,
+    String? comment,
+  }) {
+    return updater!(reviewId, rating, comment);
   }
 }
 
@@ -150,5 +162,95 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Trang đánh giá'), findsOneWidget);
+  });
+
+  testWidgets('edits a review and reloads data from the API', (tester) async {
+    var loadCalls = 0;
+    String? submittedComment;
+    int? submittedRating;
+    final updatedReview = Review(
+      id: '9',
+      userId: '1',
+      targetType: 'PRODUCT',
+      targetId: '7',
+      target: _review().target,
+      rating: 2,
+      comment: 'Noi dung moi',
+      status: 'PUBLISHED',
+      createdAt: _review().createdAt,
+      updatedAt: DateTime.utc(2026, 10, 3),
+    );
+    final api = _FakeReviewApi(
+      () async {
+        loadCalls += 1;
+        return _page([loadCalls == 1 ? _review() : updatedReview]);
+      },
+      updater: (reviewId, rating, comment) async {
+        expect(reviewId, '9');
+        submittedRating = rating;
+        submittedComment = comment;
+        return updatedReview;
+      },
+    );
+
+    await tester.pumpWidget(_app(api));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Sửa đánh giá'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vot can bang, de danh.'), findsOneWidget);
+    await tester.tap(find.byTooltip('Chọn 2 sao'));
+    await tester.enterText(find.byType(TextFormField), 'Noi dung moi');
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    expect(submittedRating, 2);
+    expect(submittedComment, 'Noi dung moi');
+    expect(loadCalls, 2);
+    expect(find.text('Noi dung moi'), findsOneWidget);
+  });
+
+  testWidgets('validates the comment before updating', (tester) async {
+    var updateCalls = 0;
+    final api = _FakeReviewApi(
+      () async => _page([_review()]),
+      updater: (_, _, _) async {
+        updateCalls += 1;
+        return _review();
+      },
+    );
+
+    await tester.pumpWidget(_app(api));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Sửa đánh giá'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'x' * 1001);
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pump();
+
+    expect(find.text('Nhận xét tối đa 1000 ký tự'), findsOneWidget);
+    expect(updateCalls, 0);
+  });
+
+  testWidgets('keeps the edit form data when the API fails', (tester) async {
+    final api = _FakeReviewApi(
+      () async => _page([_review()]),
+      updater: (_, _, _) async => throw const ApiException(
+        statusCode: 500,
+        message: 'Không thể cập nhật đánh giá',
+      ),
+    );
+
+    await tester.pumpWidget(_app(api));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Sửa đánh giá'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Noi dung dang soan');
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sửa đánh giá'), findsOneWidget);
+    expect(find.text('Noi dung dang soan'), findsOneWidget);
+    expect(find.text('Không thể cập nhật đánh giá'), findsOneWidget);
   });
 }

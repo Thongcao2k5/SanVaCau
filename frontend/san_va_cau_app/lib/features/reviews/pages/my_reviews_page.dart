@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/review_api.dart';
 import '../models/review.dart';
+import 'edit_review_page.dart';
 
 class MyReviewsPage extends StatefulWidget {
   const MyReviewsPage({super.key, this.reviewApi});
@@ -31,6 +32,21 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
       _reviewsFuture = future;
     });
     await future;
+  }
+
+  Future<void> _editReview(Review review) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EditReviewPage(review: review, reviewApi: _reviewApi),
+      ),
+    );
+    if (updated != true || !mounted) return;
+
+    await _reload();
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Đã cập nhật đánh giá')));
+    }
   }
 
   @override
@@ -72,8 +88,10 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
               padding: const EdgeInsets.all(16),
               itemCount: reviews.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) =>
-                  _ReviewCard(review: reviews[index]),
+              itemBuilder: (context, index) => _ReviewCard(
+                review: reviews[index],
+                onEdit: () => _editReview(reviews[index]),
+              ),
             ),
           );
         },
@@ -83,9 +101,10 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
 }
 
 class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.review});
+  const _ReviewCard({required this.review, required this.onEdit});
 
   final Review review;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -191,6 +210,12 @@ class _ReviewCard extends StatelessWidget {
                   _formatDate(review.updatedAt),
                   style: Theme.of(context).textTheme.bodySmall
                       ?.copyWith(color: AppColors.textSecondary),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Sửa đánh giá',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined),
                 ),
               ],
             ),
