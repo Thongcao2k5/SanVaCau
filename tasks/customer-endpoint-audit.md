@@ -21,7 +21,7 @@ Pham vi: endpoint public, authenticated va `CUSTOMER` trong `backend/src/routes`
 | Profile | `GET/PATCH /auth/profile`, `POST /auth/change-password` | `AuthApi` | Account, ProfileEdit, ChangePassword | manual | covered | Endpoint `/auth/me` va `/profile` la contract trung, khong can caller thu hai. |
 | Home | `GET /home` | `HomeApi` | HomePage | manual | covered | Du lieu tong hop da mang banners/news/products/courts can cho trang chu. |
 | Product catalog | `GET /products`, `GET /products/:id`, `GET /product-variants?productId=` | `ProductApi` | ProductList, ProductDetail | B: validation only | covered | List/detail/variant mua hang deu co. |
-| Product filters | `GET /categories`, `GET /brands` | Khong co | Khong co filter category/brand | Khong | missing | Gap UX muc `medium`; backend da san sang. |
+| Product filters | `GET /categories`, `GET /brands` | `ProductApi` | ProductList filter sheet | B, F | covered | Ho tro loc ket hop danh muc/thuong hieu, dat lai bo loc va empty state. |
 | Product detail helpers | `GET /categories/:id`, `GET /brands/:id`, `GET /product-variants/:id` | Khong co | Khong co | Khong | redundant | Product va variant list da tra du lieu can cho UI hien tai. |
 | Search | `GET /search` | `SearchApi` | SearchPage | manual | covered | Tim product/court/news theo type. |
 | Branches | `GET /branches` | `BranchApi` | BranchList, Booking, Checkout, RacketService | manual | covered | List tra du thong tin dang hien thi. |
@@ -32,7 +32,7 @@ Pham vi: endpoint public, authenticated va `CUSTOMER` trong `backend/src/routes`
 | Court helpers | `GET /courts/:id`, `GET /courts/time-slots` | Khong co | Khong co caller rieng | Khong | redundant | Court list va prices/availability da cung cap contract can dung. |
 | Booking | `GET /bookings/availability`, `POST /bookings`, `GET /bookings/me`, `PATCH /bookings/:id/cancel` | `BookingApi` | Booking, history, detail | B | covered | Co tao, xem lich su va huy. |
 | Cart | `GET /cart`, `POST /cart/items`, `PATCH/DELETE /cart/items/:id` | `CartApi` | ProductDetail, CartPage | B | covered | Them, sua so luong, xoa tung dong. |
-| Clear cart | `DELETE /cart` | Khong co | Khong co nut xoa tat ca | B | missing | Gap tien ich muc `low`; user van xoa tung dong va order se xu ly cart. |
+| Clear cart | `DELETE /cart` | `CartApi` | CartPage | B, F | covered | Co xac nhan truoc khi xoa, xu ly loading/error va cap nhat gio rong ngay sau khi thanh cong. |
 | Orders | `POST /orders`, `GET /orders/me`, `GET /orders/me/:id` | `OrderApi` | Checkout, history, detail | B | covered | Khong co endpoint customer cancel order trong backend. |
 | Fulfillment | `POST/GET /fulfillments/orders/:orderId` | `FulfillmentApi` | Checkout, OrderDetail | manual | covered | Tao pickup/delivery va xem theo order. |
 | Fulfillment list | `GET /fulfillments/me` | Khong co | Order history la entry chinh | Khong | redundant | Du lieu fulfillment duoc tai theo tung order khi can. |
@@ -52,8 +52,6 @@ Pham vi: endpoint public, authenticated va `CUSTOMER` trong `backend/src/routes`
 
 | Uu tien | Gap | De xuat | Cach verify neu lam |
 |---|---|---|---|
-| Medium | Loc san pham theo category/brand | Them filter sheet/segmented entry tren ProductList va query params cho `GET /products`; category/brand tai tu backend. | API tests + widget tests + device voi nhieu category/brand. |
-| Low | Xoa toan bo gio hang | Them `CartApi.clearCart()` va icon delete-all co confirm dialog khi cart khong rong. | API/widget test + device. |
 | Low | Loc FAQ theo category | Chi lam khi du lieu FAQ du nhieu; hien tai danh sach tong hop van day du. | HelpApi/widget test. |
 | Architecture | Bootstrap/public settings/metadata | Chon mot chien luoc config duy nhat; khong goi ca `/home`, `/bootstrap` va `/settings/public` neu du lieu trung. | Contract test + startup/network inspection. |
 

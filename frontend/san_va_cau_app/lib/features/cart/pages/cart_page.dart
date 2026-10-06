@@ -7,19 +7,23 @@ import '../models/cart.dart';
 import '../../orders/pages/checkout_page.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
+  const CartPage({super.key, this.cartApi});
+
+  final CartApi? cartApi;
 
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
-  final CartApi _cartApi = CartApi();
+  late final CartApi _cartApi;
   late Future<Cart> _cartFuture;
+  bool _isClearingCart = false;
 
   @override
   void initState() {
     super.initState();
+    _cartApi = widget.cartApi ?? CartApi();
     _cartFuture = _cartApi.getCart();
   }
 
@@ -39,10 +43,91 @@ class _CartPageState extends State<CartPage> {
     _reloadCart();
   }
 
+  Future<void> _confirmClearCart() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Xóa toàn bộ giỏ hàng?'),
+        content: const Text(
+          'Tất cả sản phẩm trong giỏ hàng sẽ bị xóa. Bạn không thể hoàn tác thao tác này.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Xóa tất cả'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isClearingCart = true;
+    });
+
+    try {
+      final emptyCart = await _cartApi.clearCart();
+      if (!mounted) return;
+
+      setState(() {
+        _cartFuture = Future.value(emptyCart);
+        _isClearingCart = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã xóa toàn bộ giỏ hàng')));
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isClearingCart = false;
+      });
+      final message = error is ApiException
+          ? error.message
+          : 'Không thể xóa giỏ hàng';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Giỏ hàng')),
+      appBar: AppBar(
+        title: const Text('Giỏ hàng'),
+        actions: [
+          FutureBuilder<Cart>(
+            future: _cartFuture,
+            builder: (context, snapshot) {
+              if (snapshot.data?.items.isNotEmpty != true) {
+                return const SizedBox.shrink();
+              }
+
+              if (_isClearingCart) {
+                return const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+
+              return IconButton(
+                tooltip: 'Xóa toàn bộ giỏ hàng',
+                onPressed: _confirmClearCart,
+                icon: const Icon(Icons.delete_sweep_outlined),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: FutureBuilder<Cart>(
         future: _cartFuture,
         builder: (context, snapshot) {

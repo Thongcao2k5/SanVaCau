@@ -25,7 +25,9 @@
 
 - [x] Task 5: Tao `tasks/customer-endpoint-audit.md`.
 - [ ] Review va duyet danh sach gap.
-- [ ] Task 6+: Sua tung gap da duoc duyet, moi gap mot vertical slice.
+- [x] Task 6: Them bo loc san pham theo danh muc va thuong hieu.
+- [x] Task 7: Them luong xoa toan bo gio hang co xac nhan.
+- [ ] Task 8+: Sua tung gap con lai da duoc duyet, moi gap mot vertical slice.
 
 ## Checkpoint: Customer endpoint coverage
 
@@ -35,6 +37,6 @@
 
 ## Phase 3: Nghiem thu cuoi
 
-- [ ] Task 7: Chay full automated verification va build APK debug.
-- [ ] Task 8: Kiem tra tren thiet bi va chup anh nghiem thu.
-- [ ] Task 9: Review staged diff va commit hoan thien lien ket Flutter - Backend.
+- [ ] Task 9: Chay full automated verification va build APK debug.
+- [ ] Task 10: Kiem tra tren thiet bi va chup anh nghiem thu.
+- [ ] Task 11: Review staged diff va commit hoan thien lien ket Flutter - Backend.

@@ -55,6 +55,16 @@ class CartApi {
     return Cart.fromJson(data['cart'] as Map<String, dynamic>);
   }
 
+  Future<Cart> clearCart() async {
+    final response = await _apiClient.delete(
+      '/cart',
+      token: await _readToken(),
+    );
+    final data = response['data'] as Map<String, dynamic>;
+
+    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+  }
+
   Future<String> _readToken() async {
     final token = await _tokenStorage.readToken();
 
