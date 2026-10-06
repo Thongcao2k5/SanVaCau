@@ -552,6 +552,24 @@ POST /reviews
 }
 ```
 
+**My reviews:** `GET /reviews/me?page=1&limit=20&targetType=PRODUCT&status=PUBLISHED`
+
+Each item preserves `targetType` and `targetId` and also includes display metadata:
+
+```json
+{
+  "targetType": "PRODUCT",
+  "targetId": "1",
+  "target": {
+    "type": "PRODUCT",
+    "id": "1",
+    "name": "Yonex Astrox 100 ZZ"
+  }
+}
+```
+
+Supported filters are `targetType` (`PRODUCT`, `COURT`) and `status` (`PUBLISHED`, `HIDDEN`).
+
 ---
 
 ### Favorites

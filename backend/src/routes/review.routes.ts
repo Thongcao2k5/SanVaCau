@@ -47,6 +47,47 @@ const toReviewResponse = (r: ReviewWithUser) => ({
   },
 });
 
+const reviewTargetKey = (targetType: string, targetId: bigint) => `${targetType}:${targetId}`;
+
+const addTargetMetadata = async (reviews: ReviewWithUser[]) => {
+  const productIds = reviews
+    .filter((review) => review.target_type === "PRODUCT")
+    .map((review) => review.target_id);
+  const courtIds = reviews
+    .filter((review) => review.target_type === "COURT")
+    .map((review) => review.target_id);
+
+  const [products, courts] = await Promise.all([
+    productIds.length
+      ? prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, name: true },
+        })
+      : [],
+    courtIds.length
+      ? prisma.court.findMany({
+          where: { id: { in: courtIds } },
+          select: { id: true, name: true },
+        })
+      : [],
+  ]);
+
+  const targetNames = new Map<string, string>();
+  products.forEach((product) => targetNames.set(reviewTargetKey("PRODUCT", product.id), product.name));
+  courts.forEach((court) => targetNames.set(reviewTargetKey("COURT", court.id), court.name));
+
+  return reviews.map((review) => ({
+    ...toReviewResponse(review),
+    target: {
+      type: review.target_type,
+      id: review.target_id.toString(),
+      name:
+        targetNames.get(reviewTargetKey(review.target_type, review.target_id)) ??
+        `${review.target_type === "PRODUCT" ? "Product" : "Court"} #${review.target_id}`,
+    },
+  }));
+};
+
 type ReviewRow = Prisma.reviewGetPayload<{}>;
 
 const toReviewResponseBasic = (r: ReviewRow) => ({
@@ -456,11 +497,12 @@ reviewRouter.get("/me", requireAuth, async (req, res, next) => {
       }),
       prisma.review.count({ where }),
     ]);
+    const itemsWithTargets = await addTargetMetadata(items);
 
     res.json({
       success: true,
       data: {
-        items: items.map(toReviewResponse),
+        items: itemsWithTargets,
         pagination: buildPagination(page, limit, Number(total)),
       },
     });
