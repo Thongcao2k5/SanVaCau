@@ -67,4 +67,29 @@ describe("Public catalog filters", () => {
       brandId: selectedBrand.id.toString(),
     });
   });
+
+  it("includes products from active child categories when filtering by a parent", async () => {
+    const parentCategory = await createCategory();
+    const childCategory = await prisma.category.create({
+      data: {
+        name: `Child_${Date.now()}`,
+        parent_id: parentCategory.id,
+      },
+    });
+    const brand = await createBrand();
+    const product = await createProduct(childCategory.id, brand.id);
+
+    const response = await request.get(
+      `/api/products?categoryId=${parentCategory.id}&brandId=${brand.id}`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.products).toEqual([
+      expect.objectContaining({
+        id: product.id.toString(),
+        categoryId: childCategory.id.toString(),
+        brandId: brand.id.toString(),
+      }),
+    ]);
+  });
 });

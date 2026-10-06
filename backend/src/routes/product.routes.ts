@@ -115,6 +115,30 @@ const findActiveBrand = (id: bigint) => {
   });
 };
 
+const getActiveCategoryTreeIds = async (rootId: bigint) => {
+  const categories = await prisma.category.findMany({
+    where: { is_active: true },
+    select: {
+      id: true,
+      parent_id: true,
+    },
+  });
+  const rootExists = categories.some((category) => category.id === rootId);
+  if (!rootExists) return [];
+
+  const categoryIds = [rootId];
+  for (let index = 0; index < categoryIds.length; index += 1) {
+    const parentId = categoryIds[index];
+    for (const category of categories) {
+      if (category.parent_id === parentId && !categoryIds.includes(category.id)) {
+        categoryIds.push(category.id);
+      }
+    }
+  }
+
+  return categoryIds;
+};
+
 productRouter.get("/", async (req, res, next) => {
   try {
     const categoryId = req.query.categoryId === undefined ? null : parseBodyBigIntId(req.query.categoryId);
@@ -145,11 +169,13 @@ productRouter.get("/", async (req, res, next) => {
       return;
     }
 
+    const categoryIds = categoryId ? await getActiveCategoryTreeIds(categoryId) : null;
+
     const products = await prisma.product.findMany({
       where: {
         is_active: true,
         ...(featured !== null ? { is_featured: featured } : {}),
-        ...(categoryId ? { category_id: categoryId } : {}),
+        ...(categoryIds ? { category_id: { in: categoryIds } } : {}),
         ...(brandId ? { brand_id: brandId } : {}),
       },
       orderBy: {
