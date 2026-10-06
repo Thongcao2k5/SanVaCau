@@ -11,7 +11,7 @@
 
 - [x] Task 1: Them integration test cho `GET /reviews/me` va `PATCH /reviews/:id`.
 - [x] Task 2: Them Flutter API/model tests cho list va update review cua toi.
-- [ ] Task 3: Them man hinh "Danh gia cua toi" va entry point tu trang Tai khoan.
+- [x] Task 3: Them man hinh "Danh gia cua toi" va entry point tu trang Tai khoan.
 - [ ] Task 4: Them luong sua rating/comment va reload du lieu that.
 
 ## Checkpoint: Review management

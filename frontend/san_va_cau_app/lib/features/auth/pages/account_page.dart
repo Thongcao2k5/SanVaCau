@@ -10,6 +10,7 @@ import '../../notifications/data/notification_api.dart';
 import '../../notifications/pages/notifications_page.dart';
 import '../../orders/pages/order_history_page.dart';
 import '../../payments/pages/payment_history_page.dart';
+import '../../reviews/pages/my_reviews_page.dart';
 import '../../support/pages/support_ticket_list_page.dart';
 import '../data/auth_api.dart';
 import '../models/auth_user.dart';
@@ -22,11 +23,13 @@ class AccountPage extends StatefulWidget {
     this.authApi,
     this.notificationApi,
     this.notificationsPage,
+    this.myReviewsPage,
   });
 
   final AuthApi? authApi;
   final NotificationApi? notificationApi;
   final Widget? notificationsPage;
+  final Widget? myReviewsPage;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -88,6 +91,14 @@ class _AccountPageState extends State<AccountPage> {
     }
   }
 
+  void _openMyReviews() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => widget.myReviewsPage ?? const MyReviewsPage(),
+      ),
+    );
+  }
+
   void _reloadProfile() {
     _loadProfile();
   }
@@ -128,6 +139,7 @@ class _AccountPageState extends State<AccountPage> {
               onEditSuccess: _reloadProfile,
               unreadNotificationCount: _unreadNotificationCount,
               onOpenNotifications: _openNotifications,
+              onOpenMyReviews: _openMyReviews,
             );
           }
 
@@ -145,6 +157,7 @@ class _ProfileView extends StatelessWidget {
     required this.onEditSuccess,
     required this.unreadNotificationCount,
     required this.onOpenNotifications,
+    required this.onOpenMyReviews,
   });
 
   final AuthUser user;
@@ -152,6 +165,7 @@ class _ProfileView extends StatelessWidget {
   final VoidCallback onEditSuccess;
   final int? unreadNotificationCount;
   final VoidCallback onOpenNotifications;
+  final VoidCallback onOpenMyReviews;
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +308,12 @@ class _ProfileView extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.rate_review_outlined,
+                title: 'Đánh giá của tôi',
+                onTap: onOpenMyReviews,
               ),
               const Divider(height: 1),
               _AccountMenuTile(
