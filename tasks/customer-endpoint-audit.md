@@ -45,14 +45,13 @@ Pham vi: endpoint public, authenticated va `CUSTOMER` trong `backend/src/routes`
 | Support | `POST /support/tickets`, `GET /support/tickets/me`, `GET /support/tickets/:id`, `POST /support/tickets/:id/messages` | `SupportApi` | Account, ticket list/form/detail | F: model | covered | Toan bo customer ticket workflow co entry point. |
 | News | `GET /news`, `GET /news/:id` | `NewsApi` | Home, NewsList/Detail | B: validation only | covered | List/detail public. |
 | FAQ/pages/contact | `GET /faqs`, `GET /pages`, `GET /pages/:slug`, `POST /contact` | `HelpApi` | HelpCenter, StaticPageDetail, ContactPage | manual | covered | FAQ category hien chua can endpoint rieng. |
-| FAQ categories | `GET /faqs/categories` | Khong co | HelpCenter hien tat ca FAQ | Khong | missing | Gap loc FAQ muc `low`; chi can khi du lieu FAQ tang. |
+| FAQ categories | `GET /faqs/categories` | Khong co caller rieng | HelpCenter loc tu `FaqItem.category` | F | redundant | `/faqs` da tra category va UI da loc cuc bo; tranh them request trung cho tap du lieu toi da 100 muc. |
 | Public config | `GET /settings/public`, `GET /bootstrap`, `GET /metadata[/:group]` | Khong co | App dung `/home`, `/app-status` va label noi bo | B: bootstrap only | partial | Day la cac endpoint tong hop/config; can quyet dinh kien truc truoc khi noi, khong tu dong them UI. |
 
 ## Gap can quyet dinh
 
 | Uu tien | Gap | De xuat | Cach verify neu lam |
 |---|---|---|---|
-| Low | Loc FAQ theo category | Chi lam khi du lieu FAQ du nhieu; hien tai danh sach tong hop van day du. | HelpApi/widget test. |
 | Architecture | Bootstrap/public settings/metadata | Chon mot chien luoc config duy nhat; khong goi ca `/home`, `/bootstrap` va `/settings/public` neu du lieu trung. | Contract test + startup/network inspection. |
 
 ## Test debt khong phai functional gap

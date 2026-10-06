@@ -8,20 +8,23 @@ import 'contact_page.dart';
 import 'static_page_detail_page.dart';
 
 class HelpCenterPage extends StatefulWidget {
-  const HelpCenterPage({super.key});
+  const HelpCenterPage({super.key, this.helpApi});
+
+  final HelpApi? helpApi;
 
   @override
   State<HelpCenterPage> createState() => _HelpCenterPageState();
 }
 
 class _HelpCenterPageState extends State<HelpCenterPage> {
-  final HelpApi _helpApi = HelpApi();
+  late final HelpApi _helpApi;
   late Future<HelpContent> _contentFuture;
   String _selectedCategory = 'Tất cả';
 
   @override
   void initState() {
     super.initState();
+    _helpApi = widget.helpApi ?? HelpApi();
     _contentFuture = _helpApi.getHelpContent();
   }
 
