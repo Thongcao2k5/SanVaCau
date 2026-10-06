@@ -218,10 +218,12 @@ class _SearchPageState extends State<SearchPage> {
           decoration: InputDecoration(
             hintText: 'Tìm kiếm (ít nhất 2 ký tự)...',
             border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            hintStyle: TextStyle(
+              color: AppColors.onPrimary.withValues(alpha: 0.7),
+            ),
           ),
-          style: const TextStyle(color: Colors.white),
-          cursorColor: Colors.white,
+          style: const TextStyle(color: AppColors.onPrimary),
+          cursorColor: AppColors.onPrimary,
           textInputAction: TextInputAction.search,
           onSubmitted: (_) {
             if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
@@ -253,7 +255,7 @@ class _SearchPageState extends State<SearchPage> {
                           : label,
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.white
+                            ? AppColors.onPrimary
                             : AppColors.textPrimary,
                       ),
                     ),
@@ -358,12 +360,12 @@ class _SearchPageState extends State<SearchPage> {
         final item = items[index];
         return InkWell(
           onTap: () => _onItemTapped(item),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.border),
             ),
             child: Row(

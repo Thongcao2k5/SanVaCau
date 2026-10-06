@@ -192,13 +192,14 @@ Color _statusColor(String status) {
   switch (status.toUpperCase()) {
     case 'BOOKED':
     case 'CONFIRMED':
-      return const Color(0xFF16A34A);
+      return AppColors.success;
     case 'CANCELLED':
-      return const Color(0xFFDC2626);
+      return AppColors.primary;
     case 'COMPLETED':
-      return const Color(0xFF2563EB);
+      return AppColors.info;
     case 'PENDING':
-      return const Color(0xFFD97706);
+    case 'CHECKED_IN':
+      return AppColors.warning;
     default:
       return AppColors.primary;
   }
@@ -216,6 +217,8 @@ String _statusLabel(String status) {
       return 'Hoàn thành';
     case 'PENDING':
       return 'Chờ xử lý';
+    case 'CHECKED_IN':
+      return 'Đã nhận sân';
     default:
       return status;
   }

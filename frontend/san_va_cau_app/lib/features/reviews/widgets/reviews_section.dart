@@ -327,6 +327,7 @@ class _CreateReviewDialogState extends State<_CreateReviewDialog> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (index) {
               return IconButton(
+                tooltip: 'Chọn ${index + 1} sao',
                 onPressed: () {
                   setState(() => _rating = index + 1);
                 },
@@ -363,7 +364,10 @@ class _CreateReviewDialogState extends State<_CreateReviewDialog> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.onPrimary,
+                  ),
                 )
               : const Text('Gửi đánh giá'),
         ),

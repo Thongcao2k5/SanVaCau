@@ -565,7 +565,7 @@ voucherRouter.post("/apply", requireAuth, async (req, res, next) => {
     const tId = parseBigIntId(targetId);
     if (!tId) return res.status(400).json({ success: false, message: "targetId required for apply" });
 
-    const decAmount = parseDecimalInput(amount);
+    let decAmount = parseDecimalInput(amount);
     if (!decAmount) return res.status(400).json({ success: false, message: "amount must be a valid decimal" });
     if (decAmount.lte(0)) return res.status(400).json({ success: false, message: "amount must be positive" });
 
@@ -580,16 +580,36 @@ voucherRouter.post("/apply", requireAuth, async (req, res, next) => {
 
     if (v.target_type !== "ALL" && v.target_type !== targetType) return res.status(400).json({ success: false, message: `Voucher is only valid for ${v.target_type}` });
 
+    if (targetType === "ORDER") {
+      const order = await prisma.customer_order.findUnique({ where: { id: tId } });
+      if (!order || order.customer_id !== userId) return res.status(400).json({ success: false, message: "Order not found or access denied" });
+      if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+        return res.status(400).json({ success: false, message: "Voucher cannot be applied to this order status" });
+      }
+      decAmount = order.total_amount;
+    } else if (targetType === "BOOKING") {
+      const booking = await prisma.booking.findUnique({ where: { id: tId } });
+      if (!booking || booking.customer_id !== userId) return res.status(400).json({ success: false, message: "Booking not found or access denied" });
+      if (booking.status === "CANCELLED" || booking.status === "COMPLETED") {
+        return res.status(400).json({ success: false, message: "Voucher cannot be applied to this booking status" });
+      }
+      decAmount = booking.total_amount;
+    }
+
     if (v.min_order_amount && decAmount.lt(v.min_order_amount)) {
       return res.status(400).json({ success: false, message: `Minimum amount required is ${v.min_order_amount.toString()}` });
     }
 
-    if (targetType === "ORDER") {
-      const order = await prisma.customer_order.findUnique({ where: { id: tId } });
-      if (!order || order.customer_id !== userId) return res.status(400).json({ success: false, message: "Order not found or access denied" });
-    } else if (targetType === "BOOKING") {
-      const booking = await prisma.booking.findUnique({ where: { id: tId } });
-      if (!booking || booking.customer_id !== userId) return res.status(400).json({ success: false, message: "Booking not found or access denied" });
+    const paidPayment = await prisma.payment.findFirst({
+      where: {
+        target_type: targetType,
+        target_id: tId,
+        status: "PAID",
+      },
+      select: { id: true },
+    });
+    if (paidPayment) {
+      return res.status(409).json({ success: false, message: "Voucher cannot be applied after payment" });
     }
 
     const { discountAmount, finalAmount } = calculateDiscount(v, decAmount);
@@ -599,13 +619,10 @@ voucherRouter.post("/apply", requireAuth, async (req, res, next) => {
         // Re-check limits in tx for concurrency
         const currentVoucher = await tx.voucher.findUniqueOrThrow({ where: { id: v.id } });
 
-        const existingTargetUsage = await tx.voucher_usage.findUnique({
+        const existingTargetUsage = await tx.voucher_usage.findFirst({
           where: {
-            voucher_id_target_type_target_id: {
-              voucher_id: currentVoucher.id,
-              target_type: targetType,
-              target_id: tId,
-            },
+            target_type: targetType,
+            target_id: tId,
           },
         });
 
@@ -640,6 +657,18 @@ voucherRouter.post("/apply", requireAuth, async (req, res, next) => {
           where: { id: currentVoucher.id },
           data: { used_count: { increment: 1 }, updated_at: new Date() },
         });
+
+        if (targetType === "ORDER") {
+          await tx.customer_order.update({
+            where: { id: tId },
+            data: { total_amount: finalAmount },
+          });
+        } else {
+          await tx.booking.update({
+            where: { id: tId },
+            data: { total_amount: finalAmount },
+          });
+        }
 
         return { usage: createdUsage, updatedVoucher: nextVoucher };
       });

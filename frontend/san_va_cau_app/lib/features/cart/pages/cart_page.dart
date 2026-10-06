@@ -189,6 +189,7 @@ class _CartItemCard extends StatelessWidget {
                       IconButton.outlined(
                         onPressed: onDecrease,
                         icon: const Icon(Icons.remove),
+                        tooltip: 'Giảm số lượng',
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -200,11 +201,13 @@ class _CartItemCard extends StatelessWidget {
                       IconButton.outlined(
                         onPressed: onIncrease,
                         icon: const Icon(Icons.add),
+                        tooltip: 'Tăng số lượng',
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: onRemove,
                         icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Xóa sản phẩm',
                       ),
                     ],
                   ),

@@ -128,19 +128,16 @@ class _BranchCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${branch.openingTime} - ${branch.closingTime}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  _BranchInfoRow(
+                    icon: Icons.schedule_outlined,
+                    text: '${branch.openingTime} - ${branch.closingTime}',
+                    emphasized: true,
                   ),
                   if (branch.phone != null && branch.phone!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      branch.phone!,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                    const SizedBox(height: 6),
+                    _BranchInfoRow(
+                      icon: Icons.phone_outlined,
+                      text: branch.phone!,
                     ),
                   ],
                 ],
@@ -149,6 +146,38 @@ class _BranchCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BranchInfoRow extends StatelessWidget {
+  const _BranchInfoRow({
+    required this.icon,
+    required this.text,
+    this.emphasized = false,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = emphasized ? AppColors.primary : AppColors.textSecondary;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: emphasized ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

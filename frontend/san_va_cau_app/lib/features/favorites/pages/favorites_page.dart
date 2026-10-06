@@ -105,11 +105,11 @@ class _FavoriteCard extends StatelessWidget {
           onReload(); // Reload in case it was unfavorited
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.border),
         ),
         clipBehavior: Clip.antiAlias,
@@ -151,11 +151,22 @@ class _FavoriteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     if (!item.isActive)
-                      Text(
-                        'Ngừng kinh doanh',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w700,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Ngừng kinh doanh',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                   ],

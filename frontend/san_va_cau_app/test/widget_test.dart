@@ -10,7 +10,7 @@ void main() {
     tester.takeException();
     await tester.pump();
 
-    expect(find.text('SanVaCau'), findsOneWidget);
+    expect(find.text('Sân cầu & cửa hàng'), findsOneWidget);
     expect(find.text('Sản phẩm'), findsWidgets);
     expect(find.text('Đặt sân'), findsWidgets);
     expect(find.text('Giỏ hàng'), findsOneWidget);

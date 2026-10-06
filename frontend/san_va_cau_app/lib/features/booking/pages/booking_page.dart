@@ -138,47 +138,20 @@ class _BookingPageState extends State<BookingPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Đặt sân')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
         children: [
-          _SectionTitle(title: '1. Chọn chi nhánh'),
-          FutureBuilder<List<Branch>>(
-            future: _branchesFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return _InlineError(
-                  message: 'Không thể tải chi nhánh',
-                  onRetry: () {
-                    setState(() {
-                      _branchesFuture = _branchApi.getBranches();
-                    });
-                  },
-                );
-              }
-
-              final branches = snapshot.data ?? const <Branch>[];
-
-              return _ChoiceWrap<Branch>(
-                items: branches,
-                selectedItem: _selectedBranch,
-                labelOf: (branch) => branch.name,
-                onSelected: _selectBranch,
-              );
-            },
+          _BookingSummaryCard(
+            branchName: _selectedBranch?.name ?? 'Chưa chọn chi nhánh',
+            courtName: _selectedCourt?.name ?? 'Chưa chọn sân',
+            dateText: _dateText,
+            selectedCount: _selectedSlotIds.length,
           ),
           const SizedBox(height: 20),
-          _SectionTitle(title: '2. Chọn sân'),
-          if (_courtsFuture == null)
-            const _HintText('Chọn chi nhánh trước để xem danh sách sân.')
-          else
-            FutureBuilder<List<Court>>(
-              future: _courtsFuture,
+          _BookingStepCard(
+            step: '01',
+            title: 'Chọn chi nhánh',
+            child: FutureBuilder<List<Branch>>(
+              future: _branchesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
@@ -188,110 +161,222 @@ class _BookingPageState extends State<BookingPage> {
                 }
 
                 if (snapshot.hasError) {
-                  return const _HintText('Không thể tải danh sách sân.');
-                }
-
-                final courts = snapshot.data ?? const <Court>[];
-
-                if (courts.isEmpty) {
-                  return const _HintText(
-                    'Chi nhánh này chưa có sân hoạt động.',
+                  return _InlineError(
+                    message: 'Không thể tải chi nhánh',
+                    onRetry: () {
+                      setState(() {
+                        _branchesFuture = _branchApi.getBranches();
+                      });
+                    },
                   );
                 }
 
-                return _ChoiceWrap<Court>(
-                  items: courts,
-                  selectedItem: _selectedCourt,
-                  labelOf: (court) => court.name,
-                  onSelected: _selectCourt,
-                  onInfoTapped: (court) async {
-                    final returnedCourt = await Navigator.of(context)
-                        .push<Court>(
-                          MaterialPageRoute(
-                            builder: (context) => CourtDetailPage(court: court),
-                          ),
+                final branches = snapshot.data ?? const <Branch>[];
+
+                return _ChoiceWrap<Branch>(
+                  items: branches,
+                  selectedItem: _selectedBranch,
+                  labelOf: (branch) => branch.name,
+                  onSelected: _selectBranch,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+          _BookingStepCard(
+            step: '02',
+            title: 'Chọn sân',
+            child: _courtsFuture == null
+                ? const _HintText('Chọn chi nhánh trước để xem danh sách sân.')
+                : FutureBuilder<List<Court>>(
+                    future: _courtsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
                         );
-                    if (returnedCourt != null) {
-                      _selectCourt(returnedCourt);
-                    }
-                  },
-                );
-              },
-            ),
-          const SizedBox(height: 20),
-          _SectionTitle(title: '3. Chọn ngày'),
-          OutlinedButton.icon(
-            onPressed: _pickDate,
-            icon: const Icon(Icons.calendar_month_outlined),
-            label: Text(_dateText),
+                      }
+
+                      if (snapshot.hasError) {
+                        return const _HintText('Không thể tải danh sách sân.');
+                      }
+
+                      final courts = snapshot.data ?? const <Court>[];
+
+                      if (courts.isEmpty) {
+                        return const _HintText(
+                          'Chi nhánh này chưa có sân hoạt động.',
+                        );
+                      }
+
+                      return _ChoiceWrap<Court>(
+                        items: courts,
+                        selectedItem: _selectedCourt,
+                        labelOf: (court) => court.name,
+                        onSelected: _selectCourt,
+                        onInfoTapped: (court) async {
+                          final returnedCourt = await Navigator.of(context)
+                              .push<Court>(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      CourtDetailPage(court: court),
+                                ),
+                              );
+                          if (returnedCourt != null) {
+                            _selectCourt(returnedCourt);
+                          }
+                        },
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 20),
-          _SectionTitle(title: '4. Chọn khung giờ'),
-          if (_slotsFuture == null)
-            const _HintText('Chọn sân để xem khung giờ còn trống.')
-          else
-            FutureBuilder<List<BookingSlot>>(
-              future: _slotsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return const _HintText('Không thể tải khung giờ.');
-                }
-
-                final slots = snapshot.data ?? const <BookingSlot>[];
-
-                if (slots.isEmpty) {
-                  return const _HintText('Sân này chưa có bảng giá khung giờ.');
-                }
-
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: slots.map((slot) {
-                    final isSelected = _selectedSlotIds.contains(
-                      slot.timeSlotId,
-                    );
-
-                    final startTime = slot.startTime.length >= 5
-                        ? slot.startTime.substring(0, 5)
-                        : slot.startTime;
-                    final endTime = slot.endTime.length >= 5
-                        ? slot.endTime.substring(0, 5)
-                        : slot.endTime;
-
-                    return FilterChip(
-                      selected: isSelected,
-                      label: Text('$startTime-$endTime'),
-                      avatar: slot.isBooked
-                          ? const Icon(Icons.lock_outline, size: 16)
-                          : null,
-                      onSelected: slot.isBooked
-                          ? null
-                          : (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedSlotIds.add(slot.timeSlotId);
-                                } else {
-                                  _selectedSlotIds.remove(slot.timeSlotId);
-                                }
-                              });
-                            },
-                    );
-                  }).toList(),
-                );
-              },
+          _BookingStepCard(
+            step: '03',
+            title: 'Chọn ngày',
+            child: OutlinedButton.icon(
+              onPressed: _pickDate,
+              icon: const Icon(Icons.calendar_month_outlined),
+              label: Text(_dateText),
             ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
+          ),
+          const SizedBox(height: 20),
+          _BookingStepCard(
+            step: '04',
+            title: 'Chọn khung giờ',
+            child: _slotsFuture == null
+                ? const _HintText('Chọn sân để xem khung giờ còn trống.')
+                : FutureBuilder<List<BookingSlot>>(
+                    future: _slotsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return const _HintText('Không thể tải khung giờ.');
+                      }
+
+                      final slots = snapshot.data ?? const <BookingSlot>[];
+
+                      if (slots.isEmpty) {
+                        return const _HintText(
+                          'Sân này chưa có bảng giá khung giờ.',
+                        );
+                      }
+
+                      return Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: slots.map((slot) {
+                          final isSelected = _selectedSlotIds.contains(
+                            slot.timeSlotId,
+                          );
+
+                          final startTime = slot.startTime.length >= 5
+                              ? slot.startTime.substring(0, 5)
+                              : slot.startTime;
+                          final endTime = slot.endTime.length >= 5
+                              ? slot.endTime.substring(0, 5)
+                              : slot.endTime;
+
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Text('$startTime-$endTime'),
+                            avatar: slot.isBooked
+                                ? const Icon(Icons.lock_outline, size: 16)
+                                : null,
+                            onSelected: slot.isBooked
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedSlotIds.add(slot.timeSlotId);
+                                      } else {
+                                        _selectedSlotIds.remove(
+                                          slot.timeSlotId,
+                                        );
+                                      }
+                                    });
+                                  },
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(top: BorderSide(color: AppColors.borderMuted)),
+          ),
+          child: FilledButton.icon(
             onPressed: _isSubmitting ? null : _submitBooking,
             icon: const Icon(Icons.check_circle_outline),
             label: Text(_isSubmitting ? 'Đang đặt sân...' : 'Xác nhận đặt sân'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingSummaryCard extends StatelessWidget {
+  const _BookingSummaryCard({
+    required this.branchName,
+    required this.courtName,
+    required this.dateText,
+    required this.selectedCount,
+  });
+
+  final String branchName;
+  final String courtName;
+  final String dateText;
+  final int selectedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.sports_tennis, color: Colors.white, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$branchName • $courtName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$dateText • $selectedCount khung giờ',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -299,21 +384,60 @@ class _BookingPageState extends State<BookingPage> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+class _BookingStepCard extends StatelessWidget {
+  const _BookingStepCard({
+    required this.step,
+    required this.title,
+    required this.child,
+  });
 
+  final String step;
   final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.borderMuted),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  step,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
@@ -352,8 +476,7 @@ class _ChoiceWrap<T> extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.info_outline, size: 20),
                 onPressed: () => onInfoTapped!(item),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                tooltip: 'Xem chi tiết sân',
               ),
               const SizedBox(width: 4),
             ],

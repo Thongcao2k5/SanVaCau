@@ -98,35 +98,12 @@ class _MaintenanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.build_circle_outlined,
-                size: 64,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Bảo trì hệ thống',
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(height: 1.5, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
-            ],
-          ),
-        ),
+      body: _StatusPageContent(
+        icon: Icons.build_circle_outlined,
+        title: 'Bảo trì hệ thống',
+        message: message,
+        actionLabel: 'Thử lại',
+        onAction: onRetry,
       ),
     );
   }
@@ -140,48 +117,88 @@ class _ForceUpdateScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
+      body: _StatusPageContent(
+        icon: Icons.system_update_alt,
+        title: 'Cập nhật bắt buộc',
+        message: message,
+        actionLabel: 'Cập nhật ngay',
+        onAction: () {
+          if (storeUrl != null && storeUrl!.isNotEmpty) {
+            openUrlSafely(context, storeUrl!);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Link cập nhật sẽ có trong thời gian tới'),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _StatusPageContent extends StatelessWidget {
+  const _StatusPageContent({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.system_update_alt,
-                size: 64,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Cập nhật bắt buộc',
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(height: 1.5, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  if (storeUrl != null && storeUrl!.isNotEmpty) {
-                    openUrlSafely(context, storeUrl!);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Link cập nhật sẽ có trong thời gian tới',
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Cập nhật ngay'),
-              ),
-            ],
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(icon, size: 48, color: AppColors.primary),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(height: 1.5, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: onAction,
+                    child: Text(actionLabel),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

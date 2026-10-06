@@ -47,6 +47,34 @@ describe("Payment Flow", () => {
     expect(res.body.data.status).toBe("PENDING");
   });
 
+  it("Includes delivery shipping fee in the order payment amount", async () => {
+    const branch = await createBranch();
+    const { token } = await createCustomer();
+    const { orderId, totalAmount } = await setupOrder(token, branch.id);
+
+    const fulfillmentRes = await request
+      .post(`/api/fulfillments/orders/${orderId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        fulfillmentType: "DELIVERY",
+        recipientName: "Khach Hang",
+        phone: "0900000000",
+        addressLine: "123 Duong Mau",
+        city: "TP HCM",
+      });
+    expect(fulfillmentRes.status).toBe(201);
+
+    const paymentRes = await request
+      .post("/api/payments/mock")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ targetType: "ORDER", targetId: orderId, provider: "MOCK" });
+
+    expect(paymentRes.status).toBe(201);
+    expect(paymentRes.body.data.amount).toBe(
+      (Number(totalAmount) + 30000).toString(),
+    );
+  });
+
   it("Reject payment for a resource owned by another customer", async () => {
     const branch = await createBranch();
     const { token: token1 } = await createCustomer();

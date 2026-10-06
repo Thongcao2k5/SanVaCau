@@ -91,7 +91,14 @@ paymentRouter.post("/mock", requireAuth, async (req, res, next) => {
     let amount: Prisma.Decimal;
 
     if (targetType === "ORDER") {
-      const order = await prisma.customer_order.findUnique({ where: { id: targetId } });
+      const order = await prisma.customer_order.findUnique({
+        where: { id: targetId },
+        include: {
+          order_fulfillment: {
+            select: { shipping_fee: true },
+          },
+        },
+      });
       if (!order) {
         res.status(404).json({ success: false, message: "Order not found" });
         return;
@@ -104,7 +111,7 @@ paymentRouter.post("/mock", requireAuth, async (req, res, next) => {
         res.status(400).json({ success: false, message: "Cannot create payment for a cancelled order" });
         return;
       }
-      amount = order.total_amount;
+      amount = order.total_amount.add(order.order_fulfillment?.shipping_fee ?? 0);
     } else {
       // BOOKING
       const booking = await prisma.booking.findUnique({ where: { id: targetId } });

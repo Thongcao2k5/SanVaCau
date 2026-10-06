@@ -17,7 +17,11 @@ class HomeHeroSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primary, AppColors.primaryDark],
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -42,15 +46,24 @@ class HomeHeroSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'SanVaCau App',
+                  'SÂN VÀ CẦU',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
                   ),
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.sports_tennis, color: Colors.white),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Icon(Icons.sports_tennis, color: Colors.white),
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -64,7 +77,7 @@ class HomeHeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Sân cầu và cửa hàng thể thao trong một app.',
+            'Một nơi cho lịch sân, sản phẩm và tin tức cầu lông.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
               height: 1.45,

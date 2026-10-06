@@ -190,13 +190,14 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
     switch (status.toUpperCase()) {
       case 'BOOKED':
       case 'CONFIRMED':
-        return const Color(0xFF16A34A);
+        return AppColors.success;
       case 'CANCELLED':
-        return const Color(0xFFDC2626);
+        return AppColors.primary;
       case 'COMPLETED':
-        return const Color(0xFF2563EB);
+        return AppColors.info;
       case 'PENDING':
-        return const Color(0xFFD97706);
+      case 'CHECKED_IN':
+        return AppColors.warning;
       default:
         return AppColors.primary;
     }
@@ -214,6 +215,8 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
         return 'Hoàn thành';
       case 'PENDING':
         return 'Chờ xử lý';
+      case 'CHECKED_IN':
+        return 'Đã nhận sân';
       default:
         return status;
     }
@@ -238,7 +241,7 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
     final sc = _statusColor(booking.status);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           // ─── Collapsible Hero Header ──────────────────────────────────

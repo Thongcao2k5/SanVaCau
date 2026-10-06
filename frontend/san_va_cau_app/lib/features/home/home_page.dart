@@ -49,10 +49,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SanVaCau'),
+        title: const Text('Sân cầu & cửa hàng'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
+            tooltip: 'Tìm kiếm',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const SearchPage()),
@@ -68,15 +69,7 @@ class _HomePageState extends State<HomePage> {
             onBookCourtPressed: widget.onBookCourtPressed,
             onViewProductsPressed: widget.onViewProductsPressed,
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Khám phá nhanh',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           HomeQuickActions(
             onBookCourtPressed: widget.onBookCourtPressed,
             onViewProductsPressed: widget.onViewProductsPressed,

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../data/fulfillment_api.dart';
 import '../data/order_api.dart';
 import '../models/order.dart';
+import '../models/order_fulfillment.dart';
 
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({required this.order, super.key});
@@ -17,21 +19,47 @@ class OrderDetailPage extends StatefulWidget {
 
 class _OrderDetailPageState extends State<OrderDetailPage> {
   late final OrderApi _orderApi;
+  late final FulfillmentApi _fulfillmentApi;
   late Order _order;
+  OrderFulfillment? _fulfillment;
+  bool _fulfillmentLoaded = false;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _orderApi = OrderApi();
+    _fulfillmentApi = FulfillmentApi();
     _order = widget.order;
+    _loadFulfillment();
+  }
+
+  Future<void> _loadFulfillment() async {
+    try {
+      final fulfillment = await _fulfillmentApi.getForOrder(_order.id);
+      if (mounted) {
+        setState(() {
+          _fulfillment = fulfillment;
+          _fulfillmentLoaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _fulfillmentLoaded = true);
+    }
   }
 
   Future<void> _refreshOrder() async {
     setState(() => _isLoading = true);
     try {
       final updatedOrder = await _orderApi.getMyOrderById(_order.id);
-      if (mounted) setState(() => _order = updatedOrder);
+      final fulfillment = await _fulfillmentApi.getForOrder(_order.id);
+      if (mounted) {
+        setState(() {
+          _order = updatedOrder;
+          _fulfillment = fulfillment;
+          _fulfillmentLoaded = true;
+        });
+      }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,13 +113,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     switch (status.toUpperCase()) {
       case 'CONFIRMED':
       case 'COMPLETED':
-        return const Color(0xFF16A34A);
+        return AppColors.success;
       case 'CANCELLED':
-        return const Color(0xFFDC2626);
+        return AppColors.primary;
       case 'PENDING':
-        return const Color(0xFFD97706);
+        return AppColors.warning;
       case 'PROCESSING':
-        return const Color(0xFF2563EB);
+      case 'READY_FOR_PICKUP':
+        return AppColors.info;
       default:
         return AppColors.primary;
     }
@@ -105,6 +134,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         return 'Đã xác nhận';
       case 'PROCESSING':
         return 'Đang xử lý';
+      case 'READY_FOR_PICKUP':
+        return 'Sẵn sàng nhận';
       case 'COMPLETED':
         return 'Hoàn thành';
       case 'CANCELLED':
@@ -114,12 +145,25 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
+  String _fulfillmentStatusLabel(String status) {
+    return switch (status.toUpperCase()) {
+      'PENDING' => 'Chờ xử lý',
+      'PREPARING' => 'Đang chuẩn bị',
+      'SHIPPING' => 'Đang giao hàng',
+      'READY_FOR_PICKUP' => 'Sẵn sàng nhận',
+      'DELIVERED' => 'Đã giao',
+      'PICKED_UP' => 'Đã nhận',
+      'CANCELLED' => 'Đã hủy',
+      _ => status,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final sc = _statusColor(_order.status);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: _refreshOrder,
         color: AppColors.primary,
@@ -350,6 +394,88 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  if (!_fulfillmentLoaded) ...[
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 16),
+                  ] else if (_fulfillment != null) ...[
+                    _SectionHeader(
+                      icon: _fulfillment!.isDelivery
+                          ? Icons.local_shipping_rounded
+                          : Icons.storefront_rounded,
+                      title: 'Hình thức nhận hàng',
+                    ),
+                    const SizedBox(height: 8),
+                    _SectionCard(
+                      child: Column(
+                        children: [
+                          _DetailRow(
+                            label: 'Hình thức',
+                            value: _fulfillment!.isDelivery
+                                ? 'Giao tận nơi'
+                                : 'Nhận tại cửa hàng',
+                            valueBold: true,
+                          ),
+                          const _RowDivider(),
+                          _DetailRow(
+                            label: 'Trạng thái',
+                            value: _fulfillmentStatusLabel(
+                              _fulfillment!.status,
+                            ),
+                          ),
+                          if (_fulfillment!.isDelivery) ...[
+                            const _RowDivider(),
+                            _DetailRow(
+                              label: 'Người nhận',
+                              value:
+                                  '${_fulfillment!.recipientName ?? ''} · ${_fulfillment!.phone ?? ''}',
+                            ),
+                            const _RowDivider(),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Địa chỉ giao hàng',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    _fulfillment!.fullAddress,
+                                    style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const _RowDivider(),
+                            _DetailRow(
+                              label: 'Phí giao hàng',
+                              value: _formatMoney(_fulfillment!.shippingFee),
+                              valueBold: true,
+                            ),
+                          ],
+                          if (_fulfillment!.trackingCode != null &&
+                              _fulfillment!.trackingCode!.isNotEmpty) ...[
+                            const _RowDivider(),
+                            _DetailRow(
+                              label: 'Mã vận đơn',
+                              value: _fulfillment!.trackingCode!,
+                              valueBold: true,
+                            ),
+                          ],
                         ],
                       ),
                     ),

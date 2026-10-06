@@ -168,8 +168,25 @@ class _OrderCard extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
+  (String, Color, Color) _statusStyle(String status) {
+    return switch (status.toUpperCase()) {
+      'READY_FOR_PICKUP' => (
+        'Sẵn sàng nhận',
+        AppColors.info,
+        AppColors.infoSoft,
+      ),
+      'COMPLETED' => ('Hoàn tất', AppColors.success, AppColors.successSoft),
+      'CANCELLED' => ('Đã hủy', AppColors.primary, AppColors.primarySoft),
+      _ => ('Chờ xác nhận', AppColors.warning, AppColors.warningSoft),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final (statusLabel, statusColor, statusBackground) = _statusStyle(
+      order.status,
+    );
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -192,15 +209,15 @@ class _OrderCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
+                      color: statusBackground,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      order.status,
-                      style: const TextStyle(
+                      statusLabel,
+                      style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
                       ),
                     ),
                   ),

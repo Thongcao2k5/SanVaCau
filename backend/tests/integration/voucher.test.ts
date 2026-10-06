@@ -54,6 +54,10 @@ describe("Voucher Flow", () => {
     
     const usageCount = await prisma.voucher_usage.count({ where: { voucher_id: voucher.id } });
     expect(usageCount).toBe(1);
+    const discountedOrder = await prisma.customer_order.findUniqueOrThrow({
+      where: { id: BigInt(orderId) },
+    });
+    expect(discountedOrder.total_amount.toString()).toBe("80000");
   });
 
   it("Apply a valid active voucher (PERCENT discount)", async () => {

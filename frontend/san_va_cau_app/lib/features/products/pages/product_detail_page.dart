@@ -109,6 +109,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return _ProductDetailData(product, variants);
   }
 
+  String _formatMoney(String value) {
+    final digits = (double.tryParse(value) ?? 0).round().toString();
+    final buffer = StringBuffer();
+
+    for (var index = 0; index < digits.length; index++) {
+      final remaining = digits.length - index;
+      buffer.write(digits[index]);
+      if (remaining > 1 && remaining % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return '${buffer.toString()} đ';
+  }
+
   void _reloadProduct() {
     setState(() {
       _dataFuture = _loadData();
@@ -175,7 +190,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
         Text(
           'Phân loại',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -205,7 +219,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         if (_selectedVariant != null) ...[
           const SizedBox(height: 16),
           Text(
-            'Giá: ${_selectedVariant!.price} ₫',
+            'Giá: ${_formatMoney(_selectedVariant!.price)}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: AppColors.primary,
@@ -220,7 +234,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
         Row(
           children: [
             Text(
@@ -240,6 +253,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     }
                   : null,
               icon: const Icon(Icons.remove),
+              tooltip: 'Giảm số lượng',
             ),
             Text('$_quantity', style: Theme.of(context).textTheme.titleMedium),
             IconButton(
@@ -249,6 +263,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 });
               },
               icon: const Icon(Icons.add),
+              tooltip: 'Tăng số lượng',
             ),
           ],
         ),
@@ -264,6 +279,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         actions: [
           IconButton(
             onPressed: _isTogglingFavorite ? null : _toggleFavorite,
+            tooltip: _isFavorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích',
             icon: Icon(
               _isFavorited ? Icons.favorite : Icons.favorite_border,
               color: _isFavorited ? AppColors.primary : null,
@@ -378,8 +394,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (isWaiting) const SizedBox(height: 24),
           if (isWaiting) const Center(child: CircularProgressIndicator()),
           if (!isWaiting) ...[
-            _buildVariantsSection(variants),
-            _buildQuantitySection(),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildVariantsSection(variants),
+                    const Divider(height: 32),
+                    _buildQuantitySection(),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _isAddingToCart ? null : _addToCart,
@@ -389,7 +416,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                        valueColor: AlwaysStoppedAnimation(AppColors.onPrimary),
                       ),
                     )
                   : const Icon(Icons.shopping_cart_outlined),

@@ -18,45 +18,52 @@ class HomeQuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.42,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.borderMuted),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      children: [
-        _QuickActionTile(
-          icon: Icons.sports_tennis_outlined,
-          title: 'Đặt sân',
-          description: 'Tìm sân và đặt lịch',
-          color: const Color(0xFF16A34A),
-          onTap: onBookCourtPressed,
-        ),
-        _QuickActionTile(
-          icon: Icons.shopping_bag_outlined,
-          title: 'Sản phẩm',
-          description: 'Vợt, giày, phụ kiện',
-          color: AppColors.primary,
-          onTap: onViewProductsPressed,
-        ),
-        _QuickActionTile(
-          icon: Icons.article_outlined,
-          title: 'Tin tức',
-          description: 'Sân mới, mẹo cầu lông',
-          color: const Color(0xFF2563EB),
-          onTap: onViewNewsPressed,
-        ),
-        _QuickActionTile(
-          icon: Icons.storefront_outlined,
-          title: 'Chi nhánh',
-          description: 'Cơ sở và giờ mở cửa',
-          color: const Color(0xFF7C3AED),
-          onTap: onViewBranchesPressed,
-        ),
-      ],
+      child: Row(
+        children: [
+          _QuickActionTile(
+            icon: Icons.sports_tennis_outlined,
+            title: 'Đặt sân',
+            color: AppColors.primary,
+            backgroundColor: AppColors.primarySoft,
+            onTap: onBookCourtPressed,
+          ),
+          _QuickActionTile(
+            icon: Icons.shopping_bag_outlined,
+            title: 'Sản phẩm',
+            color: AppColors.warning,
+            backgroundColor: AppColors.warningSoft,
+            onTap: onViewProductsPressed,
+          ),
+          _QuickActionTile(
+            icon: Icons.article_outlined,
+            title: 'Tin tức',
+            color: AppColors.info,
+            backgroundColor: AppColors.infoSoft,
+            onTap: onViewNewsPressed,
+          ),
+          _QuickActionTile(
+            icon: Icons.storefront_outlined,
+            title: 'Chi nhánh',
+            color: AppColors.success,
+            backgroundColor: AppColors.successSoft,
+            onTap: onViewBranchesPressed,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -65,54 +72,47 @@ class _QuickActionTile extends StatelessWidget {
   const _QuickActionTile({
     required this.icon,
     required this.title,
-    required this.description,
     required this.color,
+    required this.backgroundColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
-  final String description;
   final Color color;
+  final Color backgroundColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: color),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const Spacer(),
+              const SizedBox(height: 8),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary, height: 1.25),
               ),
             ],
           ),

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../addresses/pages/address_list_page.dart';
 import '../../booking/pages/booking_history_page.dart';
 import '../../favorites/pages/favorites_page.dart';
+import '../../help/pages/help_center_page.dart';
 import '../../notifications/pages/notifications_page.dart';
 import '../../orders/pages/order_history_page.dart';
+import '../../payments/pages/payment_history_page.dart';
 import '../data/auth_api.dart';
 import '../models/auth_user.dart';
 import 'change_password_page.dart';
@@ -52,7 +55,20 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tài khoản')),
+      appBar: AppBar(
+        title: const Text('Tài khoản'),
+        actions: [
+          IconButton(
+            tooltip: 'Trợ giúp',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const HelpCenterPage()),
+              );
+            },
+            icon: const Icon(Icons.help_outline),
+          ),
+        ],
+      ),
       body: FutureBuilder<AuthUser>(
         future: _profileFuture,
         builder: (context, snapshot) {
@@ -123,113 +139,173 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () async {
-            final result = await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => ProfileEditPage(user: user),
+        const SizedBox(height: 24),
+        Text(
+          'Tài khoản & Cài đặt',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Column(
+            children: [
+              _AccountMenuTile(
+                icon: Icons.edit_outlined,
+                title: 'Chỉnh sửa hồ sơ',
+                onTap: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ProfileEditPage(user: user),
+                    ),
+                  );
+                  if (result == true) {
+                    onEditSuccess();
+                  }
+                },
               ),
-            );
-            if (result == true) {
-              onEditSuccess();
-            }
-          },
-          icon: const Icon(Icons.edit),
-          label: const Text('Chỉnh sửa hồ sơ'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ChangePasswordPage(),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.password_outlined,
+                title: 'Đổi mật khẩu',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ChangePasswordPage(),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-          icon: const Icon(Icons.password),
-          label: const Text('Đổi mật khẩu'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const BookingHistoryPage(),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.location_on_outlined,
+                title: 'Địa chỉ của tôi',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const AddressListPage(),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-          icon: const Icon(Icons.calendar_month),
-          label: const Text('Lịch đặt sân của tôi'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const OrderHistoryPage()),
-            );
-          },
-          icon: const Icon(Icons.receipt_long),
-          label: const Text('Đơn hàng của tôi'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const NotificationsPage(),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.calendar_month_outlined,
+                title: 'Lịch đặt sân của tôi',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const BookingHistoryPage(),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-          icon: const Icon(Icons.notifications_outlined),
-          label: const Text('Thông báo của tôi'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const FavoritesPage()),
-            );
-          },
-          icon: const Icon(Icons.favorite_border),
-          label: const Text('Yêu thích của tôi'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: onLogout,
-          icon: const Icon(Icons.logout),
-          label: const Text('Đăng xuất'),
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            foregroundColor: Theme.of(context).colorScheme.error,
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.receipt_long_outlined,
+                title: 'Đơn hàng của tôi',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const OrderHistoryPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.payments_outlined,
+                title: 'Lịch sử thanh toán',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const PaymentHistoryPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.notifications_outlined,
+                title: 'Thông báo của tôi',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.favorite_border,
+                title: 'Yêu thích của tôi',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const FavoritesPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.support_agent_outlined,
+                title: 'Trợ giúp & chính sách',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpCenterPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              _AccountMenuTile(
+                icon: Icons.logout,
+                title: 'Đăng xuất',
+                isDestructive: true,
+                onTap: onLogout,
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AccountMenuTile extends StatelessWidget {
+  const _AccountMenuTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive
+        ? Theme.of(context).colorScheme.error
+        : AppColors.textPrimary;
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w600, color: color),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppColors.textSecondary,
+      ),
+      onTap: onTap,
     );
   }
 }
@@ -285,6 +361,7 @@ class _AuthFormState extends State<_AuthForm> {
   final _phoneController = TextEditingController();
   bool _isRegisterMode = false;
   bool _isSubmitting = false;
+  bool _showPassword = false;
   String? _errorMessage;
 
   @override
@@ -297,6 +374,8 @@ class _AuthFormState extends State<_AuthForm> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -344,73 +423,168 @@ class _AuthFormState extends State<_AuthForm> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          _isRegisterMode ? 'Tạo tài khoản' : 'Đăng nhập',
-          style: Theme.of(context).textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _isRegisterMode
-              ? 'Tạo tài khoản khách hàng để đặt sân và mua sản phẩm.'
-              : 'Đăng nhập để dùng giỏ hàng, đặt sân và xem lịch sử.',
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _isRegisterMode
+                    ? Icons.person_add_alt_1_outlined
+                    : Icons.login_outlined,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _isRegisterMode ? 'Tạo tài khoản' : 'Đăng nhập',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _isRegisterMode
+                        ? 'Tạo tài khoản để đặt sân và mua sản phẩm.'
+                        : 'Đăng nhập để sử dụng đầy đủ các tiện ích.',
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
-        Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              if (_isRegisterMode) ...[
-                TextFormField(
-                  controller: _fullNameController,
-                  decoration: const InputDecoration(labelText: 'Họ tên'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Nhập họ tên'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Số điện thoại'),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 12),
-              ],
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nhập email' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Mật khẩu'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Nhập mật khẩu';
-                  }
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: AutofillGroup(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    if (_isRegisterMode) ...[
+                      TextFormField(
+                        controller: _fullNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Họ tên',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? 'Nhập họ tên'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _phoneController,
+                        decoration: const InputDecoration(
+                          labelText: 'Số điện thoại',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.telephoneNumber],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? 'Nhập email'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Mật khẩu',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          tooltip: _showPassword
+                              ? 'Ẩn mật khẩu'
+                              : 'Hiện mật khẩu',
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                        ),
+                      ),
+                      obscureText: !_showPassword,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: [
+                        _isRegisterMode
+                            ? AutofillHints.newPassword
+                            : AutofillHints.password,
+                      ],
+                      onFieldSubmitted: (_) => _submit(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Nhập mật khẩu';
+                        }
 
-                  if (value.length < 6) {
-                    return 'Mật khẩu tối thiểu 6 ký tự';
-                  }
+                        if (value.length < 6) {
+                          return 'Mật khẩu tối thiểu 6 ký tự';
+                        }
 
-                  return null;
-                },
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
-          Text(
-            _errorMessage!,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: Theme.of(context).colorScheme.error),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
         const SizedBox(height: 20),
@@ -420,7 +594,10 @@ class _AuthFormState extends State<_AuthForm> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.onPrimary,
+                  ),
                 )
               : Text(_isRegisterMode ? 'Đăng ký' : 'Đăng nhập'),
         ),

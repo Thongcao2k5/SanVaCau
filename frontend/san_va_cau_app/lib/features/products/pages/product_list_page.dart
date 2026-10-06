@@ -71,10 +71,15 @@ class _ProductListPageState extends State<ProductListPage> {
 
           return RefreshIndicator(
             onRefresh: () async => _reloadProducts(),
-            child: ListView.separated(
+            child: GridView.builder(
               padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.7,
+              ),
               itemCount: products.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final product = products[index];
 
