@@ -12,6 +12,26 @@ class ReviewUser {
   }
 }
 
+class ReviewTarget {
+  const ReviewTarget({
+    required this.type,
+    required this.id,
+    required this.name,
+  });
+
+  final String type;
+  final String id;
+  final String name;
+
+  factory ReviewTarget.fromJson(Map<String, dynamic> json) {
+    return ReviewTarget(
+      type: json['type']?.toString() ?? '',
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+    );
+  }
+}
+
 class Review {
   const Review({
     required this.id,
@@ -24,6 +44,7 @@ class Review {
     required this.createdAt,
     required this.updatedAt,
     this.user,
+    this.target,
   });
 
   final String id;
@@ -36,6 +57,7 @@ class Review {
   final DateTime createdAt;
   final DateTime updatedAt;
   final ReviewUser? user;
+  final ReviewTarget? target;
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
@@ -55,6 +77,40 @@ class Review {
       user: json['user'] != null
           ? ReviewUser.fromJson(json['user'] as Map<String, dynamic>)
           : null,
+      target: json['target'] != null
+          ? ReviewTarget.fromJson(json['target'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class ReviewPage {
+  const ReviewPage({
+    required this.items,
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.totalPages,
+  });
+
+  final List<Review> items;
+  final int page;
+  final int limit;
+  final int total;
+  final int totalPages;
+
+  factory ReviewPage.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'] as List<dynamic>? ?? [];
+    final pagination = json['pagination'] as Map<String, dynamic>? ?? {};
+
+    return ReviewPage(
+      items: itemsJson
+          .map((item) => Review.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      page: pagination['page'] as int? ?? 1,
+      limit: pagination['limit'] as int? ?? 20,
+      total: pagination['total'] as int? ?? 0,
+      totalPages: pagination['totalPages'] as int? ?? 0,
     );
   }
 }
