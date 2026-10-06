@@ -35,6 +35,21 @@ class NotificationApi {
         .toList();
   }
 
+  Future<int> getUnreadCount() async {
+    final token = await _tokenStorage.readToken();
+    if (token == null || token.isEmpty) {
+      throw const ApiException(statusCode: 401, message: 'Vui lòng đăng nhập');
+    }
+
+    final response = await _apiClient.get(
+      '/notifications/unread-count',
+      token: token,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+
+    return int.tryParse(data['count']?.toString() ?? '') ?? 0;
+  }
+
   Future<void> markAsRead(String id) async {
     final token = await _tokenStorage.readToken();
     if (token == null || token.isEmpty) {

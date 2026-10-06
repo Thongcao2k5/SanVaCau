@@ -6,6 +6,7 @@ import '../../addresses/pages/address_list_page.dart';
 import '../../booking/pages/booking_history_page.dart';
 import '../../favorites/pages/favorites_page.dart';
 import '../../help/pages/help_center_page.dart';
+import '../../notifications/data/notification_api.dart';
 import '../../notifications/pages/notifications_page.dart';
 import '../../orders/pages/order_history_page.dart';
 import '../../payments/pages/payment_history_page.dart';
@@ -16,32 +17,75 @@ import 'change_password_page.dart';
 import 'profile_edit_page.dart';
 
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key});
+  const AccountPage({
+    super.key,
+    this.authApi,
+    this.notificationApi,
+    this.notificationsPage,
+  });
+
+  final AuthApi? authApi;
+  final NotificationApi? notificationApi;
+  final Widget? notificationsPage;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
 }
 
 class _AccountPageState extends State<AccountPage> {
-  final AuthApi _authApi = AuthApi();
+  late final AuthApi _authApi;
+  late final NotificationApi _notificationApi;
   Future<AuthUser>? _profileFuture;
+  int? _unreadNotificationCount;
 
   @override
   void initState() {
     super.initState();
+    _authApi = widget.authApi ?? AuthApi();
+    _notificationApi = widget.notificationApi ?? NotificationApi();
     _loadProfile();
   }
 
   void _loadProfile() {
     setState(() {
-      _profileFuture = _authApi.getProfile().catchError((error) async {
-        if (error is ApiException &&
-            (error.statusCode == 401 || error.statusCode == 403)) {
-          await _authApi.logout();
-        }
-        throw error; // Rethrow to let FutureBuilder know it failed
-      });
+      _profileFuture = _authApi
+          .getProfile()
+          .then((user) {
+            _loadUnreadNotificationCount().ignore();
+            return user;
+          })
+          .catchError((error) async {
+            if (error is ApiException &&
+                (error.statusCode == 401 || error.statusCode == 403)) {
+              await _authApi.logout();
+            }
+            throw error; // Rethrow to let FutureBuilder know it failed
+          });
     });
+  }
+
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      final count = await _notificationApi.getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadNotificationCount = count);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _unreadNotificationCount = null);
+      }
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => widget.notificationsPage ?? const NotificationsPage(),
+      ),
+    );
+    if (mounted) {
+      await _loadUnreadNotificationCount();
+    }
   }
 
   void _reloadProfile() {
@@ -82,6 +126,8 @@ class _AccountPageState extends State<AccountPage> {
               user: snapshot.data!,
               onLogout: _logout,
               onEditSuccess: _reloadProfile,
+              unreadNotificationCount: _unreadNotificationCount,
+              onOpenNotifications: _openNotifications,
             );
           }
 
@@ -97,11 +143,15 @@ class _ProfileView extends StatelessWidget {
     required this.user,
     required this.onLogout,
     required this.onEditSuccess,
+    required this.unreadNotificationCount,
+    required this.onOpenNotifications,
   });
 
   final AuthUser user;
   final VoidCallback onLogout;
   final VoidCallback onEditSuccess;
+  final int? unreadNotificationCount;
+  final VoidCallback onOpenNotifications;
 
   @override
   Widget build(BuildContext context) {
@@ -230,13 +280,8 @@ class _ProfileView extends StatelessWidget {
               _AccountMenuTile(
                 icon: Icons.notifications_outlined,
                 title: 'Thông báo của tôi',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationsPage(),
-                    ),
-                  );
-                },
+                badgeCount: unreadNotificationCount,
+                onTap: onOpenNotifications,
               ),
               const Divider(height: 1),
               _AccountMenuTile(
@@ -295,12 +340,14 @@ class _AccountMenuTile extends StatelessWidget {
     required this.title,
     required this.onTap,
     this.isDestructive = false,
+    this.badgeCount,
   });
 
   final IconData icon;
   final String title;
   final VoidCallback onTap;
   final bool isDestructive;
+  final int? badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -313,10 +360,23 @@ class _AccountMenuTile extends StatelessWidget {
         title,
         style: TextStyle(fontWeight: FontWeight.w600, color: color),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        size: 20,
-        color: AppColors.textSecondary,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (badgeCount != null && badgeCount! > 0) ...[
+            Badge.count(
+              count: badgeCount!,
+              backgroundColor: AppColors.primary,
+              textColor: AppColors.onPrimary,
+            ),
+            const SizedBox(width: 8),
+          ],
+          const Icon(
+            Icons.chevron_right,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
       onTap: onTap,
     );
