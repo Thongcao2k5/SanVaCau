@@ -46,13 +46,11 @@ Pham vi: endpoint public, authenticated va `CUSTOMER` trong `backend/src/routes`
 | News | `GET /news`, `GET /news/:id` | `NewsApi` | Home, NewsList/Detail | B: validation only | covered | List/detail public. |
 | FAQ/pages/contact | `GET /faqs`, `GET /pages`, `GET /pages/:slug`, `POST /contact` | `HelpApi` | HelpCenter, StaticPageDetail, ContactPage | manual | covered | FAQ category hien chua can endpoint rieng. |
 | FAQ categories | `GET /faqs/categories` | Khong co caller rieng | HelpCenter loc tu `FaqItem.category` | F | redundant | `/faqs` da tra category va UI da loc cuc bo; tranh them request trung cho tap du lieu toi da 100 muc. |
-| Public config | `GET /settings/public`, `GET /bootstrap`, `GET /metadata[/:group]` | Khong co | App dung `/home`, `/app-status` va label noi bo | B: bootstrap only | partial | Day la cac endpoint tong hop/config; can quyet dinh kien truc truoc khi noi, khong tu dong them UI. |
+| Public config | `GET /settings/public`, `GET /bootstrap`, `GET /metadata[/:group]` | Khong co caller Flutter | App dung `/home`, `/app-status` va mapping theo workflow | B | redundant | Da chot khong them request khoi dong trung lap; xem `tasks/customer-config-decision.md`. |
 
 ## Gap can quyet dinh
 
-| Uu tien | Gap | De xuat | Cach verify neu lam |
-|---|---|---|---|
-| Architecture | Bootstrap/public settings/metadata | Chon mot chien luoc config duy nhat; khong goi ca `/home`, `/bootstrap` va `/settings/public` neu du lieu trung. | Contract test + startup/network inspection. |
+Khong con gap chuc nang customer can noi them. Cac endpoint du thua da co quyet dinh ro rang trong bang tren.
 
 ## Test debt khong phai functional gap
 

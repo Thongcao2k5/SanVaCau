@@ -25,6 +25,26 @@ describe("Public API Endpoints", () => {
     expect(res.body.data).toHaveProperty("banners");
   });
 
+  it("GET /api/settings/public should return public settings", async () => {
+    const res = await request.get("/api/settings/public");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual(expect.any(Object));
+  });
+
+  it("GET /api/metadata/:group should return the requested labels", async () => {
+    const res = await request.get("/api/metadata/bookingStatuses");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.bookingStatuses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: "BOOKED", label: "Đã đặt" }),
+      ]),
+    );
+  });
+
   it("should return expected error format for unknown routes", async () => {
     const res = await request.get("/api/unknown-route-12345");
     expect(res.status).toBe(404);

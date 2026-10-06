@@ -28,7 +28,7 @@
 - [x] Task 6: Them bo loc san pham theo danh muc va thuong hieu.
 - [x] Task 7: Them luong xoa toan bo gio hang co xac nhan.
 - [x] Task 8: Xac nhan bo loc FAQ cuc bo va endpoint categories la du thua co chu dich.
-- [ ] Task 9+: Xu ly tung gap con lai da duoc duyet, moi gap mot vertical slice.
+- [x] Task 9: Chot chien luoc public config, giu startup khong co request trung lap.
 
 ## Checkpoint: Customer endpoint coverage
 
