@@ -32,12 +32,12 @@
 
 ## Checkpoint: Customer endpoint coverage
 
-- [ ] Khong con gap `missing` muc do cao.
-- [ ] Moi gap `partial` co quyet dinh ro rang.
-- [ ] Full backend va Flutter test pass.
+- [x] Khong con gap `missing` muc do cao.
+- [x] Moi gap `partial` co quyet dinh ro rang.
+- [x] Full backend va Flutter test pass.
 
 ## Phase 3: Nghiem thu cuoi
 
-- [ ] Task 10: Chay full automated verification va build APK debug.
+- [x] Task 10: Chay full automated verification va build APK debug.
 - [ ] Task 11: Kiem tra tren thiet bi va chup anh nghiem thu.
 - [ ] Task 12: Review staged diff va commit hoan thien lien ket Flutter - Backend.
