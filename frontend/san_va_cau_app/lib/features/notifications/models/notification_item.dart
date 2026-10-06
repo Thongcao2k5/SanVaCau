@@ -19,6 +19,37 @@ class NotificationItem {
   final DateTime createdAt;
   final Map<String, dynamic>? data;
 
+  NotificationTarget get target {
+    final payload = data ?? const <String, dynamic>{};
+    final ticketId = payload['ticketId']?.toString();
+    if (ticketId != null && ticketId.isNotEmpty) {
+      return NotificationTarget(NotificationTargetKind.support, ticketId);
+    }
+
+    final orderId = payload['orderId']?.toString();
+    if (orderId != null && orderId.isNotEmpty) {
+      return NotificationTarget(NotificationTargetKind.order, orderId);
+    }
+
+    final bookingId = payload['bookingId']?.toString();
+    if (bookingId != null && bookingId.isNotEmpty) {
+      return NotificationTarget(NotificationTargetKind.booking, bookingId);
+    }
+
+    final targetType = payload['targetType']?.toString();
+    final targetId = payload['targetId']?.toString();
+    if (targetId != null && targetId.isNotEmpty) {
+      if (targetType == 'ORDER') {
+        return NotificationTarget(NotificationTargetKind.order, targetId);
+      }
+      if (targetType == 'BOOKING') {
+        return NotificationTarget(NotificationTargetKind.booking, targetId);
+      }
+    }
+
+    return const NotificationTarget(NotificationTargetKind.none, '');
+  }
+
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
       id: json['id']?.toString() ?? '',
@@ -48,4 +79,13 @@ class NotificationItem {
       data: data,
     );
   }
+}
+
+enum NotificationTargetKind { none, order, booking, support }
+
+class NotificationTarget {
+  const NotificationTarget(this.kind, this.id);
+
+  final NotificationTargetKind kind;
+  final String id;
 }

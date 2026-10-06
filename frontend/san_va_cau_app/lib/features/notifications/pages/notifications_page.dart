@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../booking/data/booking_api.dart';
+import '../../booking/models/booking.dart';
+import '../../booking/pages/booking_detail_page.dart';
+import '../../orders/data/order_api.dart';
+import '../../orders/pages/order_detail_page.dart';
+import '../../support/pages/support_ticket_detail_page.dart';
 import '../data/notification_api.dart';
 import '../models/notification_item.dart';
 
@@ -18,6 +24,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _isLoading = true;
   String? _error;
   bool _isMarkingAll = false;
+  String? _openingNotificationId;
 
   @override
   void initState() {
@@ -106,6 +113,69 @@ class _NotificationsPageState extends State<NotificationsPage> {
           _notifications[index] = item;
         });
       }
+    }
+  }
+
+  Future<void> _openNotification(int index) async {
+    final item = _notifications[index];
+    if (_openingNotificationId != null) return;
+    setState(() => _openingNotificationId = item.id);
+
+    try {
+      await _markAsRead(index);
+      if (!mounted) return;
+
+      final target = item.target;
+      switch (target.kind) {
+        case NotificationTargetKind.order:
+          final order = await OrderApi().getMyOrderById(target.id);
+          if (!mounted) return;
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute(builder: (_) => OrderDetailPage(order: order)),
+          );
+        case NotificationTargetKind.booking:
+          final bookings = await BookingApi().getMyBookings();
+          Booking? booking;
+          for (final candidate in bookings) {
+            if (candidate.id == target.id) {
+              booking = candidate;
+              break;
+            }
+          }
+          if (!mounted) return;
+          if (booking == null) {
+            throw const ApiException(
+              statusCode: 404,
+              message: 'Không tìm thấy lịch đặt sân.',
+            );
+          }
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => BookingDetailPage(booking: booking!),
+            ),
+          );
+        case NotificationTargetKind.support:
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => SupportTicketDetailPage(ticketId: target.id),
+            ),
+          );
+        case NotificationTargetKind.none:
+          break;
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể mở nội dung thông báo.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingNotificationId = null);
     }
   }
 
@@ -220,7 +290,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final item = _notifications[index];
-          return _NotificationCard(item: item, onTap: () => _markAsRead(index));
+          return _NotificationCard(
+            item: item,
+            isOpening: _openingNotificationId == item.id,
+            onTap: () => _openNotification(index),
+          );
         },
       ),
     );
@@ -228,9 +302,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.item, required this.onTap});
+  const _NotificationCard({
+    required this.item,
+    required this.isOpening,
+    required this.onTap,
+  });
 
   final NotificationItem item;
+  final bool isOpening;
   final VoidCallback onTap;
 
   String _formatTime(DateTime time) {
@@ -277,17 +356,26 @@ class _NotificationCard extends StatelessWidget {
                     : AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                item.type == 'ORDER'
-                    ? Icons.receipt_long
-                    : item.type == 'BOOKING'
-                    ? Icons.calendar_today
-                    : Icons.notifications,
-                color: item.isRead
-                    ? AppColors.textSecondary
-                    : AppColors.primary,
-                size: 24,
-              ),
+              child: isOpening
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      item.type.startsWith('ORDER') ||
+                              item.type == 'FULFILLMENT_UPDATE'
+                          ? Icons.receipt_long
+                          : item.type.startsWith('BOOKING')
+                          ? Icons.calendar_today
+                          : item.type.startsWith('SUPPORT')
+                          ? Icons.forum_outlined
+                          : Icons.notifications,
+                      color: item.isRead
+                          ? AppColors.textSecondary
+                          : AppColors.primary,
+                      size: 24,
+                    ),
             ),
             const SizedBox(width: 16),
             Expanded(
