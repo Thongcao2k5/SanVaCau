@@ -39,5 +39,5 @@
 ## Phase 3: Nghiem thu cuoi
 
 - [x] Task 10: Chay full automated verification va build APK debug.
-- [ ] Task 11: Kiem tra tren thiet bi va chup anh nghiem thu.
-- [ ] Task 12: Review staged diff va commit hoan thien lien ket Flutter - Backend.
+- [x] Task 11: Kiem tra tren thiet bi va chup anh nghiem thu.
+- [x] Task 12: Review staged diff va commit hoan thien lien ket Flutter - Backend.
