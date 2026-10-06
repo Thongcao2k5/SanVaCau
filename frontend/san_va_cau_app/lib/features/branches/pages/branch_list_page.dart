@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../racket_services/pages/racket_service_page.dart';
 import '../data/branch_api.dart';
 import '../models/branch.dart';
 
@@ -74,7 +75,15 @@ class _BranchListPageState extends State<BranchListPage> {
               itemCount: branches.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                return _BranchCard(branch: branches[index]);
+                final branch = branches[index];
+                return _BranchCard(
+                  branch: branch,
+                  onViewServices: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => RacketServicePage(initialBranch: branch),
+                    ),
+                  ),
+                );
               },
             ),
           );
@@ -85,9 +94,10 @@ class _BranchListPageState extends State<BranchListPage> {
 }
 
 class _BranchCard extends StatelessWidget {
-  const _BranchCard({required this.branch});
+  const _BranchCard({required this.branch, required this.onViewServices});
 
   final Branch branch;
+  final VoidCallback onViewServices;
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +150,12 @@ class _BranchCard extends StatelessWidget {
                       text: branch.phone!,
                     ),
                   ],
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: onViewServices,
+                    icon: const Icon(Icons.build_outlined),
+                    label: const Text('Xem dịch vụ vợt'),
+                  ),
                 ],
               ),
             ),
