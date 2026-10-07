@@ -19,9 +19,9 @@ class ProductVariant {
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
     return ProductVariant(
-      id: json['id'].toString(),
-      productId: json['productId'].toString(),
-      sku: json['sku'].toString(),
+      id: json['id']?.toString() ?? '',
+      productId: json['productId']?.toString() ?? '',
+      sku: json['sku']?.toString() ?? '',
       variantName: json['variantName']?.toString() ?? '',
       price: json['price']?.toString() ?? '0',
       imageUrl: json['imageUrl']?.toString(),

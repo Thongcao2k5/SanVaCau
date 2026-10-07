@@ -19,7 +19,8 @@ class AuthApi {
       body: {'email': email, 'password': password},
     );
 
-    return _saveSessionFromResponse(response);
+    final session = await _saveSessionFromResponse(response);
+    return session;
   }
 
   Future<AuthSession> register({
@@ -38,7 +39,8 @@ class AuthApi {
       },
     );
 
-    return _saveSessionFromResponse(response);
+    final session = await _saveSessionFromResponse(response);
+    return session;
   }
 
   Future<AuthUser> getProfile() async {
@@ -95,12 +97,14 @@ class AuthApi {
     );
   }
 
-  AuthSession _saveSessionFromResponse(Map<String, dynamic> response) {
+  Future<AuthSession> _saveSessionFromResponse(
+    Map<String, dynamic> response,
+  ) async {
     final data = response['data'] as Map<String, dynamic>;
     final token = data['token']?.toString() ?? '';
     final user = AuthUser.fromJson(data['user'] as Map<String, dynamic>);
 
-    _tokenStorage.saveToken(token).ignore();
+    await _tokenStorage.saveToken(token);
 
     return AuthSession(user: user, token: token);
   }

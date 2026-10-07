@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../admin/pages/admin_dashboard_page.dart';
 import '../../addresses/pages/address_list_page.dart';
 import '../../booking/pages/booking_history_page.dart';
 import '../../favorites/pages/favorites_page.dart';
@@ -24,12 +25,16 @@ class AccountPage extends StatefulWidget {
     this.notificationApi,
     this.notificationsPage,
     this.myReviewsPage,
+    this.adminDashboardPage,
+    this.changePasswordPage,
   });
 
   final AuthApi? authApi;
   final NotificationApi? notificationApi;
   final Widget? notificationsPage;
   final Widget? myReviewsPage;
+  final Widget? adminDashboardPage;
+  final Widget? changePasswordPage;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -38,7 +43,7 @@ class AccountPage extends StatefulWidget {
 class _AccountPageState extends State<AccountPage> {
   late final AuthApi _authApi;
   late final NotificationApi _notificationApi;
-  Future<AuthUser>? _profileFuture;
+  Future<AuthUser?>? _profileFuture;
   int? _unreadNotificationCount;
 
   @override
@@ -51,20 +56,24 @@ class _AccountPageState extends State<AccountPage> {
 
   void _loadProfile() {
     setState(() {
-      _profileFuture = _authApi
-          .getProfile()
-          .then((user) {
-            _loadUnreadNotificationCount().ignore();
-            return user;
-          })
-          .catchError((error) async {
-            if (error is ApiException &&
-                (error.statusCode == 401 || error.statusCode == 403)) {
-              await _authApi.logout();
-            }
-            throw error; // Rethrow to let FutureBuilder know it failed
-          });
+      _profileFuture = _fetchProfile();
     });
+  }
+
+  Future<AuthUser?> _fetchProfile() async {
+    try {
+      final user = await _authApi.getProfile();
+      if (!user.mustChangePassword) {
+        _loadUnreadNotificationCount().ignore();
+      }
+      return user;
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        await _authApi.logout();
+        return null;
+      }
+      rethrow;
+    }
   }
 
   Future<void> _loadUnreadNotificationCount() async {
@@ -105,7 +114,22 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> _logout() async {
     await _authApi.logout();
-    _reloadProfile();
+    if (!mounted) return;
+    setState(() {
+      _profileFuture = Future<AuthUser?>.value();
+      _unreadNotificationCount = null;
+    });
+  }
+
+  Future<void> _openRequiredPasswordChange() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => widget.changePasswordPage ?? const ChangePasswordPage(),
+      ),
+    );
+    if (changed == true && mounted) {
+      _reloadProfile();
+    }
   }
 
   @override
@@ -125,7 +149,7 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ],
       ),
-      body: FutureBuilder<AuthUser>(
+      body: FutureBuilder<AuthUser?>(
         future: _profileFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -133,6 +157,12 @@ class _AccountPageState extends State<AccountPage> {
           }
 
           if (snapshot.hasData) {
+            if (snapshot.data!.mustChangePassword) {
+              return _PasswordChangeRequiredView(
+                onChangePassword: _openRequiredPasswordChange,
+                onLogout: _logout,
+              );
+            }
             return _ProfileView(
               user: snapshot.data!,
               onLogout: _logout,
@@ -140,12 +170,65 @@ class _AccountPageState extends State<AccountPage> {
               unreadNotificationCount: _unreadNotificationCount,
               onOpenNotifications: _openNotifications,
               onOpenMyReviews: _openMyReviews,
+              adminDashboardPage: widget.adminDashboardPage,
             );
           }
 
           return _AuthForm(onAuthSuccess: _reloadProfile);
         },
       ),
+    );
+  }
+}
+
+class _PasswordChangeRequiredView extends StatelessWidget {
+  const _PasswordChangeRequiredView({
+    required this.onChangePassword,
+    required this.onLogout,
+  });
+
+  final VoidCallback onChangePassword;
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(
+                  Icons.password_outlined,
+                  size: 48,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Bạn cần đổi mật khẩu',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Hãy đổi mật khẩu tạm thời trước khi sử dụng tài khoản.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: onChangePassword,
+                  child: const Text('Đổi mật khẩu ngay'),
+                ),
+                TextButton(onPressed: onLogout, child: const Text('Đăng xuất')),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -158,6 +241,7 @@ class _ProfileView extends StatelessWidget {
     required this.unreadNotificationCount,
     required this.onOpenNotifications,
     required this.onOpenMyReviews,
+    this.adminDashboardPage,
   });
 
   final AuthUser user;
@@ -166,6 +250,7 @@ class _ProfileView extends StatelessWidget {
   final int? unreadNotificationCount;
   final VoidCallback onOpenNotifications;
   final VoidCallback onOpenMyReviews;
+  final Widget? adminDashboardPage;
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +289,23 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
         ),
+        if (_isInternalRole(user.role)) ...[
+          const SizedBox(height: 16),
+          Card(
+            child: _AccountMenuTile(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Quản trị hệ thống',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        adminDashboardPage ?? const AdminDashboardPage(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         Text(
           'Tài khoản & Cài đặt',
@@ -352,6 +454,10 @@ class _ProfileView extends StatelessWidget {
       ],
     );
   }
+}
+
+bool _isInternalRole(String role) {
+  return const {'ADMIN', 'BRANCH_MANAGER', 'STAFF'}.contains(role);
 }
 
 class _AccountMenuTile extends StatelessWidget {

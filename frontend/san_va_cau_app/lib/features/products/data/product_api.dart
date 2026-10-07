@@ -1,11 +1,15 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/token_storage.dart';
 import '../models/product.dart';
 import '../models/product_variant.dart';
 
 class ProductApi {
-  ProductApi({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ProductApi({ApiClient? apiClient, TokenStorage? tokenStorage})
+    : _apiClient = apiClient ?? ApiClient(),
+      _tokenStorage = tokenStorage ?? TokenStorage();
 
   final ApiClient _apiClient;
+  final TokenStorage _tokenStorage;
 
   Future<List<Product>> getProducts({
     String? categoryId,
@@ -72,5 +76,103 @@ class ProductApi {
       categories.addAll(_flattenCategories(children));
     }
     return categories;
+  }
+
+  // Admin Product Methods
+  Future<Product> createAdminProduct(Map<String, dynamic> body) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    final response = await _apiClient.post(
+      '/products',
+      body: body,
+      token: token,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return Product.fromJson(data['product'] as Map<String, dynamic>);
+  }
+
+  Future<Product> updateAdminProduct(
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    final response = await _apiClient.patch(
+      '/products/$id',
+      body: body,
+      token: token,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return Product.fromJson(data['product'] as Map<String, dynamic>);
+  }
+
+  Future<void> inactivateAdminProduct(String id) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    await _apiClient.patch('/products/$id/inactivate', token: token);
+  }
+
+  // Admin Variant Methods
+  Future<ProductVariant> createAdminVariant(Map<String, dynamic> body) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    final response = await _apiClient.post(
+      '/product-variants',
+      body: body,
+      token: token,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return ProductVariant.fromJson(data['variant'] as Map<String, dynamic>);
+  }
+
+  Future<ProductVariant> updateAdminVariant(
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    final response = await _apiClient.patch(
+      '/product-variants/$id',
+      body: body,
+      token: token,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return ProductVariant.fromJson(data['variant'] as Map<String, dynamic>);
+  }
+
+  Future<void> inactivateAdminVariant(String id) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null) {
+      throw const ApiException(
+        statusCode: 401,
+        message: 'Phiên đăng nhập hết hạn',
+      );
+    }
+    await _apiClient.patch('/product-variants/$id/inactivate', token: token);
   }
 }

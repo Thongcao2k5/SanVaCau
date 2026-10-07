@@ -5,8 +5,12 @@ class Order {
     required this.branchId,
     required this.status,
     required this.totalAmount,
-    required this.createdAt,
+    this.createdAt,
+    this.readyAt,
+    this.completedAt,
+    this.cancelledAt,
     this.branch,
+    this.customer,
     this.items = const [],
   });
 
@@ -15,22 +19,38 @@ class Order {
   final String branchId;
   final String status;
   final String totalAmount;
-  final DateTime createdAt;
+  final DateTime? createdAt;
+  final DateTime? readyAt;
+  final DateTime? completedAt;
+  final DateTime? cancelledAt;
   final OrderBranch? branch;
+  final OrderCustomer? customer;
   final List<OrderItem> items;
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      id: json['id'].toString(),
-      customerId: json['customerId'].toString(),
-      branchId: json['branchId'].toString(),
+      id: json['id']?.toString() ?? '',
+      customerId: json['customerId']?.toString() ?? '',
+      branchId: json['branchId']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       totalAmount: json['totalAmount']?.toString() ?? '0',
       createdAt: json['createdAt'] != null
-          ? (DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
-          : DateTime.now(),
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      readyAt: json['readyAt'] != null
+          ? DateTime.tryParse(json['readyAt'].toString())
+          : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
+      cancelledAt: json['cancelledAt'] != null
+          ? DateTime.tryParse(json['cancelledAt'].toString())
+          : null,
       branch: json['branch'] != null
           ? OrderBranch.fromJson(json['branch'] as Map<String, dynamic>)
+          : null,
+      customer: json['customer'] != null
+          ? OrderCustomer.fromJson(json['customer'] as Map<String, dynamic>)
           : null,
       items:
           (json['items'] as List<dynamic>?)
@@ -89,6 +109,26 @@ class OrderItem {
       unitPrice: json['unitPrice']?.toString() ?? '0',
       quantity: int.tryParse(json['quantity']?.toString() ?? '') ?? 0,
       imageUrl: json['imageUrl']?.toString(),
+    );
+  }
+}
+
+class OrderCustomer {
+  const OrderCustomer({
+    required this.id,
+    required this.fullName,
+    required this.phone,
+  });
+
+  final String id;
+  final String fullName;
+  final String phone;
+
+  factory OrderCustomer.fromJson(Map<String, dynamic> json) {
+    return OrderCustomer(
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
     );
   }
 }

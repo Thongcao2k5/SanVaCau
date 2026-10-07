@@ -8,43 +8,86 @@ class Booking {
     required this.totalAmount,
     this.paymentMethod,
     this.paymentStatus,
-    required this.createdAt,
+    this.createdAt,
+    this.checkedInAt,
+    this.completedAt,
+    this.cancelledAt,
+    this.customer,
     required this.slots,
   });
 
   final String id;
   final BookingCourt court;
   final BookingBranch branch;
-  final DateTime bookingDate;
+  final DateTime? bookingDate;
   final String status;
   final String totalAmount;
   final String? paymentMethod;
   final String? paymentStatus;
-  final DateTime createdAt;
+  final DateTime? createdAt;
+  final DateTime? checkedInAt;
+  final DateTime? completedAt;
+  final DateTime? cancelledAt;
+  final BookingCustomer? customer;
   final List<BookingTimeSlot> slots;
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      id: json['id'].toString(),
-      court: BookingCourt.fromJson(json['court'] as Map<String, dynamic>),
-      branch: BookingBranch.fromJson(json['branch'] as Map<String, dynamic>),
-      bookingDate:
-          DateTime.tryParse(json['bookingDate'].toString()) ?? DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      court: BookingCourt.fromJson(_map(json['court'])),
+      branch: BookingBranch.fromJson(_map(json['branch'])),
+      bookingDate: json['bookingDate'] != null
+          ? DateTime.tryParse(json['bookingDate'].toString())
+          : null,
       status: json['status']?.toString() ?? '',
       totalAmount: json['totalAmount']?.toString() ?? '0',
       paymentMethod: json['paymentMethod']?.toString(),
       paymentStatus: json['paymentStatus']?.toString(),
       createdAt: json['createdAt'] != null
-          ? (DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
-          : DateTime.now(),
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      checkedInAt: json['checkedInAt'] != null
+          ? DateTime.tryParse(json['checkedInAt'].toString())
+          : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
+      cancelledAt: json['cancelledAt'] != null
+          ? DateTime.tryParse(json['cancelledAt'].toString())
+          : null,
+      customer: json['customer'] is Map<String, dynamic>
+          ? BookingCustomer.fromJson(_map(json['customer']))
+          : null,
       slots:
           (json['slots'] as List<dynamic>?)
-              ?.map(
-                (item) =>
-                    BookingTimeSlot.fromJson(item as Map<String, dynamic>),
-              )
+              ?.whereType<Map<String, dynamic>>()
+              .map(BookingTimeSlot.fromJson)
               .toList() ??
           [],
+    );
+  }
+}
+
+Map<String, dynamic> _map(Object? value) {
+  return value is Map<String, dynamic> ? value : <String, dynamic>{};
+}
+
+class BookingCustomer {
+  const BookingCustomer({
+    required this.id,
+    required this.fullName,
+    required this.phone,
+  });
+
+  final String id;
+  final String fullName;
+  final String phone;
+
+  factory BookingCustomer.fromJson(Map<String, dynamic> json) {
+    return BookingCustomer(
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
     );
   }
 }

@@ -23,6 +23,17 @@ const toAuthUser = (user: {
 const normalizeEmail = (email: unknown) =>
   typeof email === "string" ? email.trim().toLowerCase() : "";
 
+const parseBigIntId = (value: unknown) => {
+  const normalized =
+    typeof value === "string"
+      ? value.trim()
+      : typeof value === "number" && Number.isSafeInteger(value)
+        ? value.toString()
+        : "";
+
+  return /^\d+$/.test(normalized) && normalized !== "0" ? BigInt(normalized) : null;
+};
+
 authRouter.post("/register", authRateLimit, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email);
@@ -245,14 +256,21 @@ authRouter.post("/admin/users", requireAuth, requireRole("ADMIN"), async (req, r
     const fullName = typeof req.body?.fullName === "string" ? req.body.fullName.trim() : ""; // Họ tên nhân viên/quản lý
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : null; // Số điện thoại, có thể null
     const role = typeof req.body?.role === "string" ? req.body.role.trim().toUpperCase() : ""; // Role được yêu cầu tạo
-    const branchId = typeof req.body?.branchId === "string" || typeof req.body?.branchId === "number"
-      ? BigInt(req.body.branchId)
-      : null; // STAFF/BRANCH_MANAGER bắt buộc có branchId
+    const branchIdInput = req.body?.branchId;
+    const branchId = parseBigIntId(branchIdInput); // STAFF/BRANCH_MANAGER bắt buộc có branchId hợp lệ
 
-    if (!email || !password || !fullName || !role || !branchId) { // Kiểm tra dữ liệu bắt buộc
+    if (!email || !password || !fullName || !role || branchIdInput === undefined || branchIdInput === null || branchIdInput === "") { // Kiểm tra dữ liệu bắt buộc
       res.status(400).json({
         success: false,
         message: "email, password, fullName, role, and branchId are required",
+      });
+      return;
+    }
+
+    if (!branchId) {
+      res.status(400).json({
+        success: false,
+        message: "branchId is invalid",
       });
       return;
     }
@@ -788,4 +806,3 @@ authRouter.get("/admin-check", requireAuth, requireRole("ADMIN"), (req, res) => 
 
 
 });
-

@@ -90,6 +90,54 @@ class BookingApi {
     );
   }
 
+  Future<List<Booking>> getAdminBookings({
+    String? branchId,
+    String? courtId,
+    String? date,
+    String? status,
+  }) async {
+    final queryParameters = <String, String>{};
+    if (branchId != null && branchId.trim().isNotEmpty) {
+      queryParameters['branchId'] = branchId.trim();
+    }
+    if (courtId != null && courtId.trim().isNotEmpty) {
+      queryParameters['courtId'] = courtId.trim();
+    }
+    if (date != null && date.trim().isNotEmpty) {
+      queryParameters['date'] = date.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      queryParameters['status'] = status.trim().toUpperCase();
+    }
+
+    final response = await _apiClient.get(
+      '/bookings',
+      token: await _readToken(),
+      queryParameters: queryParameters,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    final bookingsJson = data['bookings'] as List<dynamic>? ?? [];
+
+    return bookingsJson
+        .map((item) => Booking.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Booking> updateAdminBookingStatus({
+    required String id,
+    required String status,
+  }) async {
+    final response = await _apiClient.patch(
+      '/bookings/${id.trim()}/status',
+      token: await _readToken(),
+      body: {'status': status.trim().toUpperCase()},
+    );
+
+    // The updated booking is returned directly in data
+    final data = response['data'] as Map<String, dynamic>;
+    return Booking.fromJson(data);
+  }
+
   Future<String> _readToken() async {
     final token = await _tokenStorage.readToken();
 

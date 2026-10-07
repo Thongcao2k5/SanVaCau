@@ -44,6 +44,59 @@ class OrderApi {
     return Order.fromJson(data['order'] as Map<String, dynamic>);
   }
 
+  Future<List<Order>> getAdminOrders({
+    String? branchId,
+    String? customerId,
+    String? status,
+  }) async {
+    final queryParameters = <String, String>{};
+    if (branchId != null && branchId.isNotEmpty) {
+      queryParameters['branchId'] = branchId;
+    }
+    if (customerId != null && customerId.isNotEmpty) {
+      queryParameters['customerId'] = customerId;
+    }
+    if (status != null && status.isNotEmpty) {
+      queryParameters['status'] = status.toUpperCase();
+    }
+
+    final response = await _apiClient.get(
+      '/orders',
+      token: await _readToken(),
+      queryParameters: queryParameters,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    final ordersJson = data['orders'] as List<dynamic>;
+
+    return ordersJson
+        .map((item) => Order.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Order> getAdminOrderById(String id) async {
+    final response = await _apiClient.get(
+      '/orders/$id',
+      token: await _readToken(),
+    );
+    final data = response['data'] as Map<String, dynamic>;
+
+    return Order.fromJson(data['order'] as Map<String, dynamic>);
+  }
+
+  Future<Order> updateAdminOrderStatus({
+    required String id,
+    required String status,
+  }) async {
+    final response = await _apiClient.patch(
+      '/orders/$id/status',
+      token: await _readToken(),
+      body: {'status': status.toUpperCase()},
+    );
+    final data = response['data'] as Map<String, dynamic>;
+
+    return Order.fromJson(data['order'] as Map<String, dynamic>);
+  }
+
   Future<String> _readToken() async {
     final token = await _tokenStorage.readToken();
 

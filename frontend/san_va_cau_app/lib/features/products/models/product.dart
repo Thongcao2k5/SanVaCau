@@ -22,27 +22,27 @@ class Product {
   final String? imageUrl;
   final bool isActive;
   final bool isFeatured;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final ProductCategory category;
   final ProductBrand? brand;
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'].toString(),
-      categoryId: json['categoryId'].toString(),
+      id: json['id']?.toString() ?? '',
+      categoryId: json['categoryId']?.toString() ?? '',
       brandId: json['brandId']?.toString(),
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
       isActive: json['isActive'] == true,
       isFeatured: json['isFeatured'] == true,
-      createdAt:
-          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-          DateTime.now(),
-      updatedAt:
-          DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
-          DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())
+          : null,
       category: json['category'] != null
           ? ProductCategory.fromJson(json['category'] as Map<String, dynamic>)
           : const ProductCategory(id: '', name: ''),
@@ -61,7 +61,7 @@ class ProductCategory {
 
   factory ProductCategory.fromJson(Map<String, dynamic> json) {
     return ProductCategory(
-      id: json['id'].toString(),
+      id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
     );
   }
@@ -75,7 +75,7 @@ class ProductBrand {
 
   factory ProductBrand.fromJson(Map<String, dynamic> json) {
     return ProductBrand(
-      id: json['id'].toString(),
+      id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
     );
   }

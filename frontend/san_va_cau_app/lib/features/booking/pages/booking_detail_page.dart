@@ -180,7 +180,8 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
     return '${buffer.toString()} đ';
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Không xác định';
     const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     final wd = days[date.weekday % 7];
     return '$wd, ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

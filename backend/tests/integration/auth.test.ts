@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { request } from "../helpers/app.js";
 import { clearDatabase } from "../helpers/db.js";
+import { createAdmin } from "../helpers/fixtures.js";
 
 describe("Authentication Flow", () => {
   beforeEach(async () => {
@@ -107,5 +108,26 @@ describe("Authentication Flow", () => {
     } finally {
       process.env.NODE_ENV = originalEnv;
     }
+  });
+
+  it("POST /api/auth/admin/users rejects a non-numeric branchId", async () => {
+    const { token } = await createAdmin();
+
+    const res = await request
+      .post("/api/auth/admin/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        email: "staff@example.com",
+        password: "Password123",
+        fullName: "Test Staff",
+        role: "STAFF",
+        branchId: "not-a-number",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      message: "branchId is invalid",
+    });
   });
 });
