@@ -80,14 +80,16 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
         indicatorColor: AppColors.primarySoft,
-        height: 68,
+        height: 74,
+        elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             color: selected ? AppColors.primary : AppColors.textSecondary,
             fontSize: 11,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {

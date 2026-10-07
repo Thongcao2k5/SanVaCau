@@ -5,7 +5,6 @@ import '../search/pages/search_page.dart';
 import 'data/home_api.dart';
 import 'models/home_data.dart';
 import 'widgets/featured_products_section.dart';
-import 'widgets/home_banner_section.dart';
 import 'widgets/home_hero_section.dart';
 import 'widgets/home_quick_actions.dart';
 import 'widgets/latest_news_section.dart';
@@ -16,6 +15,7 @@ class HomePage extends StatefulWidget {
     required this.onViewProductsPressed,
     required this.onViewNewsPressed,
     required this.onViewBranchesPressed,
+    required this.onRacketServicePressed,
     super.key,
   });
 
@@ -23,6 +23,7 @@ class HomePage extends StatefulWidget {
   final VoidCallback onViewProductsPressed;
   final VoidCallback onViewNewsPressed;
   final VoidCallback onViewBranchesPressed;
+  final VoidCallback onRacketServicePressed;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -49,10 +50,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sân cầu & cửa hàng'),
+        title: const Text('Sân & Cầu'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search_rounded),
             tooltip: 'Tìm kiếm',
             onPressed: () {
               Navigator.of(context).push(
@@ -62,32 +63,39 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          HomeHeroSection(
-            onBookCourtPressed: widget.onBookCourtPressed,
-            onViewProductsPressed: widget.onViewProductsPressed,
-          ),
-          const SizedBox(height: 14),
-          HomeQuickActions(
-            onBookCourtPressed: widget.onBookCourtPressed,
-            onViewProductsPressed: widget.onViewProductsPressed,
-            onViewNewsPressed: widget.onViewNewsPressed,
-            onViewBranchesPressed: widget.onViewBranchesPressed,
-          ),
-          FutureBuilder<HomeData>(
-            future: _homeDataFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
+      body: FutureBuilder<HomeData>(
+        future: _homeDataFuture,
+        builder: (context, snapshot) {
+          final banners = snapshot.data?.banners ?? <HomeBanner>[];
+
+          return ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              const SizedBox(height: 4),
+              // Consolidated hero carousel (API banners + fallback slides).
+              HomeHeroSection(
+                onBookCourtPressed: widget.onBookCourtPressed,
+                onViewProductsPressed: widget.onViewProductsPressed,
+                onRacketServicePressed: widget.onRacketServicePressed,
+                onViewBranchesPressed: widget.onViewBranchesPressed,
+                banners: banners,
+              ),
+              const SizedBox(height: 20),
+              // Quick actions.
+              HomeQuickActions(
+                onBookCourtPressed: widget.onBookCourtPressed,
+                onViewProductsPressed: widget.onViewProductsPressed,
+                onRacketServicePressed: widget.onRacketServicePressed,
+                onViewBranchesPressed: widget.onViewBranchesPressed,
+              ),
+              // Data-dependent sections.
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Padding(
                   padding: EdgeInsets.only(top: 32),
                   child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Padding(
+                )
+              else if (snapshot.hasError)
+                Padding(
                   padding: const EdgeInsets.only(top: 32),
                   child: Center(
                     child: Column(
@@ -104,28 +112,23 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                );
-              }
-
-              if (snapshot.hasData) {
-                final data = snapshot.data!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    HomeBannerSection(banners: data.banners),
-                    FeaturedProductsSection(
-                      products: data.featuredProducts,
-                      onViewAllPressed: widget.onViewProductsPressed,
-                    ),
-                    LatestNewsSection(newsList: data.latestNews),
-                  ],
-                );
-              }
-
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                )
+              else if (snapshot.hasData) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FeaturedProductsSection(
+                    products: snapshot.data!.featuredProducts,
+                    onViewAllPressed: widget.onViewProductsPressed,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: LatestNewsSection(newsList: snapshot.data!.latestNews),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
