@@ -5,8 +5,9 @@ import 'package:http/http.dart' as http;
 import '../constants/api_config.dart';
 
 class ApiClient {
-  ApiClient({http.Client? httpClient, this.baseUrl = ApiConfig.baseUrl})
-    : _httpClient = httpClient ?? http.Client();
+  ApiClient({http.Client? httpClient, String? baseUrl})
+      : baseUrl = baseUrl ?? ApiConfig.baseUrl,
+        _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
   final String baseUrl;

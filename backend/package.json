@@ -16,7 +16,7 @@
     "test:watch": "vitest"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx src/database/seeds/seed.ts"
   },
   "keywords": [],
   "author": "",
