@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../auth/pages/account_page.dart';
 import '../booking/pages/booking_page.dart';
 import '../branches/pages/branch_list_page.dart';
+import '../branches/models/branch.dart';
 import '../cart/pages/cart_page.dart';
 import '../home/home_page.dart';
 import '../news/pages/news_list_page.dart';
@@ -76,6 +77,8 @@ class _MainShellState extends State<MainShell> {
   final NotchBottomBarController _navigationController =
       NotchBottomBarController();
   int _currentIndex = 0;
+  Branch? _bookingBranch;
+  int _bookingRevision = 0;
 
   void _onTabSelected(int index) {
     if (_navigationController.index != index) {
@@ -83,6 +86,17 @@ class _MainShellState extends State<MainShell> {
     }
     setState(() {
       _currentIndex = index;
+    });
+  }
+
+  void _openBookingForBranch(Branch branch) {
+    if (_navigationController.index != 2) {
+      _navigationController.jumpTo(2);
+    }
+    setState(() {
+      _bookingBranch = branch;
+      _bookingRevision++;
+      _currentIndex = 2;
     });
   }
 
@@ -117,9 +131,13 @@ class _MainShellState extends State<MainShell> {
         onViewNewsPressed: _openNewsPage,
         onViewBranchesPressed: _openBranchPage,
         onRacketServicePressed: _openRacketServicePage,
+        onBookBranchPressed: _openBookingForBranch,
       ),
       const ProductListPage(),
-      const BookingPage(),
+      BookingPage(
+        key: ValueKey('booking-${_bookingBranch?.id}-$_bookingRevision'),
+        initialBranch: _bookingBranch,
+      ),
       const CartPage(),
       const AccountPage(),
     ];

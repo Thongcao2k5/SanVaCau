@@ -12,6 +12,7 @@ class Product {
     this.description,
     this.imageUrl,
     this.brand,
+    this.minPrice,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class Product {
   final DateTime? updatedAt;
   final ProductCategory category;
   final ProductBrand? brand;
+  final String? minPrice;
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
@@ -35,6 +37,7 @@ class Product {
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
+      minPrice: json['minPrice']?.toString(),
       isActive: json['isActive'] == true,
       isFeatured: json['isFeatured'] == true,
       createdAt: json['createdAt'] != null

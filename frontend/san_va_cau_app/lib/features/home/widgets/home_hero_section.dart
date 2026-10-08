@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/url_util.dart';
+import '../../../core/widgets/app_image.dart';
 import '../models/home_data.dart';
 
 /// Data for a single hero carousel slide.
@@ -200,12 +201,12 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
   Widget build(BuildContext context) {
     final slides = _buildSlides();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: 220,
-          child: PageView.builder(
+    return SizedBox(
+      height: 208,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          PageView.builder(
             controller: _pageController,
             itemCount: 4,
             onPageChanged: _onPageChanged,
@@ -217,10 +218,12 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
               );
             },
           ),
-        ),
-        const SizedBox(height: 12),
-        _PageIndicators(count: 4, currentPage: _currentPage),
-      ],
+          Positioned(
+            bottom: 8,
+            child: _PageIndicators(count: 4, currentPage: _currentPage),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -232,99 +235,77 @@ class _HeroSlideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background: API image or fallback gradient.
-            _SlideBackground(imageUrl: slide.imageUrl, icon: slide.icon),
-            // Dark overlay for readability.
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primaryDark.withValues(alpha: 0.55),
-                    AppColors.primaryDark.withValues(alpha: 0.85),
-                  ],
-                ),
-              ),
-            ),
-            // Content.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Eyebrow badge.
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      slide.eyebrow,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Title.
-                  Flexible(
-                    child: Text(
-                      slide.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Description.
-                  Text(
-                    slide.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 13,
-                      height: 1.35,
-                    ),
-                  ),
-                  const Spacer(),
-                  // CTA Button.
-                  _SlideCta(slide: slide),
+    return Container(
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background: API image or fallback gradient.
+          _SlideBackground(imageUrl: slide.imageUrl, icon: slide.icon),
+          // Dark overlay for readability.
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primaryDark.withValues(alpha: 0.55),
+                  AppColors.primaryDark.withValues(alpha: 0.85),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          // Content.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 88, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Eyebrow badge.
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    slide.eyebrow,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Title.
+                Flexible(
+                  child: Text(
+                    slide.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // CTA Button.
+                _SlideCta(slide: slide),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -339,10 +320,10 @@ class _SlideBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return Image.network(
-        imageUrl!,
+      return AppImage(
+        source: imageUrl!,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _FallbackBackground(icon: icon),
+        fallback: _FallbackBackground(icon: icon),
       );
     }
     return _FallbackBackground(icon: icon);
@@ -431,8 +412,8 @@ class _SlideCta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 36,
-      child: FilledButton(
+      height: 24,
+      child: TextButton(
         onPressed: () {
           if (slide.linkUrl != null && slide.linkUrl!.isNotEmpty) {
             openUrlSafely(context, slide.linkUrl!);
@@ -440,12 +421,12 @@ class _SlideCta extends StatelessWidget {
             slide.onPressed?.call();
           }
         },
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(0, 24),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -458,7 +439,7 @@ class _SlideCta extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_forward_rounded, size: 16),
+            const Icon(Icons.arrow_forward_rounded, size: 15),
           ],
         ),
       ),

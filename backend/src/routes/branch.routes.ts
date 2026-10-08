@@ -49,6 +49,10 @@ const toBranchResponse = (branch: {
   name: string;
   address: string;
   phone: string | null;
+  description: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  sort_order: number;
   opening_time: Date;
   closing_time: Date;
   status: string;
@@ -59,6 +63,10 @@ const toBranchResponse = (branch: {
   name: branch.name,
   address: branch.address,
   phone: branch.phone,
+  description: branch.description,
+  imageUrl: branch.image_url,
+  isFeatured: branch.is_featured,
+  sortOrder: branch.sort_order,
   openingTime: formatTime(branch.opening_time),
   closingTime: formatTime(branch.closing_time),
   status: branch.status,
@@ -71,6 +79,10 @@ const branchSelect = {
   name: true,
   address: true,
   phone: true,
+  description: true,
+  image_url: true,
+  is_featured: true,
+  sort_order: true,
   opening_time: true,
   closing_time: true,
   status: true,
@@ -334,6 +346,10 @@ branchRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next)
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
     const address = typeof req.body?.address === "string" ? req.body.address.trim() : "";
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : null;
+    const description = typeof req.body?.description === "string" ? req.body.description.trim() : null;
+    const imageUrl = typeof req.body?.imageUrl === "string" ? req.body.imageUrl.trim() : null;
+    const isFeatured = req.body?.isFeatured === true;
+    const sortOrder = Number.isInteger(req.body?.sortOrder) ? req.body.sortOrder : 0;
     const openingTime = parseTime(req.body?.openingTime);
     const closingTime = parseTime(req.body?.closingTime);
 
@@ -358,6 +374,10 @@ branchRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, res, next)
         name,
         address,
         phone,
+            description,
+            image_url: imageUrl,
+            is_featured: isFeatured,
+            sort_order: sortOrder,
         opening_time: openingTime,
         closing_time: closingTime,
         status: "ACTIVE",
@@ -425,6 +445,20 @@ branchRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, n
         : typeof req.body?.phone === "string"
           ? req.body.phone.trim()
           : undefined;
+    const description =
+      req.body?.description === null
+        ? null
+        : typeof req.body?.description === "string"
+          ? req.body.description.trim()
+          : undefined;
+    const imageUrl =
+      req.body?.imageUrl === null
+        ? null
+        : typeof req.body?.imageUrl === "string"
+          ? req.body.imageUrl.trim()
+          : undefined;
+    const isFeatured = typeof req.body?.isFeatured === "boolean" ? req.body.isFeatured : undefined;
+    const sortOrder = Number.isInteger(req.body?.sortOrder) ? req.body.sortOrder : undefined;
     const openingTime = req.body?.openingTime === undefined ? undefined : parseTime(req.body.openingTime);
     const closingTime = req.body?.closingTime === undefined ? undefined : parseTime(req.body.closingTime);
     const status = typeof req.body?.status === "string" ? req.body.status.trim().toUpperCase() : undefined;
@@ -476,6 +510,10 @@ branchRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req, res, n
       ...(name !== undefined ? { name } : {}),
       ...(address !== undefined ? { address } : {}),
       ...(phone !== undefined ? { phone } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+      ...(isFeatured !== undefined ? { is_featured: isFeatured } : {}),
+      ...(sortOrder !== undefined ? { sort_order: sortOrder } : {}),
       ...(openingTime ? { opening_time: openingTime } : {}),
       ...(closingTime ? { closing_time: closingTime } : {}),
       ...(status !== undefined ? { status } : {}),

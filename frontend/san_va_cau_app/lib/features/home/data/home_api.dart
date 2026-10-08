@@ -8,6 +8,7 @@ class HomeApi {
 
   Future<HomeData> getHomeData() async {
     final response = await _apiClient.get('/home');
-    return HomeData.fromJson(response['data'] as Map<String, dynamic>);
+    final data = response['data'] as Map<String, dynamic>? ?? {};
+    return HomeData.fromJson(data);
   }
 }

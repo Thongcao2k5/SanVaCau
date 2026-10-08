@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../data/news_api.dart';
 import '../models/news_article.dart';
 
@@ -93,23 +94,21 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
               padding: const EdgeInsets.only(bottom: 40),
               children: [
                 if (news.thumbnailUrl.isNotEmpty)
-                  Image.network(
-                    news.thumbnailUrl,
+                  AppImage(
+                    source: news.thumbnailUrl,
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: AppColors.background,
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          size: 40,
-                          color: AppColors.textSecondary,
-                        ),
-                      );
-                    },
+                    fallback: Container(
+                      height: 200,
+                      width: double.infinity,
+                      color: AppColors.background,
+                      child: const Icon(
+                        Icons.broken_image_outlined,
+                        size: 40,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
                 Padding(
                   padding: const EdgeInsets.all(16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../cart/data/cart_api.dart';
 import '../../favorites/data/favorite_api.dart';
 import '../../reviews/widgets/reviews_section.dart';
@@ -452,16 +453,14 @@ class _ProductImage extends StatelessWidget {
                   size: 54,
                   color: AppColors.primary,
                 )
-              : Image.network(
-                  url,
+              : AppImage(
+                  source: url,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.broken_image_outlined,
-                      size: 54,
-                      color: AppColors.primary,
-                    );
-                  },
+                  fallback: const Icon(
+                    Icons.broken_image_outlined,
+                    size: 54,
+                    color: AppColors.primary,
+                  ),
                 ),
         ),
       ),

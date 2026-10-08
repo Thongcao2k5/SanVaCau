@@ -33,6 +33,11 @@ const toProductResponse = (product: {
     id: bigint;
     name: string;
   } | null;
+  product_variant: Array<{
+    price: {
+      toString(): string;
+    };
+  }>;
 }) => ({
   id: product.id.toString(),
   categoryId: product.category_id.toString(),
@@ -40,6 +45,7 @@ const toProductResponse = (product: {
   name: product.name,
   description: product.description,
   imageUrl: product.image_url,
+  minPrice: product.product_variant[0]?.price.toString() ?? null,
   isFeatured: product.is_featured,
   category: {
     id: product.category.id.toString(),
@@ -86,6 +92,10 @@ const toBranchResponse = (branch: {
   name: string;
   address: string;
   phone: string | null;
+  description: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  sort_order: number;
   opening_time: Date;
   closing_time: Date;
   status: string;
@@ -94,6 +104,10 @@ const toBranchResponse = (branch: {
   name: branch.name,
   address: branch.address,
   phone: branch.phone,
+  description: branch.description,
+  imageUrl: branch.image_url,
+  isFeatured: branch.is_featured,
+  sortOrder: branch.sort_order,
   openingTime: formatTime(branch.opening_time),
   closingTime: formatTime(branch.closing_time),
   status: branch.status,
@@ -147,6 +161,18 @@ homeRouter.get("/", async (_req, res, next) => {
               name: true,
             },
           },
+          product_variant: {
+            where: {
+              is_active: true,
+            },
+            orderBy: {
+              price: "asc",
+            },
+            take: 1,
+            select: {
+              price: true,
+            },
+          },
         },
       }),
       prisma.news.findMany({
@@ -172,16 +198,19 @@ homeRouter.get("/", async (_req, res, next) => {
       prisma.branch.findMany({
         where: {
           status: "ACTIVE",
+          is_featured: true,
         },
-        orderBy: {
-          id: "asc",
-        },
-        take: 5,
+        orderBy: [{ sort_order: "asc" }, { id: "asc" }],
+        take: 3,
         select: {
           id: true,
           name: true,
           address: true,
           phone: true,
+          description: true,
+          image_url: true,
+          is_featured: true,
+          sort_order: true,
           opening_time: true,
           closing_time: true,
           status: true,

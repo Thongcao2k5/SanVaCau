@@ -29,13 +29,13 @@ void main() {
 
       expect(find.text('Đặt sân'), findsOneWidget);
       expect(find.text('Mua sắm'), findsOneWidget);
-      expect(find.text('Dịch vụ\nvợt'), findsOneWidget);
+      expect(find.text('Dịch vụ vợt'), findsOneWidget);
       expect(find.text('Chi nhánh'), findsOneWidget);
     });
 
-    testWidgets('shows heading Khám phá nhanh', (tester) async {
+    testWidgets('shows heading Tiện ích', (tester) async {
       await tester.pumpWidget(buildTestApp());
-      expect(find.text('Khám phá nhanh'), findsOneWidget);
+      expect(find.text('Tiện ích'), findsOneWidget);
     });
 
     testWidgets('Đặt sân calls onBookCourtPressed', (tester) async {
@@ -59,7 +59,7 @@ void main() {
       await tester.pumpWidget(
         buildTestApp(onRacketService: () => pressed = true),
       );
-      await tester.tap(find.text('Dịch vụ\nvợt'));
+      await tester.tap(find.text('Dịch vụ vợt'));
       expect(pressed, isTrue);
     });
 

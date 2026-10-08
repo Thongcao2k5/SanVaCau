@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../models/product.dart';
 
 class ProductCard extends StatelessWidget {
@@ -94,15 +95,13 @@ class _ProductImage extends StatelessWidget {
       color: AppColors.surfaceMuted,
       child: url == null || url.isEmpty
           ? const Icon(Icons.shopping_bag_outlined, color: AppColors.primary)
-          : Image.network(
-              url,
+          : AppImage(
+              source: url,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.broken_image_outlined,
-                  color: AppColors.primary,
-                );
-              },
+              fallback: const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.primary,
+              ),
             ),
     );
   }

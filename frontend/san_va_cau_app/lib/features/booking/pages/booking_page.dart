@@ -9,7 +9,9 @@ import '../models/court.dart';
 import 'court_detail_page.dart';
 
 class BookingPage extends StatefulWidget {
-  const BookingPage({super.key});
+  const BookingPage({super.key, this.initialBranch});
+
+  final Branch? initialBranch;
 
   @override
   State<BookingPage> createState() => _BookingPageState();
@@ -31,6 +33,11 @@ class _BookingPageState extends State<BookingPage> {
   void initState() {
     super.initState();
     _branchesFuture = _branchApi.getBranches();
+    final initialBranch = widget.initialBranch;
+    if (initialBranch != null) {
+      _selectedBranch = initialBranch;
+      _courtsFuture = _bookingApi.getCourts(branchId: initialBranch.id);
+    }
   }
 
   String get _dateText {
@@ -177,6 +184,7 @@ class _BookingPageState extends State<BookingPage> {
                   items: branches,
                   selectedItem: _selectedBranch,
                   labelOf: (branch) => branch.name,
+                  isSameItem: (branch, selected) => branch.id == selected.id,
                   onSelected: _selectBranch,
                 );
               },
@@ -214,6 +222,8 @@ class _BookingPageState extends State<BookingPage> {
                         items: courts,
                         selectedItem: _selectedCourt,
                         labelOf: (court) => court.name,
+                        isSameItem: (court, selected) =>
+                            court.id == selected.id,
                         onSelected: _selectCourt,
                         onInfoTapped: (court) async {
                           final returnedCourt = await Navigator.of(context)
@@ -449,6 +459,7 @@ class _ChoiceWrap<T> extends StatelessWidget {
     required this.selectedItem,
     required this.labelOf,
     required this.onSelected,
+    this.isSameItem,
     this.onInfoTapped,
   });
 
@@ -456,6 +467,7 @@ class _ChoiceWrap<T> extends StatelessWidget {
   final T? selectedItem;
   final String Function(T item) labelOf;
   final ValueChanged<T> onSelected;
+  final bool Function(T item, T selected)? isSameItem;
   final ValueChanged<T>? onInfoTapped;
 
   @override
@@ -464,12 +476,17 @@ class _ChoiceWrap<T> extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: items.map((item) {
+        final selected = selectedItem;
+        final isSelected =
+            selected != null &&
+            (isSameItem?.call(item, selected) ?? item == selected);
+
         if (onInfoTapped != null) {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               ChoiceChip(
-                selected: item == selectedItem,
+                selected: isSelected,
                 label: Text(labelOf(item)),
                 onSelected: (_) => onSelected(item),
               ),
@@ -483,7 +500,7 @@ class _ChoiceWrap<T> extends StatelessWidget {
           );
         }
         return ChoiceChip(
-          selected: item == selectedItem,
+          selected: isSelected,
           label: Text(labelOf(item)),
           onSelected: (_) => onSelected(item),
         );

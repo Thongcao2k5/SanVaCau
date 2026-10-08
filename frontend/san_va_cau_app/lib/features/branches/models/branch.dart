@@ -7,6 +7,10 @@ class Branch {
     required this.closingTime,
     required this.status,
     this.phone,
+    this.description,
+    this.imageUrl,
+    this.isFeatured = false,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -16,6 +20,10 @@ class Branch {
   final String openingTime;
   final String closingTime;
   final String status;
+  final String? description;
+  final String? imageUrl;
+  final bool isFeatured;
+  final int sortOrder;
 
   factory Branch.fromJson(Map<String, dynamic> json) {
     return Branch(
@@ -26,6 +34,10 @@ class Branch {
       openingTime: json['openingTime']?.toString() ?? '',
       closingTime: json['closingTime']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
+      description: json['description']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
+      isFeatured: json['isFeatured'] == true,
+      sortOrder: json['sortOrder'] is int ? json['sortOrder'] as int : 0,
     );
   }
 }

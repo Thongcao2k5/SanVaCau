@@ -16,6 +16,8 @@ class AppStatusGuard extends StatefulWidget {
 }
 
 class _AppStatusGuardState extends State<AppStatusGuard> {
+  static const Duration _startupCheckTimeout = Duration(seconds: 2);
+
   final AppStatusApi _api = AppStatusApi();
   AppStatus? _status;
   bool _isLoading = true;
@@ -37,7 +39,9 @@ class _AppStatusGuardState extends State<AppStatusGuard> {
       final platform = Platform.isIOS ? 'ios' : 'android';
       final version = '1.0.0';
 
-      final status = await _api.getAppStatus(platform, version);
+      final status = await _api
+          .getAppStatus(platform, version)
+          .timeout(_startupCheckTimeout);
       if (mounted) {
         setState(() {
           _status = status;

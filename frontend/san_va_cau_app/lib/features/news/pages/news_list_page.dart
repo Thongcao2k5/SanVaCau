@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../data/news_api.dart';
 import '../models/news_article.dart';
 import 'news_detail_page.dart';
@@ -117,18 +118,16 @@ class _NewsCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     )
-                  : Image.network(
-                      news.thumbnailUrl,
+                  : AppImage(
+                      source: news.thumbnailUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.background,
-                          child: const Icon(
-                            Icons.broken_image_outlined,
-                            color: AppColors.textSecondary,
-                          ),
-                        );
-                      },
+                      fallback: Container(
+                        color: AppColors.background,
+                        child: const Icon(
+                          Icons.broken_image_outlined,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
             ),
             Padding(

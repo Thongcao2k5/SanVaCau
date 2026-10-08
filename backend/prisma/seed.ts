@@ -43,16 +43,28 @@ const seedBranches = async () => {
       name: "SanVaCau Quận 1",
       address: "12 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM",
       phone: "0901000001",
+      description: "Chi nhánh trung tâm với hệ thống sân thảm tiêu chuẩn, ánh sáng ổn định và khu vực nghỉ tiện nghi.",
+      image_url: "assets/demo/banner-court.jpg",
+      is_featured: true,
+      sort_order: 1,
     },
     {
       name: "SanVaCau Thủ Đức",
       address: "45 Võ Văn Ngân, Phường Linh Chiểu, TP. Thủ Đức, TP.HCM",
       phone: "0901000002",
+      description: "Không gian rộng rãi gần khu vực Làng Đại học, phù hợp tập luyện thường xuyên và thi đấu theo nhóm.",
+      image_url: "assets/demo/branch-thu-duc.jpg",
+      is_featured: true,
+      sort_order: 2,
     },
     {
       name: "SanVaCau Bình Thạnh",
       address: "88 Xô Viết Nghệ Tĩnh, Phường 21, Bình Thạnh, TP.HCM",
       phone: "0901000003",
+      description: "Cụm sân thuận tiện di chuyển, có khu vực chờ và dịch vụ hỗ trợ dụng cụ dành cho người chơi.",
+      image_url: "assets/demo/branch-binh-thanh.jpg",
+      is_featured: true,
+      sort_order: 3,
     },
   ];
 
@@ -296,7 +308,7 @@ const seedProducts = async () => {
       brand: "Victor",
       price: "2150000",
       sku: "DEMO-VICTOR-RYUGA-TD",
-      featured: false,
+      featured: true,
     },
     {
       name: "Giày Yonex Power Cushion 65Z",
@@ -320,7 +332,7 @@ const seedProducts = async () => {
       brand: "SanVaCau",
       price: "290000",
       sku: "DEMO-SVC-SHIRT-PRO",
-      featured: true,
+      featured: false,
     },
     {
       name: "Quấn cán vợt SanVaCau Comfort",
@@ -332,9 +344,22 @@ const seedProducts = async () => {
     },
   ];
 
+  const productImageBySku: Record<string, string> = {
+    "DEMO-YONEX-AX88D-GAME": "assets/demo/product-racket-yonex.jpg",
+    "DEMO-YONEX-NF700-PLAY": "assets/demo/product-racket-flypower.jpg",
+    "DEMO-LINING-AXFORCE-CANNON": "assets/demo/product-racket-blue.jpg",
+    "DEMO-VICTOR-RYUGA-TD": "assets/demo/product-racket-carlton.jpg",
+    "DEMO-YONEX-SHOE-65Z": "assets/demo/product-shoes.jpg",
+    "DEMO-LINING-SAGA-LITE": "assets/demo/product-shoes.jpg",
+    "DEMO-SVC-SHIRT-PRO": "assets/demo/product-racket-blue.jpg",
+    "DEMO-SVC-GRIP-COMFORT": "assets/demo/product-racket-carlton.jpg",
+  };
+
   for (const item of products) {
     const categoryId = await getCategoryId(item.category);
     const brandId = await getBrandId(item.brand);
+    const imageUrl = productImageBySku[item.sku];
+    if (!imageUrl) throw new Error(`Missing demo image for SKU: ${item.sku}`);
     const product = await upsertByNaturalKey(
       () => prisma.product.findFirst({ where: { name: item.name } }),
       () =>
@@ -344,7 +369,7 @@ const seedProducts = async () => {
             brand_id: brandId,
             name: item.name,
             description: `Sản phẩm demo ${item.name} cho SanVaCau.`,
-            image_url: `https://example.com/sanvacau/products/${item.sku.toLowerCase()}.jpg`,
+            image_url: imageUrl,
             is_active: true,
             is_featured: item.featured,
           },
@@ -356,7 +381,7 @@ const seedProducts = async () => {
             category_id: categoryId,
             brand_id: brandId,
             description: `Sản phẩm demo ${item.name} cho SanVaCau.`,
-            image_url: `https://example.com/sanvacau/products/${item.sku.toLowerCase()}.jpg`,
+            image_url: imageUrl,
             is_active: true,
             is_featured: item.featured,
             updated_at: new Date(),
@@ -370,7 +395,7 @@ const seedProducts = async () => {
         product_id: product.id,
         variant_name: "Tiêu chuẩn",
         price: new Prisma.Decimal(item.price),
-        image_url: `https://example.com/sanvacau/products/${item.sku.toLowerCase()}.jpg`,
+        image_url: imageUrl,
         is_active: true,
       },
       create: {
@@ -378,7 +403,7 @@ const seedProducts = async () => {
         sku: item.sku,
         variant_name: "Tiêu chuẩn",
         price: new Prisma.Decimal(item.price),
-        image_url: `https://example.com/sanvacau/products/${item.sku.toLowerCase()}.jpg`,
+        image_url: imageUrl,
         is_active: true,
       },
     });
@@ -518,19 +543,19 @@ const seedBanners = async () => {
   const banners = [
     {
       title: "Đặt sân nhanh cùng SanVaCau",
-      imageUrl: "https://example.com/sanvacau/banners/booking.jpg",
+      imageUrl: "assets/demo/banner-court.jpg",
       linkUrl: "sanvacau://booking",
       sortOrder: 1,
     },
     {
       title: "Ưu đãi vợt cầu lông chính hãng",
-      imageUrl: "https://example.com/sanvacau/banners/products.jpg",
+      imageUrl: "assets/demo/product-racket-flypower.jpg",
       linkUrl: "sanvacau://products",
       sortOrder: 2,
     },
     {
       title: "Chi nhánh mới đã khai trương",
-      imageUrl: "https://example.com/sanvacau/banners/branch.jpg",
+      imageUrl: "assets/demo/branch-thu-duc.jpg",
       linkUrl: "sanvacau://branches",
       sortOrder: 3,
     },
@@ -578,6 +603,13 @@ const seedNews = async () => {
     ["Hướng dẫn đặt sân trên ứng dụng SanVaCau", null],
     ["Cách bảo quản vợt và dây căng hiệu quả", null],
   ] as const;
+  const newsImages = [
+    "assets/demo/news-stringing.png",
+    "assets/demo/branch-thu-duc.jpg",
+    "assets/demo/news-shuttlecock.jpg",
+    "assets/demo/banner-court.jpg",
+    "assets/demo/news-stringing.png",
+  ];
 
   for (const [index, [title, branchId]] of newsItems.entries()) {
     await upsertByNaturalKey(
@@ -588,7 +620,7 @@ const seedNews = async () => {
             title,
             summary: `Tin tức demo ${index + 1} cho SanVaCau.`,
             content: `Nội dung demo cho bài viết "${title}".`,
-            thumbnail_url: `https://example.com/sanvacau/news/${index + 1}.jpg`,
+            thumbnail_url: newsImages[index],
             author_user_id: admin.id,
             branch_id: branchId,
             status: "PUBLISHED",
@@ -601,7 +633,7 @@ const seedNews = async () => {
           data: {
             summary: `Tin tức demo ${index + 1} cho SanVaCau.`,
             content: `Nội dung demo cho bài viết "${title}".`,
-            thumbnail_url: `https://example.com/sanvacau/news/${index + 1}.jpg`,
+            thumbnail_url: newsImages[index],
             author_user_id: admin.id,
             branch_id: branchId,
             status: "PUBLISHED",

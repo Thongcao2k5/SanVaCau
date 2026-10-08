@@ -121,6 +121,10 @@ class HomeBranch {
     required this.openingTime,
     required this.closingTime,
     required this.status,
+    this.description,
+    this.imageUrl,
+    this.isFeatured = false,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -130,6 +134,10 @@ class HomeBranch {
   final String openingTime;
   final String closingTime;
   final String status;
+  final String? description;
+  final String? imageUrl;
+  final bool isFeatured;
+  final int sortOrder;
 
   factory HomeBranch.fromJson(Map<String, dynamic> json) {
     return HomeBranch(
@@ -140,6 +148,10 @@ class HomeBranch {
       openingTime: json['openingTime']?.toString() ?? '',
       closingTime: json['closingTime']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
+      description: json['description']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
+      isFeatured: json['isFeatured'] == true,
+      sortOrder: json['sortOrder'] is int ? json['sortOrder'] as int : 0,
     );
   }
 }

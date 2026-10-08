@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../news/pages/news_detail_page.dart';
 import '../models/home_data.dart';
 
@@ -29,6 +30,8 @@ class LatestNewsSection extends StatelessWidget {
         const SizedBox(height: 12),
         ListView.separated(
           shrinkWrap: true,
+          primary: false,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: newsList.length,
           separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -74,14 +77,13 @@ class _NewsCard extends StatelessWidget {
               child: Container(
                 color: AppColors.background,
                 child: news.thumbnailUrl.isNotEmpty
-                    ? Image.network(
-                        news.thumbnailUrl,
+                    ? AppImage(
+                        source: news.thumbnailUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                              Icons.broken_image,
-                              color: AppColors.textSecondary,
-                            ),
+                        fallback: const Icon(
+                          Icons.broken_image,
+                          color: AppColors.textSecondary,
+                        ),
                       )
                     : const Icon(Icons.image, color: AppColors.textSecondary),
               ),
