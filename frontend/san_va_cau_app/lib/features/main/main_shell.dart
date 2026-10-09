@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -84,12 +86,35 @@ class _MainShellState extends State<MainShell> {
   int _bookingRevision = 0;
   bool _bookingTimelineVisible = false;
   int _accountRevision = 0;
+  bool _exitArmed = false;
+  Timer? _exitTimer;
+
+  void _resetExitConfirmation() {
+    _exitTimer?.cancel();
+    _exitArmed = false;
+  }
+
+  void _confirmExit() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Vuốt hoặc bấm quay lại lần nữa để thoát'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    setState(() => _exitArmed = true);
+    _exitTimer?.cancel();
+    _exitTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _exitArmed = false);
+    });
+  }
 
   void _onTabSelected(int index) {
     if (_navigationController.index != index) {
       _navigationController.jumpTo(index);
     }
     setState(() {
+      _resetExitConfirmation();
       // Login can happen on a pushed page while this tab stays in IndexedStack.
       // Fetch the current session whenever the user returns to their account.
       if (index == 4 && _currentIndex != 4) _accountRevision++;
@@ -103,6 +128,7 @@ class _MainShellState extends State<MainShell> {
     }
     setState(() {
       _bookingBranch = branch;
+      _resetExitConfirmation();
       _bookingTimelineVisible = true;
       _bookingRevision++;
       _currentIndex = 2;
@@ -111,6 +137,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
+    _exitTimer?.cancel();
     _navigationController.dispose();
     super.dispose();
   }
@@ -133,6 +160,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final timelineVisible = _currentIndex == 2 && _bookingTimelineVisible;
     final pages = [
       HomePage(
         onBookCourtPressed: () => _onTabSelected(2),
@@ -149,7 +177,10 @@ class _MainShellState extends State<MainShell> {
         authApi: widget.authApi,
         onTimelineVisibilityChanged: (visible) {
           if (_bookingTimelineVisible != visible) {
-            setState(() => _bookingTimelineVisible = visible);
+            setState(() {
+              _resetExitConfirmation();
+              _bookingTimelineVisible = visible;
+            });
           }
         },
       ),
@@ -160,41 +191,48 @@ class _MainShellState extends State<MainShell> {
       ),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: _currentIndex == 2 && _bookingTimelineVisible
-          ? null
-          : SafeArea(
-              top: false,
-              minimum: const EdgeInsets.only(bottom: 2),
-              child: AnimatedNotchBottomBar(
-                notchBottomBarController: _navigationController,
-                bottomBarItems: _navigationItems,
-                onTap: _onTabSelected,
-                color: _barColor,
-                notchColor: AppColors.surface,
-                showLabel: true,
-                itemLabelStyle: const TextStyle(
-                  color: Color(0xFFFFE4E4),
-                  fontFamily: 'PlusJakartaSans',
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+    return PopScope(
+      canPop: _exitArmed && !timelineVisible,
+      onPopInvokedWithResult: (didPop, result) {
+        // The timeline handles Back by returning to the branch list.
+        if (!didPop && !timelineVisible) _confirmExit();
+      },
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: pages),
+        bottomNavigationBar: _currentIndex == 2 && _bookingTimelineVisible
+            ? null
+            : SafeArea(
+                top: false,
+                minimum: const EdgeInsets.only(bottom: 2),
+                child: AnimatedNotchBottomBar(
+                  notchBottomBarController: _navigationController,
+                  bottomBarItems: _navigationItems,
+                  onTap: _onTabSelected,
+                  color: _barColor,
+                  notchColor: AppColors.surface,
+                  showLabel: true,
+                  itemLabelStyle: const TextStyle(
+                    color: Color(0xFFFFE4E4),
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textOverflow: TextOverflow.visible,
+                  maxLine: 1,
+                  kIconSize: 25,
+                  kBottomRadius: 24,
+                  bottomBarHeight: 66,
+                  bottomBarWidth: 500,
+                  durationInMilliSeconds: 350,
+                  topMargin: 7,
+                  circleMargin: 7,
+                  elevation: 2,
+                  shadowElevation: 12,
+                  showShadow: true,
+                  removeMargins: false,
                 ),
-                textOverflow: TextOverflow.visible,
-                maxLine: 1,
-                kIconSize: 25,
-                kBottomRadius: 24,
-                bottomBarHeight: 66,
-                bottomBarWidth: 500,
-                durationInMilliSeconds: 350,
-                topMargin: 7,
-                circleMargin: 7,
-                elevation: 2,
-                shadowElevation: 12,
-                showShadow: true,
-                removeMargins: false,
               ),
-            ),
+      ),
     );
   }
 }

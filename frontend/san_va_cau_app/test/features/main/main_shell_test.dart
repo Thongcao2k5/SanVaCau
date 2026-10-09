@@ -1,5 +1,6 @@
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:san_va_cau_app/app.dart';
 import 'package:san_va_cau_app/core/network/api_client.dart';
@@ -37,6 +38,45 @@ class _SessionAuth extends AuthApi {
 }
 
 void main() {
+  testWidgets('Back requires a second attempt within two seconds to exit', (
+    tester,
+  ) async {
+    final platformCalls = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        platformCalls.add(call.method);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: MainShell(authApi: _SessionAuth())),
+    );
+    await tester.pump();
+    tester.takeException();
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(
+      find.text('Vuốt hoặc bấm quay lại lần nữa để thoát'),
+      findsOneWidget,
+    );
+    expect(platformCalls, isNot(contains('SystemNavigator.pop')));
+    await tester.pump(const Duration(milliseconds: 2100));
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(platformCalls, isNot(contains('SystemNavigator.pop')));
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(platformCalls, contains('SystemNavigator.pop'));
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets('Account reflects login performed outside the account tab', (
     tester,
   ) async {
