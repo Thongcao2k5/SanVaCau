@@ -40,8 +40,8 @@ describe("Order Flow", () => {
     const { token, user } = await createCustomer();
     const { variant } = await setupCart(token, branch.id, 2);
 
-    const initialInventory = await prisma.inventory.findFirst({
-      where: { product_variant_id: variant.id, branch_id: branch.id }
+    const initialInventory = await prisma.inventory.findUnique({
+      where: { product_variant_id: variant.id }
     });
 
     const res = await request
@@ -54,8 +54,8 @@ describe("Order Flow", () => {
     expect(res.body.data.order.totalAmount).toBe("100000"); // 50000 * 2
 
     // Inventory decreases
-    const postInventory = await prisma.inventory.findFirst({
-      where: { product_variant_id: variant.id, branch_id: branch.id }
+    const postInventory = await prisma.inventory.findUnique({
+      where: { product_variant_id: variant.id }
     });
     expect(postInventory!.quantity).toBe(initialInventory!.quantity - 2);
 
@@ -77,6 +77,34 @@ describe("Order Flow", () => {
     expect(res.body.message).toMatch(/cart is empty/i);
   });
 
+  it("Customer can buy one variant immediately without changing the existing cart", async () => {
+    const branch = await createBranch();
+    const { token } = await createCustomer();
+    const { variant } = await setupCart(token, branch.id, 1);
+
+    const res = await request
+      .post("/api/orders")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        branchId: branch.id.toString(),
+        items: [{ productVariantId: variant.id.toString(), quantity: 2 }],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.order.totalAmount).toBe("100000");
+
+    const inventory = await prisma.inventory.findUnique({
+      where: { product_variant_id: variant.id },
+    });
+    expect(inventory?.quantity).toBe(8);
+
+    const cartRes = await request
+      .get("/api/cart")
+      .set("Authorization", `Bearer ${token}`);
+    expect(cartRes.body.data.cart.items).toHaveLength(1);
+    expect(cartRes.body.data.cart.items[0].quantity).toBe(1);
+  });
+
   it("Reject insufficient inventory and ensure no partial data is created", async () => {
     const branch = await createBranch();
     const { token } = await createCustomer();
@@ -86,7 +114,7 @@ describe("Order Flow", () => {
     
     // Manually reduce inventory to 1
     await prisma.inventory.updateMany({
-      where: { product_variant_id: variant.id, branch_id: branch.id },
+      where: { product_variant_id: variant.id },
       data: { quantity: 1 }
     });
 
@@ -108,8 +136,8 @@ describe("Order Flow", () => {
     expect(await prisma.order_item.count()).toBe(initialOrderItemCount);
     expect(await prisma.cart_item.count()).toBe(initialCartItemCount);
 
-    const postInventory = await prisma.inventory.findFirst({
-      where: { product_variant_id: variant.id, branch_id: branch.id }
+    const postInventory = await prisma.inventory.findUnique({
+      where: { product_variant_id: variant.id }
     });
     expect(postInventory!.quantity).toBe(1); // not reduced further
   });
@@ -213,8 +241,8 @@ describe("Order Flow", () => {
     expect(cancelRes.body.data.order.status).toBe("CANCELLED");
 
     // Re-increment inventory check (should happen when CANCELLED)
-    const inventory = await prisma.inventory.findFirst({
-      where: { product_variant_id: variant.id, branch_id: branch.id }
+    const inventory = await prisma.inventory.findUnique({
+      where: { product_variant_id: variant.id }
     });
     // initial 10 - 2 (order) + 2 (cancel) = 10
     expect(inventory!.quantity).toBe(10); 

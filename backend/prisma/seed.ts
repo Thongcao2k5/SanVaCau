@@ -355,6 +355,45 @@ const seedProducts = async () => {
     "DEMO-SVC-GRIP-COMFORT": "assets/demo/product-racket-carlton.jpg",
   };
 
+  const buildVariants = (item: (typeof products)[number]) => {
+    const basePrice = Number(item.price);
+    if (item.category.includes("Vợt")) {
+      return ["4U", "3U"].flatMap((weight) =>
+        ["G5", "G6"].map((grip) => ({
+          suffix: `${weight}-${grip}`,
+          option1Name: "Trọng lượng",
+          option1Value: weight,
+          option2Name: "Cỡ cán",
+          option2Value: grip,
+          price: basePrice + (weight === "3U" ? 100000 : 0) + (grip === "G6" ? 50000 : 0),
+        })),
+      );
+    }
+    if (item.category === "Giày cầu lông") {
+      return ["38", "39", "40", "41", "42", "43", "44"].flatMap((size) => [
+        { suffix: `WR-${size}`, option1Name: "Màu", option1Value: "Trắng/Đỏ", option2Name: "Size", option2Value: size, price: basePrice },
+        { suffix: `BLACK-${size}`, option1Name: "Màu", option1Value: "Đen", option2Name: "Size", option2Value: size, price: basePrice + 50000 },
+      ]);
+    }
+    if (item.category === "Áo thể thao") {
+      return ["S", "M", "L", "XL", "XXL"].flatMap((size) => [
+        { suffix: `RED-${size}`, option1Name: "Màu", option1Value: "Đỏ", option2Name: "Size", option2Value: size, price: basePrice },
+        { suffix: `BLACK-${size}`, option1Name: "Màu", option1Value: "Đen", option2Name: "Size", option2Value: size, price: basePrice },
+        { suffix: `WHITE-${size}`, option1Name: "Màu", option1Value: "Trắng", option2Name: "Size", option2Value: size, price: basePrice },
+      ]);
+    }
+    return ["Đỏ", "Đen", "Trắng"].flatMap((color) =>
+      [1, 3, 10].map((pack) => ({
+        suffix: `${color === "Đỏ" ? "RED" : color === "Đen" ? "BLACK" : "WHITE"}-${pack}`,
+        option1Name: "Màu",
+        option1Value: color,
+        option2Name: "Quy cách",
+        option2Value: `${pack} cuộn`,
+        price: Math.round(basePrice * pack * (pack === 10 ? 0.9 : pack === 3 ? 0.95 : 1)),
+      })),
+    );
+  };
+
   for (const item of products) {
     const categoryId = await getCategoryId(item.category);
     const brandId = await getBrandId(item.brand);
@@ -389,56 +428,54 @@ const seedProducts = async () => {
         }),
     );
 
-    await prisma.product_variant.upsert({
-      where: { sku: item.sku },
-      update: {
-        product_id: product.id,
-        variant_name: "Tiêu chuẩn",
-        price: new Prisma.Decimal(item.price),
-        image_url: imageUrl,
-        is_active: true,
-      },
-      create: {
-        product_id: product.id,
-        sku: item.sku,
-        variant_name: "Tiêu chuẩn",
-        price: new Prisma.Decimal(item.price),
-        image_url: imageUrl,
-        is_active: true,
-      },
-    });
+    for (const [variantIndex, spec] of buildVariants(item).entries()) {
+      const sku = variantIndex === 0 ? item.sku : `${item.sku}-${spec.suffix}`;
+      const variantName = `${spec.option1Value} - ${spec.option2Value}`;
+      await prisma.product_variant.upsert({
+        where: { sku },
+        update: {
+          product_id: product.id,
+          variant_name: variantName,
+          option_1_name: spec.option1Name,
+          option_1_value: spec.option1Value,
+          option_2_name: spec.option2Name,
+          option_2_value: spec.option2Value,
+          price: new Prisma.Decimal(spec.price),
+          image_url: imageUrl,
+          is_active: true,
+        },
+        create: {
+          product_id: product.id,
+          sku,
+          variant_name: variantName,
+          option_1_name: spec.option1Name,
+          option_1_value: spec.option1Value,
+          option_2_name: spec.option2Name,
+          option_2_value: spec.option2Value,
+          price: new Prisma.Decimal(spec.price),
+          image_url: imageUrl,
+          is_active: true,
+        },
+      });
+    }
   }
 
   console.log("[seed] products and variants done");
 };
 
 const seedInventory = async () => {
-  const branches = await prisma.branch.findMany({ where: { name: { startsWith: "SanVaCau" }, status: "ACTIVE" } });
   const variants = await prisma.product_variant.findMany({ where: { sku: { startsWith: "DEMO-" } } });
 
-  for (const branch of branches) {
-    for (const [index, variant] of variants.entries()) {
-      await prisma.inventory.upsert({
-        where: {
-          branch_id_product_variant_id: {
-            branch_id: branch.id,
-            product_variant_id: variant.id,
-          },
-        },
-        update: {
-          quantity: 20 + index,
-          updated_at: new Date(),
-        },
-        create: {
-          branch_id: branch.id,
-          product_variant_id: variant.id,
-          quantity: 20 + index,
-        },
-      });
-    }
+  for (const [index, variant] of variants.entries()) {
+    const quantity = index === 0 ? 0 : index === 1 ? 3 : 20 + index;
+    await prisma.inventory.upsert({
+      where: { product_variant_id: variant.id },
+      update: { quantity, updated_at: new Date() },
+      create: { product_variant_id: variant.id, quantity },
+    });
   }
 
-  console.log("[seed] inventory done");
+  console.log("[seed] global inventory done");
 };
 
 const seedCourtsAndPrices = async () => {

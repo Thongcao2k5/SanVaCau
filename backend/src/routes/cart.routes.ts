@@ -95,16 +95,12 @@ const getOrCreateCart = async (customerId: bigint) => {
 };
 
 const getAvailableInventory = async (productVariantId: bigint) => {
-  const inventories = await prisma.inventory.findMany({
-    where: {
-      product_variant_id: productVariantId,
-      branch: {
-        status: "ACTIVE",
-      },
-    },
+  const inventory = await prisma.inventory.findUnique({
+    where: { product_variant_id: productVariantId },
+    select: { quantity: true },
   });
 
-  return inventories.reduce((sum, inv) => sum + inv.quantity, 0);
+  return inventory?.quantity ?? 0;
 };
 
 // GET /api/cart

@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../cart/data/cart_api.dart';
 import '../data/product_api.dart';
 import '../models/product.dart';
 import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({super.key, this.productApi});
+  const ProductListPage({super.key, this.productApi, this.cartApi});
 
   final ProductApi? productApi;
+  final CartApi? cartApi;
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -18,11 +20,13 @@ class ProductListPage extends StatefulWidget {
 
 class _ProductListPageState extends State<ProductListPage> {
   late final ProductApi _productApi;
+  late final CartApi _cartApi;
   late Future<List<Product>> _productsFuture;
+  late Future<_FilterData> _filterDataFuture;
+
   String? _categoryId;
   String? _categoryName;
   String? _brandId;
-  String? _brandName;
 
   bool get _hasFilters => _categoryId != null || _brandId != null;
 
@@ -30,7 +34,26 @@ class _ProductListPageState extends State<ProductListPage> {
   void initState() {
     super.initState();
     _productApi = widget.productApi ?? ProductApi();
+    _cartApi = widget.cartApi ?? CartApi();
+    _filterDataFuture = _loadFilterData();
     _productsFuture = _productApi.getProducts();
+  }
+
+  Future<_FilterData> _loadFilterData() async {
+    final results = await Future.wait([
+      _productApi.getCategories(),
+      _productApi.getBrands(),
+    ]);
+    return _FilterData(
+      categories: results[0] as List<ProductCategory>,
+      brands: results[1] as List<ProductBrand>,
+    );
+  }
+
+  void _retryFilterData() {
+    setState(() {
+      _filterDataFuture = _loadFilterData();
+    });
   }
 
   Future<void> _reloadProducts() async {
@@ -44,87 +67,152 @@ class _ProductListPageState extends State<ProductListPage> {
     await future;
   }
 
-  Future<void> _openFilters() async {
-    final selection = await showModalBottomSheet<_ProductFilterSelection>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _ProductFilterSheet(
-        productApi: _productApi,
-        categoryId: _categoryId,
-        brandId: _brandId,
+  void _clearFilters() {
+    setState(() {
+      _categoryId = null;
+      _categoryName = null;
+      _brandId = null;
+    });
+    _reloadProducts();
+  }
+
+  Widget _buildCategorySelector(List<ProductCategory> categories) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return ChoiceChip(
+              label: const Text('Tất cả'),
+              selected: _categoryId == null,
+              onSelected: (selected) {
+                if (selected && _categoryId != null) {
+                  setState(() {
+                    _categoryId = null;
+                    _categoryName = null;
+                  });
+                  _reloadProducts();
+                }
+              },
+            );
+          }
+          final category = categories[index - 1];
+          return ChoiceChip(
+            label: Text(category.name),
+            selected: _categoryId == category.id,
+            onSelected: (selected) {
+              if (selected && _categoryId != category.id) {
+                setState(() {
+                  _categoryId = category.id;
+                  _categoryName = category.name;
+                });
+                _reloadProducts();
+              }
+            },
+          );
+        },
       ),
     );
-    if (selection == null || !mounted) return;
-
-    _categoryId = selection.categoryId;
-    _categoryName = selection.categoryName;
-    _brandId = selection.brandId;
-    _brandName = selection.brandName;
-    await _reloadProducts();
   }
 
-  Future<void> _clearFilters() async {
-    _categoryId = null;
-    _categoryName = null;
-    _brandId = null;
-    _brandName = null;
-    await _reloadProducts();
-  }
-
-  String get _filterSummary {
-    return [_categoryName, _brandName].whereType<String>().join(' • ');
+  Widget _buildBrandSelector(List<ProductBrand> brands) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: brands.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return ChoiceChip(
+              label: const Text('Tất cả hãng'),
+              selected: _brandId == null,
+              onSelected: (selected) {
+                if (selected && _brandId != null) {
+                  setState(() {
+                    _brandId = null;
+                  });
+                  _reloadProducts();
+                }
+              },
+            );
+          }
+          final brand = brands[index - 1];
+          return ChoiceChip(
+            label: Text(brand.name),
+            selected: _brandId == brand.id,
+            onSelected: (selected) {
+              if (selected && _brandId != brand.id) {
+                setState(() {
+                  _brandId = brand.id;
+                });
+                _reloadProducts();
+              }
+            },
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sản phẩm'),
-        actions: [
-          Badge(
-            isLabelVisible: _hasFilters,
-            child: IconButton(
-              tooltip: 'Lọc sản phẩm',
-              onPressed: _openFilters,
-              icon: const Icon(Icons.filter_list),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Sản phẩm')),
       body: Column(
         children: [
-          if (_hasFilters)
-            Material(
-              color: AppColors.surfaceMuted,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.filter_alt_outlined,
-                      size: 18,
-                      color: AppColors.primary,
+          FutureBuilder<_FilterData>(
+            future: _filterDataFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 56,
+                  child: Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _filterSummary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Chưa thể tải bộ lọc',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Xóa bộ lọc',
-                      onPressed: _clearFilters,
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                      TextButton.icon(
+                        onPressed: _retryFilterData,
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildCategorySelector(snapshot.data!.categories),
+                  const SizedBox(height: 8),
+                  _buildBrandSelector(snapshot.data!.brands),
+                  const SizedBox(height: 8),
+                ],
+              );
+            },
+          ),
           Expanded(
             child: FutureBuilder<List<Product>>(
               future: _productsFuture,
@@ -150,54 +238,93 @@ class _ProductListPageState extends State<ProductListPage> {
 
                 final products = snapshot.data ?? const <Product>[];
 
-                if (products.isEmpty) {
-                  return _ProductStateMessage(
-                    icon: Icons.inventory_2_outlined,
-                    title: _hasFilters
-                        ? 'Không tìm thấy sản phẩm'
-                        : 'Chưa có sản phẩm',
-                    message: _hasFilters
-                        ? 'Thử thay đổi hoặc xóa bộ lọc hiện tại.'
-                        : 'Khi admin thêm sản phẩm, danh sách sẽ hiển thị ở đây.',
-                    actionText: _hasFilters ? 'Xóa bộ lọc' : 'Tải lại',
-                    onActionPressed: _hasFilters
-                        ? _clearFilters
-                        : _reloadProducts,
-                  );
-                }
+                final headerTitle = _categoryName ?? 'Tất cả sản phẩm';
+                final headerCount = '${products.length} sản phẩm';
 
-                return RefreshIndicator(
-                  onRefresh: _reloadProducts,
-                  child: GridView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.7,
-                        ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              headerTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            headerCount,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: products.isEmpty
+                          ? _ProductStateMessage(
+                              icon: Icons.inventory_2_outlined,
+                              title: _hasFilters
+                                  ? 'Không tìm thấy sản phẩm'
+                                  : 'Chưa có sản phẩm',
+                              message: _hasFilters
+                                  ? 'Thử thay đổi hoặc xóa bộ lọc hiện tại.'
+                                  : 'Khi admin thêm sản phẩm, danh sách sẽ hiển thị ở đây.',
+                              actionText: _hasFilters
+                                  ? 'Xóa bộ lọc'
+                                  : 'Tải lại',
+                              onActionPressed: _hasFilters
+                                  ? _clearFilters
+                                  : _reloadProducts,
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _reloadProducts,
+                              child: GridView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  89,
+                                ),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      mainAxisSpacing: 12,
+                                      crossAxisSpacing: 12,
+                                      childAspectRatio: 0.65,
+                                    ),
+                                itemCount: products.length,
+                                itemBuilder: (context, index) {
+                                  final product = products[index];
 
-                      return ProductCard(
-                        key: ValueKey(product.id),
-                        product: product,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => ProductDetailPage(
-                                productId: product.id,
-                                initialProduct: product,
+                                  return ProductCard(
+                                    key: ValueKey(product.id),
+                                    product: product,
+                                    productApi: _productApi,
+                                    cartApi: _cartApi,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ProductDetailPage(
+                                            productId: product.id,
+                                            initialProduct: product,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -208,196 +335,11 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 }
 
-class _ProductFilterSheet extends StatefulWidget {
-  const _ProductFilterSheet({
-    required this.productApi,
-    this.categoryId,
-    this.brandId,
-  });
-
-  final ProductApi productApi;
-  final String? categoryId;
-  final String? brandId;
-
-  @override
-  State<_ProductFilterSheet> createState() => _ProductFilterSheetState();
-}
-
-class _ProductFilterSheetState extends State<_ProductFilterSheet> {
-  late Future<_ProductFilterData> _filterDataFuture;
-  String? _categoryId;
-  String? _brandId;
-
-  @override
-  void initState() {
-    super.initState();
-    _categoryId = widget.categoryId;
-    _brandId = widget.brandId;
-    _filterDataFuture = _loadFilterData();
-  }
-
-  Future<_ProductFilterData> _loadFilterData() async {
-    final categoriesFuture = widget.productApi.getCategories();
-    final brandsFuture = widget.productApi.getBrands();
-    return _ProductFilterData(
-      categories: await categoriesFuture,
-      brands: await brandsFuture,
-    );
-  }
-
-  void _retry() {
-    setState(() {
-      _filterDataFuture = _loadFilterData();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: FutureBuilder<_ProductFilterData>(
-        future: _filterDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 280,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (snapshot.hasError) {
-            return SizedBox(
-              height: 280,
-              child: _ProductStateMessage(
-                icon: Icons.wifi_off_outlined,
-                title: 'Chưa thể tải bộ lọc',
-                message: 'Vui lòng kiểm tra kết nối và thử lại.',
-                actionText: 'Thử lại',
-                onActionPressed: _retry,
-              ),
-            );
-          }
-
-          final data = snapshot.data!;
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              0,
-              16,
-              16 + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bộ lọc sản phẩm',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Danh mục',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: data.categories
-                      .map(
-                        (category) => ChoiceChip(
-                          label: Text(category.name),
-                          selected: _categoryId == category.id,
-                          onSelected: (selected) => setState(
-                            () => _categoryId = selected ? category.id : null,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Thương hiệu',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: data.brands
-                      .map(
-                        (brand) => ChoiceChip(
-                          label: Text(brand.name),
-                          selected: _brandId == brand.id,
-                          onSelected: (selected) => setState(
-                            () => _brandId = selected ? brand.id : null,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => setState(() {
-                          _categoryId = null;
-                          _brandId = null;
-                        }),
-                        child: const Text('Đặt lại'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () {
-                          final category = data.categories
-                              .where((item) => item.id == _categoryId)
-                              .firstOrNull;
-                          final brand = data.brands
-                              .where((item) => item.id == _brandId)
-                              .firstOrNull;
-                          Navigator.of(context).pop(
-                            _ProductFilterSelection(
-                              categoryId: category?.id,
-                              categoryName: category?.name,
-                              brandId: brand?.id,
-                              brandName: brand?.name,
-                            ),
-                          );
-                        },
-                        child: const Text('Áp dụng'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ProductFilterData {
-  const _ProductFilterData({required this.categories, required this.brands});
+class _FilterData {
+  const _FilterData({required this.categories, required this.brands});
 
   final List<ProductCategory> categories;
   final List<ProductBrand> brands;
-}
-
-class _ProductFilterSelection {
-  const _ProductFilterSelection({
-    this.categoryId,
-    this.categoryName,
-    this.brandId,
-    this.brandName,
-  });
-
-  final String? categoryId;
-  final String? categoryName;
-  final String? brandId;
-  final String? brandName;
 }
 
 class _ProductStateMessage extends StatelessWidget {

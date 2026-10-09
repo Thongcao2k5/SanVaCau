@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../branches/data/branch_api.dart';
-import '../../branches/models/branch.dart';
 import '../../products/data/product_api.dart';
 import '../data/admin_inventory_api.dart';
 import '../models/admin_inventory.dart';
@@ -37,15 +36,10 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
   List<AdminInventory> _allInventories = [];
   List<AdminInventory> _displayedInventories = [];
 
-  List<Branch> _branches = [];
-  String? _selectedBranchId;
-
   final TextEditingController _searchController = TextEditingController();
 
   bool get isAdmin => widget.role == 'ADMIN';
-  bool get canMutate => isAdmin || widget.role == 'BRANCH_MANAGER';
-  bool get hasAssignedBranch =>
-      widget.assignedBranchId != null && widget.assignedBranchId!.isNotEmpty;
+  bool get canMutate => isAdmin;
 
   @override
   void initState() {
@@ -54,10 +48,6 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
     _branchApi = widget.branchApi ?? BranchApi();
 
     _searchController.addListener(_filterBySearch);
-
-    if (!isAdmin) {
-      _selectedBranchId = widget.assignedBranchId;
-    }
 
     _loadInitialData();
   }
@@ -91,70 +81,14 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
   }
 
   Future<void> _loadInitialData() async {
-    // Role check for missing branchId
-    if (!isAdmin && !hasAssignedBranch) {
-      if (mounted) {
-        setState(() {
-          _error =
-              'Tài khoản của bạn chưa được gán cho bất kỳ chi nhánh nào. '
-              'Vui lòng liên hệ quản trị viên.';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final futures = <Future>[
-        _api.getInventories(branchId: _selectedBranchId),
-      ];
+      final inventories = await _api.getInventories();
 
-      if (isAdmin) {
-        futures.add(_branchApi.getBranches());
-      }
-
-      final results = await Future.wait(futures);
-
-      if (mounted) {
-        setState(() {
-          _allInventories = results[0] as List<AdminInventory>;
-          if (isAdmin) {
-            _branches = results[1] as List<Branch>;
-            // Add a synthetic "All" option if needed, but we handle it via null selected branch.
-          }
-          _isLoading = false;
-          _applySearch();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _loadInventories() async {
-    if (!isAdmin && !hasAssignedBranch) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final inventories = await _api.getInventories(
-        branchId: _selectedBranchId,
-      );
       if (mounted) {
         setState(() {
           _allInventories = inventories;
@@ -172,89 +106,29 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
     }
   }
 
-  void _showFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Lọc theo chi nhánh',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String?>(
-                      initialValue: _selectedBranchId,
-                      decoration: const InputDecoration(
-                        labelText: 'Chi nhánh',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Tất cả chi nhánh'),
-                        ),
-                        ..._branches.map(
-                          (b) => DropdownMenuItem(
-                            value: b.id,
-                            child: Text(b.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        setSheetState(() => _selectedBranchId = val);
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              setSheetState(() {
-                                _selectedBranchId = null;
-                              });
-                              Navigator.pop(context);
-                              _loadInventories();
-                            },
-                            child: const Text('Xóa bộ lọc'),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _loadInventories();
-                            },
-                            child: const Text('Áp dụng'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  Future<void> _loadInventories() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final inventories = await _api.getInventories();
+      if (mounted) {
+        setState(() {
+          _allInventories = inventories;
+          _isLoading = false;
+          _applySearch();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   String _formatDate(DateTime? date) {
@@ -269,14 +143,6 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
       appBar: AppBar(
         title: const Text('Quản lý tồn kho'),
         centerTitle: true,
-        actions: [
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: _showFilterSheet,
-              tooltip: 'Lọc chi nhánh',
-            ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -303,7 +169,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
           ),
         ),
       ),
-      floatingActionButton: canMutate && (isAdmin || hasAssignedBranch)
+      floatingActionButton: canMutate
           ? FloatingActionButton(
               onPressed: () async {
                 final result = await Navigator.push(
@@ -357,13 +223,10 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
-              if (isAdmin ||
-                  (widget.assignedBranchId != null &&
-                      widget.assignedBranchId!.isNotEmpty))
-                ElevatedButton(
-                  onPressed: _loadInitialData,
-                  child: const Text('Thử lại'),
-                ),
+              ElevatedButton(
+                onPressed: _loadInitialData,
+                child: const Text('Thử lại'),
+              ),
             ],
           ),
         ),
@@ -414,7 +277,6 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
           final variantName =
               inv.productVariant?.variantName ?? 'Unknown Variant';
           final sku = inv.productVariant?.sku ?? 'N/A';
-          final branchName = inv.branch?.name ?? 'Unknown Branch';
 
           return Card(
             elevation: 0,
@@ -428,7 +290,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: !canMutate
+              onTap: !isAdmin
                   ? null
                   : () async {
                       final result = await Navigator.push(
@@ -544,7 +406,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            branchName,
+                            'Kho chung',
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textPrimary,

@@ -164,19 +164,21 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 
     if (_reviews.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
               Icons.rate_review_outlined,
-              size: 40,
+              size: 24,
               color: AppColors.textSecondary,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(width: 8),
             Text(
               'Chưa có đánh giá nào',
               style: Theme.of(context).textTheme.bodyMedium

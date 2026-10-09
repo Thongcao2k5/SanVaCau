@@ -71,7 +71,7 @@ class FakeInventoryApi extends AdminInventoryApi {
 
   @override
   Future<AdminInventory> createInventory({
-    required String branchId,
+    String? branchId,
     required String productVariantId,
     required int quantity,
   }) async {
@@ -226,16 +226,15 @@ void main() {
       );
     }
 
-    testWidgets('Loading state, success, low stock visual, missing branchId', (
+    testWidgets('STAFF can view global inventory without a branch assignment', (
       tester,
     ) async {
       await tester.pumpWidget(createListWidget('STAFF', null));
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('chưa được gán'),
-        findsOneWidget,
-      ); // missing branchId
-      expect(inventoryApi.getCalls, 0);
+      expect(find.text('Product 1'), findsWidgets);
+      expect(find.text('Kho chung'), findsWidgets);
+      expect(inventoryApi.getCalls, 1);
+      expect(inventoryApi.lastBranchId, isNull);
       expect(find.byType(FloatingActionButton), findsNothing);
     });
 
@@ -255,27 +254,13 @@ void main() {
       expect(find.text('Tồn kho'), findsWidgets);
     });
 
-    testWidgets('ADMIN can filter branches, create and edit', (tester) async {
+    testWidgets('ADMIN can create and edit global inventory', (tester) async {
       await tester.pumpWidget(createListWidget('ADMIN', null));
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
-
-      // Open filter
-      await tester.tap(find.byIcon(Icons.filter_list));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Lọc theo chi nhánh'), findsOneWidget);
-
-      await tester.tap(find.text('Tất cả chi nhánh'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Branch 1').last);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Áp dụng'));
-      await tester.pumpAndSettle();
-
-      expect(inventoryApi.lastBranchId, 'b1');
+      expect(find.byIcon(Icons.filter_list), findsNothing);
+      expect(inventoryApi.lastBranchId, isNull);
     });
 
     testWidgets('local search filters by SKU', (tester) async {
@@ -292,13 +277,15 @@ void main() {
       expect(find.text('SKU: SKU1'), findsNothing);
     });
 
-    testWidgets('BRANCH_MANAGER is locked and can create/edit', (tester) async {
+    testWidgets('BRANCH_MANAGER can view but cannot mutate global inventory', (
+      tester,
+    ) async {
       await tester.pumpWidget(createListWidget('BRANCH_MANAGER', 'b1'));
       await tester.pumpAndSettle();
 
-      expect(inventoryApi.lastBranchId, 'b1');
-      expect(find.byIcon(Icons.filter_list), findsNothing); // No filter icon
-      expect(find.byType(FloatingActionButton), findsOneWidget); // Can create
+      expect(inventoryApi.lastBranchId, isNull);
+      expect(find.byIcon(Icons.filter_list), findsNothing);
+      expect(find.byType(FloatingActionButton), findsNothing);
     });
 
     testWidgets('STAFF is locked and sees no mutation controls', (
@@ -307,7 +294,7 @@ void main() {
       await tester.pumpWidget(createListWidget('STAFF', 'b1'));
       await tester.pumpAndSettle();
 
-      expect(inventoryApi.lastBranchId, 'b1');
+      expect(inventoryApi.lastBranchId, isNull);
       expect(find.byIcon(Icons.filter_list), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
     });
@@ -354,18 +341,8 @@ void main() {
       await tester.ensureVisible(submitBtn);
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
-      expect(find.text('Vui lòng chọn chi nhánh'), findsOneWidget);
       expect(find.text('Vui lòng chọn sản phẩm'), findsOneWidget);
       expect(find.text('Vui lòng nhập số lượng'), findsOneWidget);
-
-      // Select Branch
-      await tester.ensureVisible(
-        find.byKey(const Key('inventory-branch-field')),
-      );
-      await tester.tap(find.byKey(const Key('inventory-branch-field')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Branch 1').last);
-      await tester.pumpAndSettle();
 
       // Select Product
       await tester.tap(find.byKey(const Key('inventory-product-field')));
@@ -391,7 +368,7 @@ void main() {
 
       expect(find.text('Push'), findsOneWidget);
       expect(inventoryApi.createCalls, 1);
-      expect(inventoryApi.lastCreatedBranchId, 'b1');
+      expect(inventoryApi.lastCreatedBranchId, isNull);
       expect(inventoryApi.lastCreatedVariantId, 'v2');
       expect(inventoryApi.lastQuantity, 10);
     });
@@ -400,11 +377,6 @@ void main() {
       await tester.pumpWidget(createFormWidget('ADMIN', null));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Push'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('inventory-branch-field')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Branch 1').last);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('inventory-product-field')));
@@ -429,7 +401,7 @@ void main() {
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
       expect(
-        find.text('Sản phẩm này đã có trong tồn kho của chi nhánh'),
+        find.text('Phân loại sản phẩm này đã có trong tồn kho'),
         findsOneWidget,
       );
       final quantityField = tester.widget<TextFormField>(

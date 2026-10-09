@@ -31,6 +31,10 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
   late final TextEditingController _imageUrlController;
+  late final TextEditingController _option1NameController;
+  late final TextEditingController _option1ValueController;
+  late final TextEditingController _option2NameController;
+  late final TextEditingController _option2ValueController;
 
   @override
   void initState() {
@@ -45,6 +49,18 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
     _imageUrlController = TextEditingController(
       text: widget.variant?.imageUrl ?? '',
     );
+    _option1NameController = TextEditingController(
+      text: widget.variant?.option1Name ?? '',
+    );
+    _option1ValueController = TextEditingController(
+      text: widget.variant?.option1Value ?? '',
+    );
+    _option2NameController = TextEditingController(
+      text: widget.variant?.option2Name ?? '',
+    );
+    _option2ValueController = TextEditingController(
+      text: widget.variant?.option2Value ?? '',
+    );
   }
 
   @override
@@ -53,6 +69,10 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
     _nameController.dispose();
     _priceController.dispose();
     _imageUrlController.dispose();
+    _option1NameController.dispose();
+    _option1ValueController.dispose();
+    _option2NameController.dispose();
+    _option2ValueController.dispose();
     super.dispose();
   }
 
@@ -73,6 +93,18 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
         'imageUrl': _imageUrlController.text.trim().isEmpty
             ? null
             : _imageUrlController.text.trim(),
+        'option1Name': _option1NameController.text.trim().isEmpty
+            ? null
+            : _option1NameController.text.trim(),
+        'option1Value': _option1ValueController.text.trim().isEmpty
+            ? null
+            : _option1ValueController.text.trim(),
+        'option2Name': _option2NameController.text.trim().isEmpty
+            ? null
+            : _option2NameController.text.trim(),
+        'option2Value': _option2ValueController.text.trim().isEmpty
+            ? null
+            : _option2ValueController.text.trim(),
       };
 
       if (widget.variant != null) {
@@ -141,6 +173,7 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
               ),
 
             TextFormField(
+              key: const Key('variant-sku'),
               controller: _skuController,
               decoration: const InputDecoration(
                 labelText: 'Mã SKU *',
@@ -157,6 +190,7 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
             const SizedBox(height: 16),
 
             TextFormField(
+              key: const Key('variant-name'),
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: 'Tên phân loại *',
@@ -173,6 +207,7 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
             const SizedBox(height: 16),
 
             TextFormField(
+              key: const Key('variant-price'),
               controller: _priceController,
               decoration: const InputDecoration(
                 labelText: 'Giá *',
@@ -191,6 +226,43 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
                 }
                 return null;
               },
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 16),
+
+            TextFormField(
+              controller: _option1NameController,
+              decoration: const InputDecoration(
+                labelText: 'Tên lựa chọn 1 (VD: Màu)',
+                border: OutlineInputBorder(),
+              ),
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _option1ValueController,
+              decoration: const InputDecoration(
+                labelText: 'Giá trị lựa chọn 1 (VD: Trắng/Đỏ)',
+                border: OutlineInputBorder(),
+              ),
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _option2NameController,
+              decoration: const InputDecoration(
+                labelText: 'Tên lựa chọn 2 (VD: Size)',
+                border: OutlineInputBorder(),
+              ),
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _option2ValueController,
+              decoration: const InputDecoration(
+                labelText: 'Giá trị lựa chọn 2 (VD: 40)',
+                border: OutlineInputBorder(),
+              ),
               enabled: !_isSubmitting,
             ),
             const SizedBox(height: 16),
@@ -219,6 +291,7 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
+                key: const Key('variant-submit'),
                 onPressed: _isSubmitting ? null : _submit,
                 child: _isSubmitting
                     ? const SizedBox(

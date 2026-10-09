@@ -13,7 +13,7 @@ export const generalRateLimit = rateLimit({
 
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
+  max: process.env.NODE_ENV === "test" ? 1000 : 20,
   message: {
     success: false,
     message: "Too many requests, please try again later",

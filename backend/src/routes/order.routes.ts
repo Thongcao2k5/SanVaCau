@@ -106,36 +106,81 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
       return;
     }
 
-    const cart = await prisma.cart.findUnique({
-      where: { customer_id: customerId },
-      include: {
-        cart_item: {
+    const directItems = Array.isArray(req.body?.items) ? req.body.items : null;
+    const cart = directItems
+      ? null
+      : await prisma.cart.findUnique({
+          where: { customer_id: customerId },
           include: {
-            product_variant: {
+            cart_item: {
               include: {
-                product: true,
+                product_variant: {
+                  include: { product: true },
+                },
               },
             },
           },
-        },
-      },
-    });
+        });
 
-    if (!cart || cart.cart_item.length === 0) {
+    if (!directItems && (!cart || cart.cart_item.length === 0)) {
       res.status(400).json({ success: false, message: "Cart is empty" });
       return;
     }
 
+    const parsedDirectItems: Array<{
+      productVariantId: bigint | null;
+      quantity: number | null;
+    }> | null = directItems?.map((item: unknown) => {
+      const value = item as { productVariantId?: unknown; quantity?: unknown };
+      const productVariantId = parseBigIntId(
+        typeof value.productVariantId === "string" ? value.productVariantId : null
+      );
+      const quantity =
+        typeof value.quantity === "number" && Number.isInteger(value.quantity) && value.quantity > 0
+          ? value.quantity
+          : null;
+      return { productVariantId, quantity };
+    }) ?? null;
+
+    if (
+      parsedDirectItems &&
+      (parsedDirectItems.length !== 1 ||
+        parsedDirectItems.some((item) => !item.productVariantId || !item.quantity))
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Buy-now requires one valid product variant and quantity",
+      });
+      return;
+    }
+
+    const directVariant = parsedDirectItems
+      ? await prisma.product_variant.findUnique({
+          where: { id: parsedDirectItems[0].productVariantId! },
+          include: { product: true },
+        })
+      : null;
+
+    if (parsedDirectItems && !directVariant) {
+      res.status(400).json({ success: false, message: "Product variant not found" });
+      return;
+    }
+
+    const orderSourceItems = parsedDirectItems
+      ? [
+          {
+            product_variant_id: parsedDirectItems[0].productVariantId!,
+            quantity: parsedDirectItems[0].quantity!,
+            product_variant: directVariant!,
+          },
+        ]
+      : cart!.cart_item;
+
     // Check inventory
     const inventoryChecks = await Promise.all(
-      cart.cart_item.map(async (item) => {
+      orderSourceItems.map(async (item) => {
         const inventory = await prisma.inventory.findUnique({
-          where: {
-            branch_id_product_variant_id: {
-              branch_id: branchId,
-              product_variant_id: item.product_variant_id,
-            },
-          },
+          where: { product_variant_id: item.product_variant_id },
         });
         return { item, inventory };
       })
@@ -152,14 +197,14 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
       if (!inventory || inventory.quantity < item.quantity) {
         res.status(400).json({
           success: false,
-          message: `Not enough stock for ${item.product_variant.product.name} - ${item.product_variant.variant_name} at this branch`,
+          message: `Not enough stock for ${item.product_variant.product.name} - ${item.product_variant.variant_name}`,
         });
         return;
       }
     }
 
     let totalAmount = 0;
-    const orderItemsData = cart.cart_item.map((item) => {
+    const orderItemsData = orderSourceItems.map((item) => {
       const unitPrice = Number(item.product_variant.price);
       totalAmount += unitPrice * item.quantity;
 
@@ -188,10 +233,9 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
       });
 
       // Decrease inventory only if enough stock is still available inside the transaction.
-      for (const item of cart.cart_item) {
+      for (const item of orderSourceItems) {
         const inventoryUpdate = await tx.inventory.updateMany({
           where: {
-            branch_id: branchId,
             product_variant_id: item.product_variant_id,
             quantity: {
               gte: item.quantity,
@@ -209,14 +253,13 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
         }
       }
 
-      // Clear cart
-      await tx.cart_item.deleteMany({
-        where: { cart_id: cart.id },
-      });
-      await tx.cart.update({
-        where: { id: cart.id },
-        data: { updated_at: new Date() },
-      });
+      if (cart) {
+        await tx.cart_item.deleteMany({ where: { cart_id: cart.id } });
+        await tx.cart.update({
+          where: { id: cart.id },
+          data: { updated_at: new Date() },
+        });
+      }
 
       return tx.customer_order.findUnique({
         where: { id: newOrder.id },
@@ -481,12 +524,7 @@ orderRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MANA
       if (status === "CANCELLED" && existingOrder.status !== "CANCELLED") {
         for (const item of existingOrder.order_item) {
           await tx.inventory.update({
-            where: {
-              branch_id_product_variant_id: {
-                branch_id: existingOrder.branch_id,
-                product_variant_id: item.product_variant_id,
-              },
-            },
+            where: { product_variant_id: item.product_variant_id },
             data: {
               quantity: {
                 increment: item.quantity,

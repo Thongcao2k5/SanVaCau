@@ -250,29 +250,20 @@ const seedProducts = async () => {
 };
 
 const seedInventory = async () => {
-  const branches = await prisma.branch.findMany({ where: { name: { startsWith: "SanVaCau" }, status: "ACTIVE" } });
   const variants = await prisma.product_variant.findMany({ where: { sku: { startsWith: "DEMO-" } } });
 
-  for (const branch of branches) {
-    for (const [index, variant] of variants.entries()) {
-      await prisma.inventory.upsert({
-        where: {
-          branch_id_product_variant_id: {
-            branch_id: branch.id,
-            product_variant_id: variant.id,
-          },
-        },
-        update: {
-          quantity: 20 + index,
-          updated_at: new Date(),
-        },
-        create: {
-          branch_id: branch.id,
-          product_variant_id: variant.id,
-          quantity: 20 + index,
-        },
-      });
-    }
+  for (const [index, variant] of variants.entries()) {
+    await prisma.inventory.upsert({
+      where: { product_variant_id: variant.id },
+      update: {
+        quantity: 20 + index,
+        updated_at: new Date(),
+      },
+      create: {
+        product_variant_id: variant.id,
+        quantity: 20 + index,
+      },
+    });
   }
 
   console.log("[seed] inventory done");

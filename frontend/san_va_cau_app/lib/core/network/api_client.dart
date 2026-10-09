@@ -96,7 +96,21 @@ class ApiClient {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         var message = decoded['message']?.toString() ?? 'Yêu cầu thất bại';
 
-        if (response.statusCode == 401) {
+        if (response.statusCode == 400) {
+          if (message.contains('email is invalid')) {
+            message = 'Email không đúng định dạng';
+          } else if (message.contains('registration data is invalid')) {
+            message = 'Thông tin đăng ký không hợp lệ';
+          } else if (message.contains('OTP is invalid or expired')) {
+            message = 'Mã OTP không đúng hoặc đã hết hạn';
+          } else if (message.contains('reset data is invalid')) {
+            message = 'Thông tin đặt lại mật khẩu không hợp lệ';
+          } else if (message.contains(
+            'new password must be different from current password',
+          )) {
+            message = 'Mật khẩu mới phải khác mật khẩu hiện tại';
+          }
+        } else if (response.statusCode == 401) {
           if (message.contains('invalid email or password')) {
             message = 'Email hoặc mật khẩu không chính xác';
           } else if (message.contains('current password is incorrect')) {
@@ -114,6 +128,8 @@ class ApiClient {
           if (message.contains('email already exists')) {
             message = 'Email đã được đăng ký, vui lòng sử dụng email khác.';
           }
+        } else if (response.statusCode == 429) {
+          message = 'Vui lòng chờ trước khi yêu cầu gửi lại mã OTP.';
         }
 
         throw ApiException(statusCode: response.statusCode, message: message);

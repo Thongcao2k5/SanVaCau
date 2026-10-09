@@ -10,11 +10,22 @@ class OrderApi {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
 
-  Future<Order> createOrder({required String branchId}) async {
+  Future<Order> createOrder({
+    required String branchId,
+    String? productVariantId,
+    int? quantity,
+  }) async {
+    final isBuyNow = productVariantId != null && quantity != null;
     final response = await _apiClient.post(
       '/orders',
       token: await _readToken(),
-      body: {'branchId': branchId},
+      body: {
+        'branchId': branchId,
+        if (isBuyNow)
+          'items': [
+            {'productVariantId': productVariantId, 'quantity': quantity},
+          ],
+      },
     );
     final data = response['data'] as Map<String, dynamic>;
 

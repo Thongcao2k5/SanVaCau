@@ -37,12 +37,7 @@ class MockApiClient extends ApiClient {
     if (path.startsWith('/inventories/')) {
       return {
         'data': {
-          'inventory': {
-            'id': 'inv1',
-            'branchId': 'b1',
-            'productVariantId': 'v1',
-            'quantity': 10,
-          },
+          'inventory': {'id': 'inv1', 'productVariantId': 'v1', 'quantity': 10},
         },
       };
     }
@@ -50,12 +45,7 @@ class MockApiClient extends ApiClient {
     return {
       'data': {
         'inventories': [
-          {
-            'id': 'inv1',
-            'branchId': 'b1',
-            'productVariantId': 'v1',
-            'quantity': 10,
-          },
+          {'id': 'inv1', 'productVariantId': 'v1', 'quantity': 10},
         ],
       },
     };
@@ -81,7 +71,6 @@ class MockApiClient extends ApiClient {
       'data': {
         'inventory': {
           'id': 'inv2',
-          'branchId': lastBody?['branchId'] ?? 'b1',
           'productVariantId': lastBody?['productVariantId'] ?? 'v1',
           'quantity': lastBody?['quantity'] ?? 0,
         },
@@ -109,7 +98,6 @@ class MockApiClient extends ApiClient {
       'data': {
         'inventory': {
           'id': 'inv1',
-          'branchId': 'b1',
           'productVariantId': 'v1',
           'quantity': lastBody?['quantity'] ?? 0,
         },
@@ -156,7 +144,7 @@ void main() {
     test('getInventories uses exact GET path and queryParameters', () async {
       await api.getInventories(branchId: 'b1', productVariantId: 'v1');
       expect(mockApi.lastPath, '/inventories');
-      expect(mockApi.lastQuery, {'branchId': 'b1', 'productVariantId': 'v1'});
+      expect(mockApi.lastQuery, {'productVariantId': 'v1'});
       expect(mockApi.lastToken, 'mock_token');
       expect(mockApi.lastMethod, 'GET');
     });
@@ -175,11 +163,7 @@ void main() {
       );
       expect(mockApi.lastPath, '/inventories');
       expect(mockApi.lastMethod, 'POST');
-      expect(mockApi.lastBody, {
-        'branchId': 'b1',
-        'productVariantId': 'v1',
-        'quantity': 5,
-      });
+      expect(mockApi.lastBody, {'productVariantId': 'v1', 'quantity': 5});
       expect(res.quantity, 5);
     });
 

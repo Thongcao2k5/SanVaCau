@@ -180,6 +180,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           if (value.length < 6) {
                             return 'Mật khẩu phải dài ít nhất 6 ký tự';
                           }
+                          if (value == _currentPasswordController.text) {
+                            return 'Mật khẩu mới phải khác mật khẩu hiện tại';
+                          }
                           return null;
                         },
                       ),

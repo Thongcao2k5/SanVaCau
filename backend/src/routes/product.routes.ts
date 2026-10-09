@@ -25,6 +25,7 @@ type ProductRow = {
     id: bigint;
     name: string;
   } | null;
+  product_variant: Array<{ price: { toString: () => string } }>;
 };
 
 const productSelect = {
@@ -50,6 +51,12 @@ const productSelect = {
       name: true,
     },
   },
+  product_variant: {
+    where: { is_active: true },
+    orderBy: { price: "asc" },
+    take: 1,
+    select: { price: true },
+  },
 } as const;
 
 const parseBigIntId = (value: string | string[] | undefined) => {
@@ -68,28 +75,33 @@ const parseBodyBigIntId = (value: unknown) => {
   return null;
 };
 
-const toProductResponse = (product: ProductRow) => ({
-  id: product.id.toString(),
-  categoryId: product.category_id.toString(),
-  brandId: product.brand_id?.toString() ?? null,
-  name: product.name,
-  description: product.description,
-  imageUrl: product.image_url,
-  isActive: product.is_active,
-  isFeatured: product.is_featured,
-  createdAt: product.created_at,
-  updatedAt: product.updated_at,
-  category: {
-    id: product.category.id.toString(),
-    name: product.category.name,
-  },
-  brand: product.brand
-    ? {
-        id: product.brand.id.toString(),
-        name: product.brand.name,
-      }
-    : null,
-});
+const toProductResponse = (product: ProductRow) => {
+  const minPrice = product.product_variant[0]?.price.toString() ?? null;
+
+  return {
+    id: product.id.toString(),
+    categoryId: product.category_id.toString(),
+    brandId: product.brand_id?.toString() ?? null,
+    name: product.name,
+    description: product.description,
+    imageUrl: product.image_url,
+    isActive: product.is_active,
+    isFeatured: product.is_featured,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at,
+    minPrice,
+    category: {
+      id: product.category.id.toString(),
+      name: product.category.name,
+    },
+    brand: product.brand
+      ? {
+          id: product.brand.id.toString(),
+          name: product.brand.name,
+        }
+      : null,
+  };
+};
 
 const findActiveCategory = (id: bigint) => {
   return prisma.category.findFirst({

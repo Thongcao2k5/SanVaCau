@@ -97,10 +97,9 @@ export const createProductVariant = async (productId: bigint, price: number) => 
   });
 };
 
-export const createInventory = async (branchId: bigint, productVariantId: bigint, quantity: number) => {
+export const createInventory = async (_branchId: bigint, productVariantId: bigint, quantity: number) => {
   return prisma.inventory.create({
     data: {
-      branch_id: branchId,
       product_variant_id: productVariantId,
       quantity,
     },

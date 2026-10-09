@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../branches/data/branch_api.dart';
-import '../../branches/models/branch.dart';
 import '../../products/data/product_api.dart';
 import '../../products/models/product.dart';
 import '../../products/models/product_variant.dart';
@@ -35,7 +34,6 @@ class AdminInventoryFormPage extends StatefulWidget {
 class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
   late final AdminInventoryApi _api;
   late final ProductApi _productApi;
-  late final BranchApi _branchApi;
 
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
@@ -43,9 +41,6 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
   bool _isLoadingData = true;
   bool _isSubmitting = false;
   String? _error;
-
-  List<Branch> _branches = [];
-  String? _selectedBranchId;
 
   List<Product> _products = [];
   String? _selectedProductId;
@@ -55,16 +50,13 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
 
   bool get isAdmin => widget.role == 'ADMIN';
   bool get isEditing => widget.inventory != null;
-  bool get canMutate => isAdmin || widget.role == 'BRANCH_MANAGER';
-  bool get hasAssignedBranch =>
-      widget.assignedBranchId != null && widget.assignedBranchId!.isNotEmpty;
+  bool get canMutate => isAdmin;
 
   @override
   void initState() {
     super.initState();
     _api = widget.inventoryApi ?? AdminInventoryApi();
     _productApi = widget.productApi ?? ProductApi();
-    _branchApi = widget.branchApi ?? BranchApi();
 
     if (!canMutate) {
       _isLoadingData = false;
@@ -72,21 +64,10 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
       return;
     }
 
-    if (!isAdmin && !hasAssignedBranch) {
-      _isLoadingData = false;
-      _error =
-          'Tài khoản của bạn chưa được gán cho bất kỳ chi nhánh nào. '
-          'Vui lòng liên hệ quản trị viên.';
-      return;
-    }
-
     if (isEditing) {
       _quantityController.text = widget.inventory!.quantity.toString();
       _isLoadingData = false;
     } else {
-      if (!isAdmin) {
-        _selectedBranchId = widget.assignedBranchId;
-      }
       _loadFormData();
     }
   }
@@ -104,27 +85,11 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
     });
 
     try {
-      final futures = <Future>[_productApi.getProducts()];
-
-      if (isAdmin) {
-        futures.add(_branchApi.getBranches());
-      }
-
-      final results = await Future.wait(futures);
+      final products = await _productApi.getProducts();
 
       if (mounted) {
         setState(() {
-          _products = (results[0] as List<Product>)
-              .where((p) => p.isActive)
-              .toList();
-          if (isAdmin) {
-            _branches = (results[1] as List<Branch>)
-                .where((b) => b.status == 'ACTIVE')
-                .toList();
-          } else {
-            // For BRANCH_MANAGER we could optionally fetch branch name if we wanted,
-            // but the backend enforces the branchId anyway.
-          }
+          _products = products.where((p) => p.isActive).toList();
           _isLoadingData = false;
         });
       }
@@ -166,13 +131,8 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
   }
 
   Future<void> _submit() async {
-    if (!canMutate || (!isAdmin && !hasAssignedBranch)) return;
+    if (!canMutate) return;
     if (!_formKey.currentState!.validate()) return;
-
-    if (!isEditing && _selectedBranchId == null) {
-      setState(() => _error = 'Vui lòng chọn chi nhánh');
-      return;
-    }
 
     if (!isEditing && _selectedVariantId == null) {
       setState(() => _error = 'Vui lòng chọn phân loại sản phẩm');
@@ -221,7 +181,6 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
         );
       } else {
         await _api.createInventory(
-          branchId: _selectedBranchId!,
           productVariantId: _selectedVariantId!,
           quantity: quantity,
         );
@@ -244,7 +203,7 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
       if (mounted) {
         setState(() {
           if (e.statusCode == 409) {
-            _error = 'Sản phẩm này đã có trong tồn kho của chi nhánh';
+            _error = 'Phân loại sản phẩm này đã có trong tồn kho';
           } else {
             _error = e.toString();
           }
@@ -273,7 +232,7 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
-          : !canMutate || (!isAdmin && !hasAssignedBranch)
+          : !canMutate
           ? _buildBlockingError()
           : Form(
               key: _formKey,
@@ -299,12 +258,6 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
 
                   if (isEditing) ...[
                     _buildReadOnlyField(
-                      'Chi nhánh',
-                      widget.inventory!.branch?.name ??
-                          widget.inventory!.branchId,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildReadOnlyField(
                       'Sản phẩm',
                       widget.inventory!.productVariant?.product?.name ?? 'N/A',
                     ),
@@ -319,35 +272,6 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
                       widget.inventory!.productVariant?.sku ?? 'N/A',
                     ),
                   ] else ...[
-                    if (isAdmin)
-                      DropdownButtonFormField<String>(
-                        key: const Key('inventory-branch-field'),
-                        initialValue: _selectedBranchId,
-                        decoration: const InputDecoration(
-                          labelText: 'Chi nhánh *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _branches
-                            .map(
-                              (b) => DropdownMenuItem(
-                                value: b.id,
-                                child: Text(b.name),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (val) {
-                          setState(() => _selectedBranchId = val);
-                        },
-                        validator: (val) =>
-                            val == null ? 'Vui lòng chọn chi nhánh' : null,
-                      )
-                    else
-                      _buildReadOnlyField(
-                        'Chi nhánh',
-                        'Chi nhánh #${widget.assignedBranchId} (Cố định)',
-                      ),
-
-                    const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       key: const Key('inventory-product-field'),
                       initialValue: _selectedProductId,

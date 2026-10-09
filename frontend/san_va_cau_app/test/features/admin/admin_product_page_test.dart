@@ -325,43 +325,92 @@ void main() {
       await tester.drag(find.byType(ListView), const Offset(0, -500));
       await tester.pumpAndSettle();
 
-      final submitBtn = find.text('Tạo phân loại', skipOffstage: false).last;
-      await tester.ensureVisible(submitBtn);
+      final submitBtn = find.byKey(const Key('variant-submit'));
+      final formScrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        submitBtn,
+        300,
+        scrollable: formScrollable,
+      );
+      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pump();
 
-      expect(find.text('Vui lòng nhập mã SKU'), findsOneWidget);
-      expect(find.text('Vui lòng nhập tên phân loại'), findsOneWidget);
-      expect(find.text('Vui lòng nhập giá'), findsOneWidget);
+      expect(
+        find.text('Vui lòng nhập mã SKU', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Vui lòng nhập tên phân loại', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Vui lòng nhập giá', skipOffstage: false),
+        findsOneWidget,
+      );
 
-      await tester.enterText(
-        find.byType(TextFormField).at(0),
-        'CONFLICT',
-      ); // SKU
-      await tester.enterText(find.byType(TextFormField).at(1), 'V1'); // Name
-      await tester.enterText(
-        find.byType(TextFormField).at(2),
-        '150.5',
-      ); // Price
+      await tester.drag(find.byType(ListView).last, const Offset(0, 2000));
+      await tester.pumpAndSettle();
+      final skuField = find.byKey(const Key('variant-sku'));
+      final nameField = find.byKey(const Key('variant-name'));
+      final priceField = find.byKey(const Key('variant-price'));
+      await tester.scrollUntilVisible(
+        skuField,
+        -300,
+        scrollable: formScrollable,
+      );
+      await tester.enterText(skuField, 'CONFLICT'); // SKU
+      await tester.scrollUntilVisible(
+        nameField,
+        100,
+        scrollable: formScrollable,
+      );
+      await tester.enterText(nameField, 'V1'); // Name
+      await tester.scrollUntilVisible(
+        priceField,
+        100,
+        scrollable: formScrollable,
+      );
+      await tester.enterText(priceField, '150.5'); // Price
 
-      await tester.ensureVisible(submitBtn);
+      await tester.scrollUntilVisible(
+        submitBtn,
+        300,
+        scrollable: formScrollable,
+      );
+      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('SKU đã tồn tại'),
+        find.textContaining('SKU đã tồn tại', skipOffstage: false),
         findsOneWidget,
       ); // Backend error
 
-      await tester.enterText(
-        find.byType(TextFormField).at(0),
-        'SKU2',
-      ); // Good SKU
-      await tester.ensureVisible(submitBtn);
+      await tester.drag(find.byType(ListView).last, const Offset(0, 2000));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        skuField,
+        -300,
+        scrollable: formScrollable,
+      );
+      await tester.enterText(skuField, 'SKU2'); // Good SKU
+      await tester.scrollUntilVisible(
+        submitBtn,
+        300,
+        scrollable: formScrollable,
+      );
+      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Tạo phân loại thành công'), findsOneWidget);
+      expect(
+        find.textContaining('Tạo phân loại thành công', skipOffstage: false),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Variant inactivation confirmation', (tester) async {

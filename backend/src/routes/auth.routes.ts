@@ -23,6 +23,9 @@ const toAuthUser = (user: {
 const normalizeEmail = (email: unknown) =>
   typeof email === "string" ? email.trim().toLowerCase() : "";
 
+const isValidEmail = (email: string) =>
+  email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const parseBigIntId = (value: unknown) => {
   const normalized =
     typeof value === "string"
@@ -34,84 +37,6 @@ const parseBigIntId = (value: unknown) => {
   return /^\d+$/.test(normalized) && normalized !== "0" ? BigInt(normalized) : null;
 };
 
-authRouter.post("/register", authRateLimit, async (req, res, next) => {
-  try {
-    const email = normalizeEmail(req.body?.email);
-    const password = typeof req.body?.password === "string" ? req.body.password : "";
-    const fullName = typeof req.body?.fullName === "string" ? req.body.fullName.trim() : "";
-    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : null;
-
-    if (!email || !password || !fullName) {
-      res.status(400).json({
-        success: false,
-        message: "email, password, and fullName are required",
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      res.status(400).json({
-        success: false,
-        message: "password must be at least 6 characters",
-      });
-      return;
-    }
-
-    const existingUser = await prisma.app_user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
-    if (existingUser) {
-      res.status(409).json({
-        success: false,
-        message: "email already exists",
-      });
-      return;
-    }
-
-    const user = await prisma.app_user.create({
-      data: {
-        email,
-        password_hash: await hashPassword(password),
-        full_name: fullName,
-        phone,
-        role: "CUSTOMER",
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-        email: true,
-        full_name: true,
-        phone: true,
-        role: true,
-        status: true,
-        branch_id: true,
-      },
-    });
-
-    const authUser = toAuthUser(user);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          id: authUser.id,
-          email: user.email,
-          fullName: user.full_name,
-          phone: user.phone,
-          role: user.role,
-          status: user.status,
-          branchId: authUser.branchId,
-        },
-        token: signAuthToken(authUser),
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
 authRouter.post("/login", authRateLimit, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email);
@@ -121,6 +46,14 @@ authRouter.post("/login", authRateLimit, async (req, res, next) => {
       res.status(400).json({
         success: false,
         message: "email and password are required",
+      });
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      res.status(400).json({
+        success: false,
+        message: "email is invalid",
       });
       return;
     }
@@ -136,6 +69,7 @@ authRouter.post("/login", authRateLimit, async (req, res, next) => {
         role: true,
         status: true,
         branch_id: true,
+        must_change_password: true,
       },
     });
 
@@ -168,6 +102,7 @@ authRouter.post("/login", authRateLimit, async (req, res, next) => {
           role: user.role,
           status: user.status,
           branchId: authUser.branchId,
+          mustChangePassword: user.must_change_password,
         },
         token: signAuthToken(authUser),
       },
@@ -263,6 +198,14 @@ authRouter.post("/admin/users", requireAuth, requireRole("ADMIN"), async (req, r
       res.status(400).json({
         success: false,
         message: "email, password, fullName, role, and branchId are required",
+      });
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      res.status(400).json({
+        success: false,
+        message: "email is invalid",
       });
       return;
     }
@@ -744,6 +687,14 @@ authRouter.post("/change-password", requireAuth, async (req, res, next) => { // 
       res.status(400).json({
         success: false,
         message: "newPassword must be at least 6 characters",
+      });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      res.status(400).json({
+        success: false,
+        message: "new password must be different from current password",
       });
       return;
     }

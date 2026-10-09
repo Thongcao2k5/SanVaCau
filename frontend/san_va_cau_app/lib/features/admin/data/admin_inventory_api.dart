@@ -23,9 +23,6 @@ class AdminInventoryApi {
     }
 
     final queryParameters = <String, String>{};
-    if (branchId != null && branchId.isNotEmpty) {
-      queryParameters['branchId'] = branchId;
-    }
     if (productVariantId != null && productVariantId.isNotEmpty) {
       queryParameters['productVariantId'] = productVariantId;
     }
@@ -60,7 +57,7 @@ class AdminInventoryApi {
   }
 
   Future<AdminInventory> createInventory({
-    required String branchId,
+    String? branchId,
     required String productVariantId,
     required int quantity,
   }) async {
@@ -74,11 +71,7 @@ class AdminInventoryApi {
 
     final response = await _apiClient.post(
       '/inventories',
-      body: {
-        'branchId': branchId,
-        'productVariantId': productVariantId,
-        'quantity': quantity,
-      },
+      body: {'productVariantId': productVariantId, 'quantity': quantity},
       token: token,
     );
 

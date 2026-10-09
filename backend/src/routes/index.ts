@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authRouter } from "./auth.routes.js";
+import { otpAuthRouter } from "./otp-auth.routes.js";
 import { branchRouter } from "./branch.routes.js";
 import { categoryRouter } from "./category.routes.js";
 import { brandRouter } from "./brand.routes.js"; // Import route brand
@@ -60,6 +61,7 @@ router.get("/health/db", async (_req, res, next) => {
 });
 router.use("/brands", brandRouter); // Gắn brand API vào /api/brands
 router.use("/auth", authRouter);
+router.use("/auth", otpAuthRouter);
 router.use("/branches", branchRouter);
 router.use("/categories", categoryRouter);
 router.use("/products", productRouter);

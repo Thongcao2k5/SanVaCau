@@ -10,9 +10,14 @@ type ProductVariantRow = {
   product_id: bigint;
   sku: string;
   variant_name: string;
+  option_1_name: string | null;
+  option_1_value: string | null;
+  option_2_name: string | null;
+  option_2_value: string | null;
   price: { toString: () => string };
   image_url: string | null;
   is_active: boolean;
+  inventory: Array<{ quantity: number }>;
   product: {
     id: bigint;
     name: string;
@@ -24,9 +29,18 @@ const productVariantSelect = {
   product_id: true,
   sku: true,
   variant_name: true,
+  option_1_name: true,
+  option_1_value: true,
+  option_2_name: true,
+  option_2_value: true,
   price: true,
   image_url: true,
   is_active: true,
+  inventory: {
+    select: {
+      quantity: true,
+    },
+  },
   product: {
     select: {
       id: true,
@@ -62,9 +76,14 @@ const toProductVariantResponse = (variant: ProductVariantRow) => ({
   productId: variant.product_id.toString(),
   sku: variant.sku,
   variantName: variant.variant_name,
+  option1Name: variant.option_1_name,
+  option1Value: variant.option_1_value,
+  option2Name: variant.option_2_name,
+  option2Value: variant.option_2_value,
   price: variant.price.toString(),
   imageUrl: variant.image_url,
   isActive: variant.is_active,
+  stockQuantity: variant.inventory[0]?.quantity ?? 0,
   product: {
     id: variant.product.id.toString(),
     name: variant.product.name,
@@ -171,6 +190,10 @@ productVariantRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, re
     const productId = parseBodyBigIntId(req.body?.productId);
     const sku = typeof req.body?.sku === "string" ? req.body.sku.trim() : "";
     const variantName = typeof req.body?.variantName === "string" ? req.body.variantName.trim() : "";
+    const option1Name = typeof req.body?.option1Name === "string" ? req.body.option1Name.trim() || null : null;
+    const option1Value = typeof req.body?.option1Value === "string" ? req.body.option1Value.trim() || null : null;
+    const option2Name = typeof req.body?.option2Name === "string" ? req.body.option2Name.trim() || null : null;
+    const option2Value = typeof req.body?.option2Value === "string" ? req.body.option2Value.trim() || null : null;
     const price = parsePrice(req.body?.price);
     const imageUrl = typeof req.body?.imageUrl === "string" ? req.body.imageUrl.trim() : null;
 
@@ -212,6 +235,10 @@ productVariantRouter.post("/", requireAuth, requireRole("ADMIN"), async (req, re
         product_id: productId,
         sku,
         variant_name: variantName,
+        option_1_name: option1Name,
+        option_1_value: option1Value,
+        option_2_name: option2Name,
+        option_2_value: option2Value,
         price,
         image_url: imageUrl,
         is_active: true,
@@ -263,6 +290,12 @@ productVariantRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req
     const sku = typeof req.body?.sku === "string" ? req.body.sku.trim() : undefined;
     const variantName =
       typeof req.body?.variantName === "string" ? req.body.variantName.trim() : undefined;
+    const optionalText = (value: unknown) =>
+      value === null ? null : typeof value === "string" ? value.trim() || null : undefined;
+    const option1Name = optionalText(req.body?.option1Name);
+    const option1Value = optionalText(req.body?.option1Value);
+    const option2Name = optionalText(req.body?.option2Name);
+    const option2Value = optionalText(req.body?.option2Value);
     const price = req.body?.price === undefined ? undefined : parsePrice(req.body.price);
     const imageUrl =
       req.body?.imageUrl === null
@@ -337,6 +370,10 @@ productVariantRouter.patch("/:id", requireAuth, requireRole("ADMIN"), async (req
       ...(productId ? { product_id: productId } : {}),
       ...(sku !== undefined ? { sku } : {}),
       ...(variantName !== undefined ? { variant_name: variantName } : {}),
+      ...(option1Name !== undefined ? { option_1_name: option1Name } : {}),
+      ...(option1Value !== undefined ? { option_1_value: option1Value } : {}),
+      ...(option2Name !== undefined ? { option_2_name: option2Name } : {}),
+      ...(option2Value !== undefined ? { option_2_value: option2Value } : {}),
       ...(price !== undefined && price !== null ? { price } : {}),
       ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
       ...(isActive !== undefined ? { is_active: isActive } : {}),

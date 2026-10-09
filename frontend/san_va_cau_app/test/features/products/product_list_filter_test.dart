@@ -65,29 +65,49 @@ void main() {
     expect(api.requests.single.categoryId, isNull);
     expect(api.requests.single.brandId, isNull);
 
-    await tester.tap(find.byTooltip('Lọc sản phẩm'));
-    await tester.pumpAndSettle();
-    expect(find.text('Bộ lọc sản phẩm'), findsOneWidget);
+    // Initial state: "Tất cả sản phẩm" and "1 sản phẩm"
+    expect(find.text('Tất cả sản phẩm'), findsOneWidget);
+    expect(find.text('1 sản phẩm'), findsOneWidget);
+
+    // Select category
     await tester.tap(find.widgetWithText(ChoiceChip, 'Vợt cầu lông'));
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Yonex'));
-    await tester.tap(find.text('Áp dụng'));
     await tester.pumpAndSettle();
 
     expect(api.requests, hasLength(2));
     expect(api.requests.last.categoryId, '2');
-    expect(api.requests.last.brandId, '4');
-    expect(find.text('Vợt cầu lông • Yonex'), findsOneWidget);
+    expect(api.requests.last.brandId, isNull);
 
-    await tester.tap(find.byTooltip('Xóa bộ lọc'));
+    // Header should now show "Vợt cầu lông"
+    // (There is also the ChoiceChip with the same text, so findsWidgets)
+    expect(find.text('Vợt cầu lông'), findsWidgets);
+
+    // Select brand
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Yonex'));
     await tester.pumpAndSettle();
 
     expect(api.requests, hasLength(3));
+    expect(api.requests.last.categoryId, '2');
+    expect(api.requests.last.brandId, '4');
+
+    // Clear category using "Tất cả"
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Tất cả'));
+    await tester.pumpAndSettle();
+
+    expect(api.requests, hasLength(4));
+    expect(api.requests.last.categoryId, isNull);
+    expect(api.requests.last.brandId, '4');
+    expect(find.text('Tất cả sản phẩm'), findsOneWidget);
+
+    // Clear brand using "Tất cả hãng"
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Tất cả hãng'));
+    await tester.pumpAndSettle();
+
+    expect(api.requests, hasLength(5));
     expect(api.requests.last.categoryId, isNull);
     expect(api.requests.last.brandId, isNull);
-    expect(find.text('Vợt cầu lông • Yonex'), findsNothing);
   });
 
-  testWidgets('keeps filter options reachable when no product matches', (
+  testWidgets('shows empty state when no product matches and clears filters', (
     tester,
   ) async {
     final api = _EmptyProductApi();
@@ -97,7 +117,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Chưa có sản phẩm'), findsOneWidget);
-    expect(find.byTooltip('Lọc sản phẩm'), findsOneWidget);
+
+    // Select category
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Vợt cầu lông'));
+    await tester.pumpAndSettle();
+
+    // Expect filter-specific empty state
+    expect(find.text('Không tìm thấy sản phẩm'), findsOneWidget);
+    expect(find.text('Xóa bộ lọc'), findsOneWidget);
+
+    // Tap "Xóa bộ lọc"
+    await tester.tap(find.text('Xóa bộ lọc'));
+    await tester.pumpAndSettle();
+
+    expect(api.requests.last.categoryId, isNull);
+  });
+
+  testWidgets('shows filter error and retries loading filter options', (
+    tester,
+  ) async {
+    final api = _FailingFilterApi();
+    await tester.pumpWidget(
+      MaterialApp(home: ProductListPage(productApi: api)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chưa thể tải bộ lọc'), findsOneWidget);
+    expect(find.text('Thử lại'), findsOneWidget);
+
+    await tester.tap(find.text('Thử lại'));
+    await tester.pumpAndSettle();
+
+    expect(api.categoryAttempts, 2);
+    expect(find.widgetWithText(ChoiceChip, 'Vợt cầu lông'), findsOneWidget);
   });
 }
 
@@ -109,5 +161,16 @@ class _EmptyProductApi extends _FakeProductApi {
   }) async {
     requests.add(_ProductRequest(categoryId, brandId));
     return [];
+  }
+}
+
+class _FailingFilterApi extends _FakeProductApi {
+  var categoryAttempts = 0;
+
+  @override
+  Future<List<ProductCategory>> getCategories() async {
+    categoryAttempts++;
+    if (categoryAttempts == 1) throw Exception('filter failed');
+    return super.getCategories();
   }
 }

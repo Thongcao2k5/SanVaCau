@@ -17,9 +17,16 @@ import '../data/order_api.dart';
 import '../models/order.dart';
 
 class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({required this.cart, super.key});
+  const CheckoutPage({
+    required this.cart,
+    this.buyNowProductVariantId,
+    this.buyNowQuantity,
+    super.key,
+  });
 
   final Cart cart;
+  final String? buyNowProductVariantId;
+  final int? buyNowQuantity;
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -86,7 +93,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     Order? createdOrder;
     Payment? payment;
     try {
-      createdOrder = await _orderApi.createOrder(branchId: _selectedBranch!.id);
+      createdOrder = await _orderApi.createOrder(
+        branchId: _selectedBranch!.id,
+        productVariantId: widget.buyNowProductVariantId,
+        quantity: widget.buyNowQuantity,
+      );
 
       if (_fulfillmentType == 'DELIVERY') {
         await _fulfillmentApi.createDelivery(

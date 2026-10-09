@@ -16,7 +16,9 @@ import '../../support/pages/support_ticket_list_page.dart';
 import '../data/auth_api.dart';
 import '../models/auth_user.dart';
 import 'change_password_page.dart';
+import 'forgot_password_page.dart';
 import 'profile_edit_page.dart';
+import 'registration_otp_page.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({
@@ -174,7 +176,7 @@ class _AccountPageState extends State<AccountPage> {
             );
           }
 
-          return _AuthForm(onAuthSuccess: _reloadProfile);
+          return _AuthForm(authApi: _authApi, onAuthSuccess: _reloadProfile);
         },
       ),
     );
@@ -543,8 +545,9 @@ class _ProfileRow extends StatelessWidget {
 }
 
 class _AuthForm extends StatefulWidget {
-  const _AuthForm({required this.onAuthSuccess});
+  const _AuthForm({required this.authApi, required this.onAuthSuccess});
 
+  final AuthApi authApi;
   final VoidCallback onAuthSuccess;
 
   @override
@@ -552,7 +555,6 @@ class _AuthForm extends StatefulWidget {
 }
 
 class _AuthFormState extends State<_AuthForm> {
-  final AuthApi _authApi = AuthApi();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -562,6 +564,15 @@ class _AuthFormState extends State<_AuthForm> {
   bool _isSubmitting = false;
   bool _showPassword = false;
   String? _errorMessage;
+
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return 'Nhập email';
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      return 'Email không đúng định dạng';
+    }
+    return null;
+  }
 
   @override
   void dispose() {
@@ -586,14 +597,31 @@ class _AuthFormState extends State<_AuthForm> {
 
     try {
       if (_isRegisterMode) {
-        await _authApi.register(
+        final result = await widget.authApi.requestRegistrationOtp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           fullName: _fullNameController.text.trim(),
           phone: _phoneController.text.trim(),
         );
+        if (!mounted) return;
+        final verified = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RegistrationOtpPage(
+              authApi: widget.authApi,
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+              fullName: _fullNameController.text.trim(),
+              phone: _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+              initialResult: result,
+            ),
+          ),
+        );
+        if (verified != true) return;
       } else {
-        await _authApi.login(
+        await widget.authApi.login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -709,10 +737,7 @@ class _AuthFormState extends State<_AuthForm> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Nhập email'
-                          : null,
+                      validator: _validateEmail,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -800,6 +825,22 @@ class _AuthFormState extends State<_AuthForm> {
                 )
               : Text(_isRegisterMode ? 'Đăng ký' : 'Đăng nhập'),
         ),
+        if (!_isRegisterMode)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _isSubmitting
+                  ? null
+                  : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ForgotPasswordPage(authApi: widget.authApi),
+                      ),
+                    ),
+              child: const Text('Quên mật khẩu?'),
+            ),
+          ),
         const SizedBox(height: 8),
         TextButton(
           onPressed: _isSubmitting

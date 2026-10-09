@@ -23,14 +23,14 @@ class AuthApi {
     return session;
   }
 
-  Future<AuthSession> register({
+  Future<OtpRequestResult> requestRegistrationOtp({
     required String email,
     required String password,
     required String fullName,
     String? phone,
   }) async {
     final response = await _apiClient.post(
-      '/auth/register',
+      '/auth/register/request-otp',
       body: {
         'email': email,
         'password': password,
@@ -39,8 +39,37 @@ class AuthApi {
       },
     );
 
-    final session = await _saveSessionFromResponse(response);
-    return session;
+    return OtpRequestResult.fromResponse(response);
+  }
+
+  Future<AuthSession> verifyRegistrationOtp({
+    required String email,
+    required String code,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/register/verify-otp',
+      body: {'email': email, 'code': code},
+    );
+    return _saveSessionFromResponse(response);
+  }
+
+  Future<OtpRequestResult> requestPasswordResetOtp(String email) async {
+    final response = await _apiClient.post(
+      '/auth/forgot-password/request-otp',
+      body: {'email': email},
+    );
+    return OtpRequestResult.fromResponse(response);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await _apiClient.post(
+      '/auth/forgot-password/reset',
+      body: {'email': email, 'code': code, 'newPassword': newPassword},
+    );
   }
 
   Future<AuthUser> getProfile() async {
@@ -115,4 +144,25 @@ class AuthSession {
 
   final AuthUser user;
   final String token;
+}
+
+class OtpRequestResult {
+  const OtpRequestResult({
+    required this.expiresInSeconds,
+    required this.resendAfterSeconds,
+    this.debugOtp,
+  });
+
+  factory OtpRequestResult.fromResponse(Map<String, dynamic> response) {
+    final data = response['data'] as Map<String, dynamic>? ?? const {};
+    return OtpRequestResult(
+      expiresInSeconds: (data['expiresInSeconds'] as num?)?.toInt() ?? 300,
+      resendAfterSeconds: (data['resendAfterSeconds'] as num?)?.toInt() ?? 60,
+      debugOtp: data['debugOtp']?.toString(),
+    );
+  }
+
+  final int expiresInSeconds;
+  final int resendAfterSeconds;
+  final String? debugOtp;
 }

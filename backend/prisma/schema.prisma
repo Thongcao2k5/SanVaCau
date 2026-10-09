@@ -39,6 +39,21 @@ model app_user {
   @@index([branch_id, role], map: "ix_app_user_branch")
 }
 
+model auth_otp {
+  id           BigInt    @id @default(autoincrement())
+  email        String    @db.VarChar(255)
+  purpose      String    @db.VarChar(30)
+  code_hash    String    @db.VarChar(255)
+  payload      Json?
+  attempts     Int       @default(0)
+  expires_at   DateTime  @db.Timestamp(6)
+  last_sent_at DateTime  @default(now()) @db.Timestamp(6)
+  consumed_at  DateTime? @db.Timestamp(6)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([email, purpose, created_at])
+}
+
 model audit_log {
   id          BigInt   @id @default(autoincrement())
   actor_id    BigInt?
@@ -130,7 +145,6 @@ model branch {
   branch_service branch_service[]
   court          court[]
   customer_order customer_order[]
-  inventory      inventory[]
   news           news[]
 }
 
@@ -240,15 +254,10 @@ model customer_order {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model inventory {
   id                 BigInt          @id @default(autoincrement())
-  branch_id          BigInt
-  product_variant_id BigInt
+  product_variant_id BigInt          @unique
   quantity           Int             @default(0)
   updated_at         DateTime        @default(now()) @db.Timestamp(6)
-  branch             branch          @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   product_variant    product_variant @relation(fields: [product_variant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([branch_id, product_variant_id])
-  @@index([branch_id], map: "ix_inventory_branch")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -323,6 +332,10 @@ model product_variant {
   product_id   BigInt
   sku          String       @unique @db.VarChar(80)
   variant_name String       @db.VarChar(150)
+  option_1_name String?     @db.VarChar(50)
+  option_1_value String?    @db.VarChar(100)
+  option_2_name String?     @db.VarChar(50)
+  option_2_value String?    @db.VarChar(100)
   price        Decimal      @db.Decimal(18, 2)
   image_url    String?      @db.VarChar(1000)
   is_active    Boolean      @default(true)

@@ -121,8 +121,6 @@ dashboardRouter.get("/summary", requireAuth, requireRole(["ADMIN", "BRANCH_MANAG
     // 3. Inventory low stock
     const inventoryWhere = {
       quantity: { lte: 5 },
-      branch: { status: "ACTIVE" },
-      ...(branchId ? { branch_id: branchId } : {}),
     };
 
     const lowStockCount = await prisma.inventory.count({ where: inventoryWhere });
@@ -131,7 +129,6 @@ dashboardRouter.get("/summary", requireAuth, requireRole(["ADMIN", "BRANCH_MANAG
       orderBy: { quantity: "asc" },
       take: 10,
       include: {
-        branch: true,
         product_variant: {
           include: {
             product: true,
@@ -142,8 +139,8 @@ dashboardRouter.get("/summary", requireAuth, requireRole(["ADMIN", "BRANCH_MANAG
 
     const mappedLowStock = lowStockItems.map((inv) => ({
       inventoryId: inv.id.toString(),
-      branchId: inv.branch_id.toString(),
-      branchName: inv.branch.name,
+      branchId: null,
+      branchName: "Kho chung",
       productVariantId: inv.product_variant_id.toString(),
       productName: inv.product_variant.product.name,
       variantName: inv.product_variant.variant_name,
