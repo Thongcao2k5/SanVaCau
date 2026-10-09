@@ -45,6 +45,8 @@ CREATE DATABASE sanvacau_test;
 
 ## 2. Cấu hình và chạy backend
 
+Muốn dùng dữ liệu snapshot đã có sản phẩm và lịch đặt sân, làm theo [database/README.md](database/README.md) thay cho bước tạo schema và seed bên dưới.
+
 ```powershell
 cd backend
 Copy-Item .env.example .env

@@ -12,6 +12,8 @@
     "seed": "prisma db seed",
     "migrate:half-hour-slots": "tsx scripts/migrate-half-hour-slots.ts",
     "schedule:fill": "tsx scripts/fill-court-schedule.ts",
+    "db:export-demo": "tsx scripts/export-demo-database.ts",
+    "db:restore-demo": "tsx scripts/restore-demo-database.ts",
     "smoke:test": "tsx scripts/smoke-test.ts",
     "test": "vitest run",
     "test:integration": "vitest run tests/integration",
