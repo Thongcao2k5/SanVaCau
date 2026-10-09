@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../auth/pages/account_page.dart';
+import '../auth/data/auth_api.dart';
 import '../booking/pages/booking_page.dart';
 import '../branches/pages/branch_list_page.dart';
 import '../branches/models/branch.dart';
@@ -13,7 +14,9 @@ import '../products/pages/product_list_page.dart';
 import '../racket_services/pages/racket_service_page.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, this.authApi});
+
+  final AuthApi? authApi;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -79,12 +82,17 @@ class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   Branch? _bookingBranch;
   int _bookingRevision = 0;
+  bool _bookingTimelineVisible = false;
+  int _accountRevision = 0;
 
   void _onTabSelected(int index) {
     if (_navigationController.index != index) {
       _navigationController.jumpTo(index);
     }
     setState(() {
+      // Login can happen on a pushed page while this tab stays in IndexedStack.
+      // Fetch the current session whenever the user returns to their account.
+      if (index == 4 && _currentIndex != 4) _accountRevision++;
       _currentIndex = index;
     });
   }
@@ -95,6 +103,7 @@ class _MainShellState extends State<MainShell> {
     }
     setState(() {
       _bookingBranch = branch;
+      _bookingTimelineVisible = true;
       _bookingRevision++;
       _currentIndex = 2;
     });
@@ -137,44 +146,55 @@ class _MainShellState extends State<MainShell> {
       BookingPage(
         key: ValueKey('booking-${_bookingBranch?.id}-$_bookingRevision'),
         initialBranch: _bookingBranch,
+        authApi: widget.authApi,
+        onTimelineVisibilityChanged: (visible) {
+          if (_bookingTimelineVisible != visible) {
+            setState(() => _bookingTimelineVisible = visible);
+          }
+        },
       ),
       const CartPage(),
-      const AccountPage(),
+      AccountPage(
+        key: ValueKey('account-$_accountRevision'),
+        authApi: widget.authApi,
+      ),
     ];
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.only(bottom: 2),
-        child: AnimatedNotchBottomBar(
-          notchBottomBarController: _navigationController,
-          bottomBarItems: _navigationItems,
-          onTap: _onTabSelected,
-          color: _barColor,
-          notchColor: AppColors.surface,
-          showLabel: true,
-          itemLabelStyle: const TextStyle(
-            color: Color(0xFFFFE4E4),
-            fontFamily: 'PlusJakartaSans',
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-          ),
-          textOverflow: TextOverflow.visible,
-          maxLine: 1,
-          kIconSize: 25,
-          kBottomRadius: 24,
-          bottomBarHeight: 66,
-          bottomBarWidth: 500,
-          durationInMilliSeconds: 350,
-          topMargin: 7,
-          circleMargin: 7,
-          elevation: 2,
-          shadowElevation: 12,
-          showShadow: true,
-          removeMargins: false,
-        ),
-      ),
+      bottomNavigationBar: _currentIndex == 2 && _bookingTimelineVisible
+          ? null
+          : SafeArea(
+              top: false,
+              minimum: const EdgeInsets.only(bottom: 2),
+              child: AnimatedNotchBottomBar(
+                notchBottomBarController: _navigationController,
+                bottomBarItems: _navigationItems,
+                onTap: _onTabSelected,
+                color: _barColor,
+                notchColor: AppColors.surface,
+                showLabel: true,
+                itemLabelStyle: const TextStyle(
+                  color: Color(0xFFFFE4E4),
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
+                textOverflow: TextOverflow.visible,
+                maxLine: 1,
+                kIconSize: 25,
+                kBottomRadius: 24,
+                bottomBarHeight: 66,
+                bottomBarWidth: 500,
+                durationInMilliSeconds: 350,
+                topMargin: 7,
+                circleMargin: 7,
+                elevation: 2,
+                shadowElevation: 12,
+                showShadow: true,
+                removeMargins: false,
+              ),
+            ),
     );
   }
 }

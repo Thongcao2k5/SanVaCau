@@ -1,3 +1,9 @@
+class CourtSlotSelection {
+  const CourtSlotSelection({required this.court, required this.slot});
+  final Court court;
+  final BookingSlot slot;
+}
+
 class Court {
   const Court({
     required this.id,

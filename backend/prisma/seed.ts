@@ -1,3 +1,4 @@
+import { migrateHalfHourSlots } from '../src/lib/half-hour-slots.js';
 import { Prisma } from "@prisma/client";
 import { hashPassword } from "../src/lib/auth.js";
 import { prisma } from "../src/lib/prisma.js";
@@ -480,55 +481,22 @@ const seedInventory = async () => {
 
 const seedCourtsAndPrices = async () => {
   const branches = await prisma.branch.findMany({ where: { name: { startsWith: "SanVaCau" }, status: "ACTIVE" } });
-  const slotValues = [
-    ["06:00", "07:00"],
-    ["07:00", "08:00"],
-    ["08:00", "09:00"],
-    ["17:00", "18:00"],
-    ["18:00", "19:00"],
-    ["19:00", "20:00"],
-    ["20:00", "21:00"],
-    ["21:00", "22:00"],
-  ] as const;
-
+  await migrateHalfHourSlots(prisma);
   const slots = [];
-  for (const [index, [start, end]] of slotValues.entries()) {
-    const startTime = timeOfDay(start);
-    const endTime = timeOfDay(end);
-    const sortOrder = index + 1;
-    const exactSlot = await prisma.time_slot.findFirst({
-      where: { start_time: startTime, end_time: endTime },
-    });
-    const sortSlot = exactSlot ? null : await prisma.time_slot.findUnique({ where: { sort_order: sortOrder } });
-    const slot =
-      exactSlot ??
-      (sortSlot
-        ? await prisma.time_slot.update({
-            where: { id: sortSlot.id },
-            data: {
-              start_time: startTime,
-              end_time: endTime,
-              is_active: true,
-            },
-          })
-        : await prisma.time_slot.create({
-            data: {
-              start_time: startTime,
-              end_time: endTime,
-              sort_order: sortOrder,
-              is_active: true,
-            },
-          }));
-
-    if (!slot.is_active) {
-      await prisma.time_slot.update({
-        where: { id: slot.id },
-        data: { is_active: true },
+  let sortOrder = (await prisma.time_slot.aggregate({ _max: { sort_order: true } }))._max.sort_order ?? 0;
+  for (const [from, until] of [[6, 22]]) {
+    for (let minute = from * 60; minute < until * 60; minute += 30) {
+      const format = (value: number) => `${Math.floor(value / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`;
+      const start = timeOfDay(format(minute));
+      const end = timeOfDay(format(minute + 30));
+      const slot = await prisma.time_slot.upsert({
+        where: { start_time_end_time: { start_time: start, end_time: end } },
+        update: { is_active: true },
+        create: { start_time: start, end_time: end, sort_order: ++sortOrder, is_active: true },
       });
+      slots.push(slot);
     }
-    slots.push(slot);
   }
-
   for (const branch of branches) {
     for (const courtName of ["Sân 1", "Sân 2", "Sân 3"]) {
       const court = await prisma.court.upsert({
@@ -552,7 +520,7 @@ const seedCourtsAndPrices = async () => {
 
       for (const slot of slots) {
         const hour = slot.start_time.getUTCHours();
-        const price = hour < 12 ? "80000" : "120000";
+        const price = hour < 12 ? "40000" : "60000";
         await prisma.court_price.upsert({
           where: {
             court_id_time_slot_id: {

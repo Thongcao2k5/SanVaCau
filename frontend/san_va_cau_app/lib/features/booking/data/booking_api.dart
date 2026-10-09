@@ -69,6 +69,24 @@ class BookingApi {
     );
   }
 
+  Future<void> createBookings({
+    required String bookingDate,
+    required Map<String, List<String>> courtSlots,
+  }) async {
+    await _apiClient.post(
+      '/bookings/batch',
+      token: await _readToken(),
+      body: {
+        'bookingDate': bookingDate,
+        'paymentMethod': 'CASH',
+        'courts': [
+          for (final entry in courtSlots.entries)
+            {'courtId': entry.key, 'timeSlotIds': entry.value},
+        ],
+      },
+    );
+  }
+
   Future<List<Booking>> getMyBookings() async {
     final response = await _apiClient.get(
       '/bookings/me',

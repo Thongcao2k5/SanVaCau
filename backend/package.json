@@ -10,6 +10,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "seed": "prisma db seed",
+    "migrate:half-hour-slots": "tsx scripts/migrate-half-hour-slots.ts",
+    "schedule:fill": "tsx scripts/fill-court-schedule.ts",
     "smoke:test": "tsx scripts/smoke-test.ts",
     "test": "vitest run",
     "test:integration": "vitest run tests/integration",

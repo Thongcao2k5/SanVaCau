@@ -121,6 +121,12 @@ flutter run -d <DEVICE_ID> --dart-define=API_BASE_URL=http://127.0.0.1:3000/api
 
 ## 4. Chạy kiểm thử
 
+### Khung đặt sân 30 phút
+
+Mỗi ô timeline là 30 phút, đầy đủ từ 06:00 đến 22:00. Giá mẫu là 40.000đ/30 phút trước 12:00 và 60.000đ/30 phút từ 12:00. Chọn ba ô liên tiếp để đặt 1 giờ 30 phút; có thể chọn nhiều sân trong một lần xác nhận. Với database thiếu giờ, chạy `npm run schedule:fill` trong `backend` để bổ sung bảng giá mà vẫn giữ giá đã có.
+
+Với database cũ dùng khung 1 giờ, chạy `npm run migrate:half-hour-slots` trong `backend`. Lệnh chia bảng giá theo thời lượng và giữ nguyên lịch đã đặt; API khóa các ô 30 phút trùng lịch cũ. Seed mới tạo trực tiếp các khung 30 phút.
+
 Backend:
 
 ```powershell

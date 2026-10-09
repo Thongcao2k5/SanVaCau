@@ -29,6 +29,7 @@ class AccountPage extends StatefulWidget {
     this.myReviewsPage,
     this.adminDashboardPage,
     this.changePasswordPage,
+    this.returnAfterAuthentication = false,
   });
 
   final AuthApi? authApi;
@@ -37,6 +38,7 @@ class AccountPage extends StatefulWidget {
   final Widget? myReviewsPage;
   final Widget? adminDashboardPage;
   final Widget? changePasswordPage;
+  final bool returnAfterAuthentication;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -114,6 +116,15 @@ class _AccountPageState extends State<AccountPage> {
     _loadProfile();
   }
 
+  void _onAuthSuccess() {
+    if (!mounted) return;
+    if (widget.returnAfterAuthentication) {
+      Navigator.of(context).pop(true);
+    } else {
+      _reloadProfile();
+    }
+  }
+
   Future<void> _logout() async {
     await _authApi.logout();
     if (!mounted) return;
@@ -138,7 +149,11 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tài khoản'),
+        title: Text(
+          widget.returnAfterAuthentication
+              ? 'Đăng nhập để đặt sân'
+              : 'Tài khoản',
+        ),
         actions: [
           IconButton(
             tooltip: 'Trợ giúp',
@@ -176,7 +191,7 @@ class _AccountPageState extends State<AccountPage> {
             );
           }
 
-          return _AuthForm(authApi: _authApi, onAuthSuccess: _reloadProfile);
+          return _AuthForm(authApi: _authApi, onAuthSuccess: _onAuthSuccess);
         },
       ),
     );

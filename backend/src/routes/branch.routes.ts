@@ -196,7 +196,7 @@ branchRouter.get("/:id/availability", async (req, res, next) => {
           },
           orderBy: {
             time_slot: {
-              sort_order: "asc",
+              start_time: "asc",
             },
           },
         },
@@ -221,6 +221,7 @@ branchRouter.get("/:id/availability", async (req, res, next) => {
       select: {
         court_id: true,
         time_slot_id: true,
+        time_slot: true,
       },
     });
 
@@ -232,7 +233,8 @@ branchRouter.get("/:id/availability", async (req, res, next) => {
       const slots = court.court_price.map((cp) => {
         const timeSlotIdStr = cp.time_slot_id.toString();
         const courtIdStr = court.id.toString();
-        const isBooked = bookedSet.has(`${courtIdStr}-${timeSlotIdStr}`);
+        const isBooked = bookedSet.has(`${courtIdStr}-${timeSlotIdStr}`) || bookingSlots.some(bs =>
+          bs.court_id === court.id && bs.time_slot.start_time < cp.time_slot.end_time && bs.time_slot.end_time > cp.time_slot.start_time);
 
         return {
           timeSlotId: timeSlotIdStr,

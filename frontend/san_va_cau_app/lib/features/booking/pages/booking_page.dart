@@ -1,542 +1,680 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/token_storage.dart';
+import '../../auth/data/auth_api.dart';
+import '../../auth/pages/account_page.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../branches/data/branch_api.dart';
 import '../../branches/models/branch.dart';
 import '../data/booking_api.dart';
 import '../models/court.dart';
+import '../widgets/booking_timeline.dart';
 import 'court_detail_page.dart';
 
 class BookingPage extends StatefulWidget {
-  const BookingPage({super.key, this.initialBranch});
+  const BookingPage({
+    super.key,
+    this.initialBranch,
+    this.branchApi,
+    this.bookingApi,
+    this.onTimelineVisibilityChanged,
+    this.authApi,
+  });
 
   final Branch? initialBranch;
+  final BranchApi? branchApi;
+  final BookingApi? bookingApi;
+  final ValueChanged<bool>? onTimelineVisibilityChanged;
+  final AuthApi? authApi;
 
   @override
   State<BookingPage> createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
-  final BranchApi _branchApi = BranchApi();
-  final BookingApi _bookingApi = BookingApi();
+  late final BranchApi _branchApi = widget.branchApi ?? BranchApi();
+  late final BookingApi _bookingApi = widget.bookingApi ?? BookingApi();
   late Future<List<Branch>> _branchesFuture;
-  Future<List<Court>>? _courtsFuture;
-  Future<List<BookingSlot>>? _slotsFuture;
-  Branch? _selectedBranch;
-  Court? _selectedCourt;
-  DateTime _selectedDate = DateTime.now();
-  final Set<String> _selectedSlotIds = {};
-  bool _isSubmitting = false;
+  Future<List<CourtSchedule>>? _scheduleFuture;
+  Branch? _branch;
+
+  DateTime _date = DateUtils.dateOnly(DateTime.now());
+  final Map<String, CourtSlotSelection> _selected = {};
+  bool _submitting = false;
+  bool _checkingLogin = false;
+  final TokenStorage _tokenStorage = TokenStorage();
+  double _zoom = 1;
+
+  String get _dateKey =>
+      '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}';
+  String get _dateLabel =>
+      '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
+  double get _total =>
+      _selected.values.fold(0, (sum, slot) => sum + slot.slot.price);
+  String _money(double value) =>
+      '${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
 
   @override
   void initState() {
     super.initState();
     _branchesFuture = _branchApi.getBranches();
-    final initialBranch = widget.initialBranch;
-    if (initialBranch != null) {
-      _selectedBranch = initialBranch;
-      _courtsFuture = _bookingApi.getCourts(branchId: initialBranch.id);
+    if (widget.initialBranch != null) {
+      _chooseBranch(widget.initialBranch!, notify: false);
     }
   }
 
-  String get _dateText {
-    final year = _selectedDate.year.toString().padLeft(4, '0');
-    final month = _selectedDate.month.toString().padLeft(2, '0');
-    final day = _selectedDate.day.toString().padLeft(2, '0');
-
-    return '$year-$month-$day';
+  Future<List<CourtSchedule>> _loadSchedule(
+    String branchId,
+    String date,
+  ) async {
+    final courts = await _bookingApi.getCourts(branchId: branchId);
+    return Future.wait(
+      courts.map((court) async {
+        try {
+          final slots = await _bookingApi.getAvailability(
+            courtId: court.id,
+            date: date,
+          );
+          return CourtSchedule(court: court, slots: slots);
+        } catch (_) {
+          return CourtSchedule(court: court, slots: const [], hasError: true);
+        }
+      }),
+    );
   }
 
-  void _selectBranch(Branch branch) {
+  void _chooseBranch(Branch branch, {bool notify = true}) {
     setState(() {
-      _selectedBranch = branch;
-      _selectedCourt = null;
-      _selectedSlotIds.clear();
-      _courtsFuture = _bookingApi.getCourts(branchId: branch.id);
-      _slotsFuture = null;
+      _branch = branch;
+
+      _selected.clear();
+      _scheduleFuture = _loadSchedule(branch.id, _dateKey);
+    });
+    if (notify) widget.onTimelineVisibilityChanged?.call(true);
+  }
+
+  void _backToBranches() {
+    if (_submitting) return;
+    setState(() {
+      _branch = null;
+      _selected.clear();
+    });
+    widget.onTimelineVisibilityChanged?.call(false);
+  }
+
+  void _refresh() {
+    setState(() {
+      _selected.clear();
+
+      _scheduleFuture = _loadSchedule(_branch!.id, _dateKey);
     });
   }
 
-  void _selectCourt(Court court) {
+  void _changeDate(DateTime date) {
     setState(() {
-      _selectedCourt = court;
-      _selectedSlotIds.clear();
-      _slotsFuture = _bookingApi.getAvailability(
-        courtId: court.id,
-        date: _dateText,
-      );
+      _date = DateUtils.dateOnly(date);
+
+      _selected.clear();
+      _scheduleFuture = _loadSchedule(_branch!.id, _dateKey);
     });
   }
 
   Future<void> _pickDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
+      initialDate: _date.isBefore(today) ? today : _date,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 30)),
     );
+    if (picked != null && mounted) _changeDate(picked);
+  }
 
-    if (picked == null) {
-      return;
+  Map<String, List<String>> get _courtSlots {
+    final groups = <String, List<String>>{};
+    for (final selection in _selected.values) {
+      groups
+          .putIfAbsent(selection.court.id, () => [])
+          .add(selection.slot.timeSlotId);
     }
+    return groups;
+  }
 
+  void _toggle(Court court, BookingSlot slot) {
+    final key = '${court.id}:${slot.timeSlotId}';
     setState(() {
-      _selectedDate = picked;
-      _selectedSlotIds.clear();
-      if (_selectedCourt != null) {
-        _slotsFuture = _bookingApi.getAvailability(
-          courtId: _selectedCourt!.id,
-          date: _dateText,
-        );
+      if (_selected.containsKey(key)) {
+        _selected.remove(key);
+      } else {
+        _selected[key] = CourtSlotSelection(court: court, slot: slot);
       }
     });
   }
 
-  Future<void> _submitBooking() async {
-    final court = _selectedCourt;
-
-    if (court == null || _selectedSlotIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chọn sân và ít nhất một khung giờ.')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
+  Future<void> _review() async {
+    if (_selected.isEmpty || _checkingLogin) return;
+    setState(() => _checkingLogin = true);
     try {
-      await _bookingApi.createBooking(
-        courtId: court.id,
-        bookingDate: _dateText,
-        timeSlotIds: _selectedSlotIds.toList(),
-      );
-
-      if (!mounted) {
+      final token = await _tokenStorage.readToken();
+      if (!mounted) return;
+      if (token == null || token.isEmpty) {
+        await _openLogin();
         return;
       }
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đặt sân thành công.')));
-
-      setState(() {
-        _selectedSlotIds.clear();
-        _slotsFuture = _bookingApi.getAvailability(
-          courtId: court.id,
-          date: _dateText,
-        );
-      });
-    } on ApiException catch (error) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+      if (mounted) setState(() => _checkingLogin = false);
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Đặt sân')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-        children: [
-          _BookingSummaryCard(
-            branchName: _selectedBranch?.name ?? 'Chưa chọn chi nhánh',
-            courtName: _selectedCourt?.name ?? 'Chưa chọn sân',
-            dateText: _dateText,
-            selectedCount: _selectedSlotIds.length,
-          ),
-          const SizedBox(height: 20),
-          _BookingStepCard(
-            step: '01',
-            title: 'Chọn chi nhánh',
-            child: FutureBuilder<List<Branch>>(
-              future: _branchesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return _InlineError(
-                    message: 'Không thể tải chi nhánh',
-                    onRetry: () {
-                      setState(() {
-                        _branchesFuture = _branchApi.getBranches();
-                      });
-                    },
-                  );
-                }
-
-                final branches = snapshot.data ?? const <Branch>[];
-
-                return _ChoiceWrap<Branch>(
-                  items: branches,
-                  selectedItem: _selectedBranch,
-                  labelOf: (branch) => branch.name,
-                  isSameItem: (branch, selected) => branch.id == selected.id,
-                  onSelected: _selectBranch,
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          _BookingStepCard(
-            step: '02',
-            title: 'Chọn sân',
-            child: _courtsFuture == null
-                ? const _HintText('Chọn chi nhánh trước để xem danh sách sân.')
-                : FutureBuilder<List<Court>>(
-                    future: _courtsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return const _HintText('Không thể tải danh sách sân.');
-                      }
-
-                      final courts = snapshot.data ?? const <Court>[];
-
-                      if (courts.isEmpty) {
-                        return const _HintText(
-                          'Chi nhánh này chưa có sân hoạt động.',
-                        );
-                      }
-
-                      return _ChoiceWrap<Court>(
-                        items: courts,
-                        selectedItem: _selectedCourt,
-                        labelOf: (court) => court.name,
-                        isSameItem: (court, selected) =>
-                            court.id == selected.id,
-                        onSelected: _selectCourt,
-                        onInfoTapped: (court) async {
-                          final returnedCourt = await Navigator.of(context)
-                              .push<Court>(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CourtDetailPage(court: court),
-                                ),
-                              );
-                          if (returnedCourt != null) {
-                            _selectCourt(returnedCourt);
-                          }
-                        },
-                      );
-                    },
+    if (!mounted) return;
+    final slots = _selected.values.toList()
+      ..sort((a, b) {
+        final courtOrder = a.court.name.compareTo(b.court.name);
+        return courtOrder != 0
+            ? courtOrder
+            : a.slot.startTime.compareTo(b.slot.startTime);
+      });
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Xác nhận đặt sân',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _branch!.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('${_courtSlots.length} sân • $_dateLabel'),
+              const SizedBox(height: 12),
+              for (final slot in slots)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${slot.court.name}: ${slot.slot.startTime.substring(0, 5)} – ${slot.slot.endTime.substring(0, 5)}',
+                        ),
+                      ),
+                      Text(_money(slot.slot.price)),
+                    ],
                   ),
-          ),
-          const SizedBox(height: 20),
-          _BookingStepCard(
-            step: '03',
-            title: 'Chọn ngày',
-            child: OutlinedButton.icon(
-              onPressed: _pickDate,
-              icon: const Icon(Icons.calendar_month_outlined),
-              label: Text(_dateText),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _BookingStepCard(
-            step: '04',
-            title: 'Chọn khung giờ',
-            child: _slotsFuture == null
-                ? const _HintText('Chọn sân để xem khung giờ còn trống.')
-                : FutureBuilder<List<BookingSlot>>(
-                    future: _slotsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return const _HintText('Không thể tải khung giờ.');
-                      }
-
-                      final slots = snapshot.data ?? const <BookingSlot>[];
-
-                      if (slots.isEmpty) {
-                        return const _HintText(
-                          'Sân này chưa có bảng giá khung giờ.',
-                        );
-                      }
-
-                      return Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: slots.map((slot) {
-                          final isSelected = _selectedSlotIds.contains(
-                            slot.timeSlotId,
-                          );
-
-                          final startTime = slot.startTime.length >= 5
-                              ? slot.startTime.substring(0, 5)
-                              : slot.startTime;
-                          final endTime = slot.endTime.length >= 5
-                              ? slot.endTime.substring(0, 5)
-                              : slot.endTime;
-
-                          return FilterChip(
-                            selected: isSelected,
-                            label: Text('$startTime-$endTime'),
-                            avatar: slot.isBooked
-                                ? const Icon(Icons.lock_outline, size: 16)
-                                : null,
-                            onSelected: slot.isBooked
-                                ? null
-                                : (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedSlotIds.add(slot.timeSlotId);
-                                      } else {
-                                        _selectedSlotIds.remove(
-                                          slot.timeSlotId,
-                                        );
-                                      }
-                                    });
-                                  },
-                          );
-                        }).toList(),
-                      );
-                    },
+                ),
+              const Divider(),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Tổng tiền',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.borderMuted)),
-          ),
-          child: FilledButton.icon(
-            onPressed: _isSubmitting ? null : _submitBooking,
-            icon: const Icon(Icons.check_circle_outline),
-            label: Text(_isSubmitting ? 'Đang đặt sân...' : 'Xác nhận đặt sân'),
+                  Text(
+                    _money(_total),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Thanh toán tại sân. Bạn cần đăng nhập tài khoản khách hàng để xác nhận.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Xác nhận đặt sân'),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+    if (confirmed == true && mounted) await _submit();
   }
-}
 
-class _BookingSummaryCard extends StatelessWidget {
-  const _BookingSummaryCard({
-    required this.branchName,
-    required this.courtName,
-    required this.dateText,
-    required this.selectedCount,
-  });
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    try {
+      await _bookingApi.createBookings(
+        bookingDate: _dateKey,
+        courtSlots: _courtSlots,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Đặt sân thành công.')));
+      _refresh();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.statusCode == 401) {
+        await _tokenStorage.clearToken();
+        if (mounted) await _openLogin();
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.statusCode == 409
+                ? 'Khung giờ vừa được đặt. Vui lòng chọn giờ khác.'
+                : error.message,
+          ),
+        ),
+      );
+      if (error.statusCode == 409) _refresh();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể đặt sân. Kiểm tra kết nối và thử lại.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
 
-  final String branchName;
-  final String courtName;
-  final String dateText;
-  final int selectedCount;
+  Future<void> _openLogin() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AccountPage(
+          authApi: widget.authApi,
+          returnAfterAuthentication: true,
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.sports_tennis, color: Colors.white, size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$branchName • $courtName',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
+  Widget build(BuildContext context) =>
+      _branch == null ? _branchPicker() : _timelinePage();
+
+  Widget _branchPicker() => Scaffold(
+    appBar: AppBar(title: const Text('Đặt sân')),
+    body: FutureBuilder<List<Branch>>(
+      future: _branchesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return _error(
+            'Không thể tải chi nhánh',
+            () => setState(() => _branchesFuture = _branchApi.getBranches()),
+          );
+        }
+        final branches = snapshot.data ?? [];
+        if (branches.isEmpty) {
+          return const Center(child: Text('Chưa có chi nhánh hoạt động.'));
+        }
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Bạn muốn chơi ở đâu?',
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Chọn chi nhánh để xem lịch trống và đặt sân.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            for (final branch in branches)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: ValueKey('branch-${branch.id}'),
+                    onTap: () => _chooseBranch(branch),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (branch.imageUrl?.isNotEmpty == true)
+                          Image.network(
+                            branch.imageUrl!,
+                            height: 130,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, error, stack) =>
+                                _branchPlaceholder(),
+                          )
+                        else
+                          _branchPlaceholder(),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                branch.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: Text(branch.address)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Giờ mở cửa: ${_shortTime(branch.openingTime)} – ${_shortTime(branch.closingTime)}',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              const Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Xem lịch & đặt sân',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '$dateText • $selectedCount khung giờ',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w600,
+              ),
+          ],
+        );
+      },
+    ),
+  );
+
+  String _shortTime(String value) =>
+      value.length >= 5 ? value.substring(0, 5) : value;
+  Widget _branchPlaceholder() => Container(
+    height: 100,
+    width: double.infinity,
+    color: AppColors.primarySoft,
+    child: const Icon(Icons.sports_tennis, size: 42, color: AppColors.primary),
+  );
+
+  Widget _timelinePage() => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _backToBranches();
+    },
+    child: Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: _submitting ? null : _backToBranches,
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Đặt lịch theo sân',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              _branch!.name,
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: _submitting ? null : _refresh,
+            tooltip: 'Làm mới lịch',
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: AppColors.primaryDark,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Chọn ngày đặt sân',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _submitting ? null : _pickDate,
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: .2),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                      label: Text(_dateLabel),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: [
+                    TimelineLegend(color: Colors.white, label: 'Trống'),
+                    TimelineLegend(color: AppColors.info, label: 'Đã đặt'),
+                    TimelineLegend(color: Color(0xFF9CA3AF), label: 'Khóa'),
+                    TimelineLegend(
+                      color: AppColors.primary,
+                      label: 'Đang chọn',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.swipe_rounded,
+                  size: 18,
+                  color: AppColors.primaryDark,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Mỗi ô 30 phút • Chạm ô trống để chọn',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primaryDark,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          Expanded(
+            child: FutureBuilder<List<CourtSchedule>>(
+              future: _scheduleFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryDark,
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return _error('Không thể tải lịch sân', _refresh);
+                }
+                final schedules = snapshot.data ?? [];
+                if (schedules.isEmpty) {
+                  return _error(
+                    'Chi nhánh này chưa có sân hoạt động.',
+                    _refresh,
+                  );
+                }
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      BookingTimeline(
+                        schedules: schedules,
+                        selectedCourtIds: _courtSlots.keys.toSet(),
+                        selectedSlotKeys: _selected.keys.toSet(),
+                        date: _date,
+                        zoom: _zoom,
+                        onSlotTap: _submitting ? null : _toggle,
+                        onCourtInfo: (court) => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => CourtDetailPage(court: court),
+                          ),
+                        ),
+                        onRetry: _submitting ? null : _refresh,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Chọn 1 ô để đặt 30 phút, 3 ô liền nhau để đặt 1 giờ 30 phút. Có thể chọn nhiều sân; chạm lại ô để bỏ chọn.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _BookingStepCard extends StatelessWidget {
-  const _BookingStepCard({
-    required this.step,
-    required this.title,
-    required this.child,
-  });
-
-  final String step;
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.borderMuted),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          color: AppColors.background,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 30,
-                height: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  step,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
+              Row(
+                children: [
+                  const Icon(
+                    Icons.zoom_out,
+                    size: 20,
+                    color: AppColors.primaryDark,
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _zoom,
+                      min: .65,
+                      max: 1.8,
+                      activeColor: AppColors.primaryDark,
+                      onChanged: (value) => setState(() => _zoom = value),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.zoom_in,
+                    size: 20,
+                    color: AppColors.primaryDark,
+                  ),
+                ],
+              ),
+              if (_selected.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${_courtSlots.length} sân • ${_selected.length} khung giờ',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Text(
+                        _money(_total),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  onPressed: _selected.isEmpty || _submitting || _checkingLogin
+                      ? null
+                      : _review,
+                  child: Text(_submitting ? 'Đang đặt sân...' : 'TIẾP THEO'),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _error(String message, VoidCallback retry) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          child,
+          TextButton(onPressed: retry, child: const Text('Thử lại')),
         ],
       ),
-    );
-  }
-}
-
-class _ChoiceWrap<T> extends StatelessWidget {
-  const _ChoiceWrap({
-    required this.items,
-    required this.selectedItem,
-    required this.labelOf,
-    required this.onSelected,
-    this.isSameItem,
-    this.onInfoTapped,
-  });
-
-  final List<T> items;
-  final T? selectedItem;
-  final String Function(T item) labelOf;
-  final ValueChanged<T> onSelected;
-  final bool Function(T item, T selected)? isSameItem;
-  final ValueChanged<T>? onInfoTapped;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: items.map((item) {
-        final selected = selectedItem;
-        final isSelected =
-            selected != null &&
-            (isSameItem?.call(item, selected) ?? item == selected);
-
-        if (onInfoTapped != null) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ChoiceChip(
-                selected: isSelected,
-                label: Text(labelOf(item)),
-                onSelected: (_) => onSelected(item),
-              ),
-              IconButton(
-                icon: const Icon(Icons.info_outline, size: 20),
-                onPressed: () => onInfoTapped!(item),
-                tooltip: 'Xem chi tiết sân',
-              ),
-              const SizedBox(width: 4),
-            ],
-          );
-        }
-        return ChoiceChip(
-          selected: isSelected,
-          label: Text(labelOf(item)),
-          onSelected: (_) => onSelected(item),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _HintText extends StatelessWidget {
-  const _HintText(this.message);
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      message,
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: AppColors.textSecondary, height: 1.4),
-    );
-  }
-}
-
-class _InlineError extends StatelessWidget {
-  const _InlineError({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: _HintText(message)),
-        TextButton(onPressed: onRetry, child: const Text('Thử lại')),
-      ],
-    );
-  }
+    ),
+  );
 }
