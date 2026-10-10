@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - tesst/thuc_branch
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'

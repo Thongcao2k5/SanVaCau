@@ -43,7 +43,7 @@ class FeaturedProductsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 220,
+          height: 270,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
@@ -110,13 +110,13 @@ class _ProductCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                  color: AppColors.background,
+                  color: Colors.white,
                   width: double.infinity,
                   child:
                       product.imageUrl != null && product.imageUrl!.isNotEmpty
                       ? AppImage(
                           source: product.imageUrl!,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           fallback: const Icon(
                             Icons.broken_image,
                             color: AppColors.textSecondary,

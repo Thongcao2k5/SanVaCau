@@ -297,7 +297,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                                 _product!.imageUrl!.isNotEmpty
                             ? Image.network(
                                 _product!.imageUrl!,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => const Icon(
                                   Icons.image_not_supported_outlined,
                                   color: AppColors.textSecondary,
@@ -494,7 +494,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                                 variant.imageUrl!.isNotEmpty
                             ? Image.network(
                                 variant.imageUrl!,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => const Icon(
                                   Icons.image_not_supported_outlined,
                                   color: AppColors.textSecondary,

@@ -98,7 +98,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                     source: news.thumbnailUrl,
                     width: double.infinity,
                     height: 200,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     fallback: Container(
                       height: 200,
                       width: double.infinity,

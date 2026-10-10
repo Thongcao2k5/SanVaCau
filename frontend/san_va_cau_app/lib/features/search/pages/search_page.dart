@@ -381,7 +381,7 @@ class _SearchPageState extends State<SearchPage> {
                   child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                       ? Image.network(
                           item.imageUrl!,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(
                                 Icons.image,

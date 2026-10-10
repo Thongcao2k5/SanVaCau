@@ -264,7 +264,7 @@ class _ServiceImage extends StatelessWidget {
         url!,
         width: 64,
         height: 64,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         errorBuilder: (_, _, _) => fallback,
       ),
     );

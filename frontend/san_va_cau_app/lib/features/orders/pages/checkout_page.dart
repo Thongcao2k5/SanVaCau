@@ -97,6 +97,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         branchId: _selectedBranch!.id,
         productVariantId: widget.buyNowProductVariantId,
         quantity: widget.buyNowQuantity,
+        cartItemIds: widget.buyNowProductVariantId == null
+            ? widget.cart.items.map((item) => item.id).toList()
+            : null,
       );
 
       if (_fulfillmentType == 'DELIVERY') {

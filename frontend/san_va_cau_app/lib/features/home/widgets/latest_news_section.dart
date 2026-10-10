@@ -79,7 +79,7 @@ class _NewsCard extends StatelessWidget {
                 child: news.thumbnailUrl.isNotEmpty
                     ? AppImage(
                         source: news.thumbnailUrl,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         fallback: const Icon(
                           Icons.broken_image,
                           color: AppColors.textSecondary,

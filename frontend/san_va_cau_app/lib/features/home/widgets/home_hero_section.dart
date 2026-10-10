@@ -322,7 +322,7 @@ class _SlideBackground extends StatelessWidget {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return AppImage(
         source: imageUrl!,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         fallback: _FallbackBackground(icon: icon),
       );
     }

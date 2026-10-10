@@ -1,3 +1,5 @@
+import '../../../core/widgets/app_image.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
@@ -349,13 +351,15 @@ class _BookingPageState extends State<BookingPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (branch.imageUrl?.isNotEmpty == true)
-                          Image.network(
-                            branch.imageUrl!,
-                            height: 130,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, error, stack) =>
-                                _branchPlaceholder(),
+                          AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: AppImage(
+                              source: branch.imageUrl!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              fallback: _branchPlaceholder(),
+                            ),
                           )
                         else
                           _branchPlaceholder(),

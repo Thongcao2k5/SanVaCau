@@ -124,7 +124,7 @@ class _FavoriteCard extends StatelessWidget {
                 child: item.targetImageUrl.isNotEmpty
                     ? Image.network(
                         item.targetImageUrl,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(
                               Icons.broken_image,

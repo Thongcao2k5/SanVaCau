@@ -363,7 +363,7 @@ class _ProductCard extends StatelessWidget {
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
                     ? Image.network(
                         product.imageUrl!,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (_, _, _) => const Icon(
                           Icons.image_not_supported_outlined,
                           color: AppColors.textSecondary,

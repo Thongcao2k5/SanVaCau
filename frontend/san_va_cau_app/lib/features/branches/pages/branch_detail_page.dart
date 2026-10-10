@@ -51,7 +51,7 @@ class _BranchDetailPageState extends State<BranchDetailPage> {
             aspectRatio: 16 / 9,
             child: AppImage(
               source: branch.imageUrl ?? '',
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               fallback: Container(
                 color: AppColors.surfaceMuted,
                 child: const Icon(

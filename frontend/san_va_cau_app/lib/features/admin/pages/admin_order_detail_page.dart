@@ -341,7 +341,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
                                         borderRadius: BorderRadius.circular(8),
                                         child: Image.network(
                                           item.imageUrl!,
-                                          fit: BoxFit.cover,
+                                          fit: BoxFit.contain,
                                           errorBuilder: (_, _, _) => const Icon(
                                             Icons.image_not_supported,
                                             color: Colors.grey,

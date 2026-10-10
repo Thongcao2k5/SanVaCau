@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/cart/data/cart_updates.dart';
+
 class TokenStorage {
   static const String _tokenKey = 'auth_token';
 
@@ -11,10 +13,12 @@ class TokenStorage {
   Future<void> saveToken(String token) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_tokenKey, token);
+    CartUpdates.reset();
   }
 
   Future<void> clearToken() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_tokenKey);
+    CartUpdates.reset();
   }
 }

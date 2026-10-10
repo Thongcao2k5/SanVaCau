@@ -1,3 +1,5 @@
+import '../../../core/constants/api_config.dart';
+
 class Branch {
   const Branch({
     required this.id,
@@ -35,7 +37,11 @@ class Branch {
       closingTime: json['closingTime']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       description: json['description']?.toString(),
-      imageUrl: json['imageUrl']?.toString(),
+      imageUrl: json['imageUrl'] == null
+          ? null
+          : json['imageUrl'].toString().startsWith('assets/')
+          ? json['imageUrl'].toString()
+          : ApiConfig.resolveMediaUrl(json['imageUrl'].toString()),
       isFeatured: json['isFeatured'] == true,
       sortOrder: json['sortOrder'] is int ? json['sortOrder'] as int : 0,
     );

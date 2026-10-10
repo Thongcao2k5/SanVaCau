@@ -8,6 +8,7 @@ CREATE TABLE "app_user" (
     "password_hash" VARCHAR(255) NOT NULL,
     "full_name" VARCHAR(150) NOT NULL,
     "phone" VARCHAR(20),
+    "avatar_url" VARCHAR(1000),
     "role" VARCHAR(30) NOT NULL DEFAULT 'CUSTOMER',
     "status" VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     "branch_id" BIGINT,

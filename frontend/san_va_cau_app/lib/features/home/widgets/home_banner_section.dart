@@ -38,7 +38,7 @@ class HomeBannerSection extends StatelessWidget {
                 Image.network(
                   banner.imageUrl,
                   height: 160,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       height: 160,

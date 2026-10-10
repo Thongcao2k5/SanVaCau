@@ -1,8 +1,9 @@
+import '../../cart/widgets/cart_badge.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_image.dart';
 import '../../cart/data/cart_api.dart';
 import '../../cart/models/cart.dart';
 import '../../favorites/data/favorite_api.dart';
@@ -11,6 +12,8 @@ import '../../reviews/widgets/reviews_section.dart';
 import '../data/product_api.dart';
 import '../models/product.dart';
 import '../models/product_variant.dart';
+import '../../cart/pages/cart_page.dart';
+import '../../../core/widgets/app_image.dart';
 
 class _ProductDetailData {
   _ProductDetailData(this.product, this.variants);
@@ -119,7 +122,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final product = await _productApi.getProductById(widget.productId);
     final variants = await _productApi.getProductVariants(widget.productId);
     if (_selectedVariant == null) {
-      for (final variant in variants) {
+      final choices = [
+        ...variants.where((variant) => variant.option1Value != null),
+        ...variants.where((variant) => variant.option1Value == null),
+      ];
+      for (final variant in choices) {
         if (variant.isActive && variant.stockQuantity > 0) {
           _selectedVariant = variant;
           break;
@@ -251,6 +258,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  Widget _optionImage(String? url) => ClipRRect(
+    borderRadius: BorderRadius.circular(8),
+    child: url == null || url.isEmpty
+        ? const Icon(Icons.image_outlined)
+        : AppImage(
+            source: url,
+            fit: BoxFit.contain,
+            fallback: const Icon(Icons.image_outlined),
+          ),
+  );
+
   Widget _buildVariantsSection(List<ProductVariant> variants) {
     if (variants.isEmpty) return const SizedBox.shrink();
 
@@ -289,7 +307,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            'Chọn [$label]',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -304,7 +325,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 (variant) => variant.isActive && variant.stockQuantity > 0,
               );
               return ChoiceChip(
-                label: Text(value),
+                label: firstOption && label.toLowerCase().contains('màu')
+                    ? SizedBox(
+                        width: 80,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: 58,
+                              child: _optionImage(candidates.first.imageUrl),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(value),
+                          ],
+                        ),
+                      )
+                    : Text(value),
                 selected: selectedValue == value,
                 onSelected: !available || selectedValue == value
                     ? null
@@ -576,6 +612,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         title: const Text('Chi tiết sản phẩm'),
         actions: [
           IconButton(
+            tooltip: 'Giỏ hàng',
+            icon: const CartBadge(),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const CartPage())),
+          ),
+          IconButton(
             onPressed: _isTogglingFavorite ? null : _toggleFavorite,
             tooltip: _isFavorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích',
             icon: Icon(
@@ -659,53 +702,69 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
-                _ProductImage(imageUrl: product.imageUrl),
-                const SizedBox(height: 16),
-                if (product.brand != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      product.brand!.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
+                _ProductImage(
+                  imageUrl: selectedVariant?.imageUrl ?? product.imageUrl,
+                ),
+                if ({product.imageUrl, ...variants.map((v) => v.imageUrl)}
+                        .whereType<String>()
+                        .where((url) => url.isNotEmpty)
+                        .length >
+                    1)
+                  SizedBox(
+                    height: 70,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children:
+                          {product.imageUrl, ...variants.map((v) => v.imageUrl)}
+                              .whereType<String>()
+                              .where((url) => url.isNotEmpty)
+                              .map(
+                                (url) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: SizedBox(
+                                    width: 70,
+                                    child: _optionImage(url),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                     ),
                   ),
+                const SizedBox(height: 16),
                 Text(
-                  product.name,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
+                  _formatMoney(
+                    selectedVariant?.price ?? product.minPrice ?? '0',
+                  ),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (selectedVariant != null)
-                  Text(
-                    _formatMoney(selectedVariant.price),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w900,
-                    ),
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
                   ),
+                ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _InfoChip(
-                      icon: Icons.category_outlined,
-                      label: product.category.name,
-                    ),
-                    if (product.brand != null)
-                      _InfoChip(
-                        icon: Icons.verified_outlined,
-                        label: product.brand!.name,
-                      ),
-                  ],
+                Text('Mã: ${selectedVariant?.sku ?? product.id}'),
+                const SizedBox(height: 6),
+                Text('Thương hiệu: ${product.brand?.name ?? 'Đang cập nhật'}'),
+                const SizedBox(height: 6),
+                Text(
+                  'Tình trạng: ${canPurchase
+                      ? 'Còn hàng'
+                      : isWaiting
+                      ? 'Đang tải'
+                      : 'Hết hàng'}',
+                  style: TextStyle(
+                    color: canPurchase
+                        ? AppColors.success
+                        : AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Divider(height: 1, color: AppColors.border),
@@ -752,126 +811,58 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         if (!isWaiting)
           SafeArea(
             top: false,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-                border: const Border(
-                  top: BorderSide(color: AppColors.border, width: 0.5),
-                ),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Row(
                 children: [
                   Expanded(
-                    flex: 4,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Tổng tiền',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            _formatMoney(total.toString()),
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w900,
+                    child: SizedBox(
+                      height: 64,
+                      child: OutlinedButton.icon(
+                        onPressed: !canPurchase || _isAddingToCart
+                            ? null
+                            : _addToCart,
+                        icon: _isAddingToCart
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                          ),
-                        ),
-                      ],
+                              )
+                            : const Icon(Icons.add_shopping_cart),
+                        label: const Text('Thêm vào giỏ'),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    flex: 6,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        SizedBox(
-                          width: 48,
-                          height: 44,
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              side: BorderSide(
-                                color: (!canPurchase || _isAddingToCart)
-                                    ? Colors.grey.shade400
-                                    : AppColors.primary,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: !canPurchase || _isAddingToCart
-                                ? null
-                                : _addToCart,
-                            child: _isAddingToCart
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.add_shopping_cart,
-                                    color: (!canPurchase || _isAddingToCart)
-                                        ? Colors.grey.shade400
-                                        : AppColors.primary,
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: SizedBox(
-                            height: 44,
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: !canPurchase || _isBuyingNow
-                                  ? null
-                                  : () => _buyNow(product),
-                              child: _isBuyingNow
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.onPrimary,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Mua ngay',
+                    child: SizedBox(
+                      height: 64,
+                      child: FilledButton(
+                        onPressed: !canPurchase || _isBuyingNow
+                            ? null
+                            : () => _buyNow(product),
+                        child: _isBuyingNow
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('Mua ngay'),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _formatMoney(total.toString()),
                                       maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                            ),
-                          ),
-                        ),
-                      ],
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                   ),
                 ],
@@ -914,38 +905,6 @@ class _ProductImage extends StatelessWidget {
                   ),
                 ),
         ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }

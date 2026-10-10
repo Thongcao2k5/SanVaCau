@@ -626,7 +626,7 @@ class _OrderItemCard extends StatelessWidget {
                       )
                     : Image.network(
                         item.imageUrl!,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(
                               Icons.broken_image_rounded,

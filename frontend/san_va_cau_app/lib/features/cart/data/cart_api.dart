@@ -1,3 +1,4 @@
+import 'cart_updates.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_storage.dart';
 import '../models/cart.dart';
@@ -14,7 +15,10 @@ class CartApi {
     final response = await _apiClient.get('/cart', token: await _readToken());
     final data = response['data'] as Map<String, dynamic>;
 
-    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+    return CartUpdates.publish(
+      Cart.fromJson(data['cart'] as Map<String, dynamic>),
+      changed: false,
+    );
   }
 
   Future<Cart> addItem({
@@ -28,7 +32,10 @@ class CartApi {
     );
     final data = response['data'] as Map<String, dynamic>;
 
-    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+    return CartUpdates.publish(
+      Cart.fromJson(data['cart'] as Map<String, dynamic>),
+      changed: true,
+    );
   }
 
   Future<Cart> updateQuantity({
@@ -42,7 +49,10 @@ class CartApi {
     );
     final data = response['data'] as Map<String, dynamic>;
 
-    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+    return CartUpdates.publish(
+      Cart.fromJson(data['cart'] as Map<String, dynamic>),
+      changed: true,
+    );
   }
 
   Future<Cart> removeItem(String itemId) async {
@@ -52,7 +62,10 @@ class CartApi {
     );
     final data = response['data'] as Map<String, dynamic>;
 
-    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+    return CartUpdates.publish(
+      Cart.fromJson(data['cart'] as Map<String, dynamic>),
+      changed: true,
+    );
   }
 
   Future<Cart> clearCart() async {
@@ -62,7 +75,10 @@ class CartApi {
     );
     final data = response['data'] as Map<String, dynamic>;
 
-    return Cart.fromJson(data['cart'] as Map<String, dynamic>);
+    return CartUpdates.publish(
+      Cart.fromJson(data['cart'] as Map<String, dynamic>),
+      changed: true,
+    );
   }
 
   Future<String> _readToken() async {

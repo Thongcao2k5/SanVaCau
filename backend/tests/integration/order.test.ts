@@ -14,6 +14,32 @@ import {
 } from "../helpers/fixtures.js";
 
 describe("Order Flow", () => {
+  it("orders only selected cart items and preserves the others", async () => {
+    const branch = await createBranch();
+    const { token } = await createCustomer();
+    await setupCart(token, branch.id, 1);
+    await setupCart(token, branch.id, 2);
+    const before = await request.get("/api/cart").set("Authorization", `Bearer ${token}`);
+    const items = before.body.data.cart.items;
+    expect(items).toHaveLength(2);
+    const result = await request.post("/api/orders")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ branchId: branch.id.toString(), cartItemIds: [items[0].id] });
+    expect(result.status).toBe(201);
+    expect(result.body.data.order.items).toHaveLength(1);
+    const after = await request.get("/api/cart").set("Authorization", `Bearer ${token}`);
+    expect(after.body.data.cart.items).toHaveLength(1);
+    expect(after.body.data.cart.items[0].id).toBe(items[1].id);
+  });
+
+  it("rejects cart selections that do not belong to the customer", async () => {
+    const branch = await createBranch();
+    const { token } = await createCustomer();
+    const result = await request.post("/api/orders")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ branchId: branch.id.toString(), cartItemIds: ["999999"] });
+    expect(result.status).toBe(400);
+  });
   beforeEach(async () => {
     await clearDatabase();
   });

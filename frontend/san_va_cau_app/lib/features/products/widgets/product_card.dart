@@ -138,8 +138,8 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 4,
+            AspectRatio(
+              aspectRatio: 1,
               child: _ProductImage(imageUrl: widget.product.imageUrl),
             ),
             Expanded(
@@ -308,12 +308,12 @@ class _ProductImage extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      color: AppColors.surfaceMuted,
+      color: Colors.white,
       child: url == null || url.isEmpty
           ? const Icon(Icons.shopping_bag_outlined, color: AppColors.primary)
           : AppImage(
               source: url,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               fallback: const Icon(
                 Icons.broken_image_outlined,
                 color: AppColors.primary,

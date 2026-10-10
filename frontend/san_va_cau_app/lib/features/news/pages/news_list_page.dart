@@ -120,7 +120,7 @@ class _NewsCard extends StatelessWidget {
                     )
                   : AppImage(
                       source: news.thumbnailUrl,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       fallback: Container(
                         color: AppColors.background,
                         child: const Icon(

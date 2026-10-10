@@ -1,8 +1,11 @@
+import '../../cart/widgets/cart_badge.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../cart/data/cart_api.dart';
+import '../../cart/pages/cart_page.dart';
 import '../data/product_api.dart';
 import '../models/product.dart';
 import 'product_detail_page.dart';
@@ -22,45 +25,25 @@ class _ProductListPageState extends State<ProductListPage> {
   late final ProductApi _productApi;
   late final CartApi _cartApi;
   late Future<List<Product>> _productsFuture;
-  late Future<_FilterData> _filterDataFuture;
+
+  final _searchController = TextEditingController();
+  String _query = "";
 
   String? _categoryId;
   String? _categoryName;
-  String? _brandId;
 
-  bool get _hasFilters => _categoryId != null || _brandId != null;
+  bool get _hasFilters => _categoryId != null || _query.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
     _productApi = widget.productApi ?? ProductApi();
     _cartApi = widget.cartApi ?? CartApi();
-    _filterDataFuture = _loadFilterData();
     _productsFuture = _productApi.getProducts();
   }
 
-  Future<_FilterData> _loadFilterData() async {
-    final results = await Future.wait([
-      _productApi.getCategories(),
-      _productApi.getBrands(),
-    ]);
-    return _FilterData(
-      categories: results[0] as List<ProductCategory>,
-      brands: results[1] as List<ProductBrand>,
-    );
-  }
-
-  void _retryFilterData() {
-    setState(() {
-      _filterDataFuture = _loadFilterData();
-    });
-  }
-
   Future<void> _reloadProducts() async {
-    final future = _productApi.getProducts(
-      categoryId: _categoryId,
-      brandId: _brandId,
-    );
+    final future = _productApi.getProducts(categoryId: _categoryId);
     setState(() {
       _productsFuture = future;
     });
@@ -71,148 +54,142 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() {
       _categoryId = null;
       _categoryName = null;
-      _brandId = null;
+      _query = "";
+      _searchController.clear();
     });
     _reloadProducts();
   }
 
-  Widget _buildCategorySelector(List<ProductCategory> categories) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return ChoiceChip(
-              label: const Text('Tất cả'),
-              selected: _categoryId == null,
-              onSelected: (selected) {
-                if (selected && _categoryId != null) {
-                  setState(() {
-                    _categoryId = null;
-                    _categoryName = null;
-                  });
-                  _reloadProducts();
-                }
-              },
-            );
-          }
-          final category = categories[index - 1];
-          return ChoiceChip(
-            label: Text(category.name),
-            selected: _categoryId == category.id,
-            onSelected: (selected) {
-              if (selected && _categoryId != category.id) {
-                setState(() {
-                  _categoryId = category.id;
-                  _categoryName = category.name;
-                });
-                _reloadProducts();
-              }
-            },
-          );
-        },
-      ),
-    );
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  Widget _buildBrandSelector(List<ProductBrand> brands) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: brands.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return ChoiceChip(
-              label: const Text('Tất cả hãng'),
-              selected: _brandId == null,
-              onSelected: (selected) {
-                if (selected && _brandId != null) {
-                  setState(() {
-                    _brandId = null;
-                  });
-                  _reloadProducts();
-                }
-              },
-            );
-          }
-          final brand = brands[index - 1];
-          return ChoiceChip(
-            label: Text(brand.name),
-            selected: _brandId == brand.id,
-            onSelected: (selected) {
-              if (selected && _brandId != brand.id) {
-                setState(() {
-                  _brandId = brand.id;
-                });
-                _reloadProducts();
-              }
-            },
-          );
-        },
+  Widget _productTile(Product product) => ProductCard(
+    key: ValueKey(product.id),
+    product: product,
+    productApi: _productApi,
+    cartApi: _cartApi,
+    onTap: () => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ProductDetailPage(productId: product.id, initialProduct: product),
       ),
+    ),
+  );
+
+  Widget _buildCatalog(List<Product> products) {
+    final groups = <String, List<Product>>{};
+    for (final product in products) {
+      groups.putIfAbsent(product.categoryId, () => []).add(product);
+    }
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        for (final entry in groups.entries) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.value.first.category.name.isEmpty
+                          ? 'Sản phẩm khác'
+                          : entry.value.first.category.name.toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (_categoryId == null)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _categoryId = entry.key;
+                          _categoryName = entry.value.first.category.name;
+                        });
+                        _reloadProducts();
+                      },
+                      child: const Text('Xem thêm'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.55,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _productTile(entry.value[index]),
+                childCount: _categoryId == null && _query.isEmpty
+                    ? entry.value.length.clamp(0, 4)
+                    : entry.value.length,
+              ),
+            ),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 89)),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sản phẩm')),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        toolbarHeight: 76,
+        title: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _query = value.trim()),
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Tìm kiếm sản phẩm...',
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _query.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Xóa tìm kiếm',
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _query = '');
+                    },
+                  ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Giỏ hàng',
+            color: Colors.white,
+            icon: const CartBadge(),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CartPage(cartApi: _cartApi),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Column(
         children: [
-          FutureBuilder<_FilterData>(
-            future: _filterDataFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 56,
-                  child: Center(
-                    child: SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-              }
-              if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Chưa thể tải bộ lọc',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: _retryFilterData,
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('Thử lại'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              if (!snapshot.hasData) return const SizedBox.shrink();
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 8),
-                  _buildCategorySelector(snapshot.data!.categories),
-                  const SizedBox(height: 8),
-                  _buildBrandSelector(snapshot.data!.brands),
-                  const SizedBox(height: 8),
-                ],
-              );
-            },
-          ),
           Expanded(
             child: FutureBuilder<List<Product>>(
               future: _productsFuture,
@@ -236,7 +213,15 @@ class _ProductListPageState extends State<ProductListPage> {
                   );
                 }
 
-                final products = snapshot.data ?? const <Product>[];
+                final products = (snapshot.data ?? const <Product>[]).where((
+                  product,
+                ) {
+                  final query = _query.toLowerCase();
+                  return product.name.toLowerCase().contains(query) ||
+                      (product.brand?.name.toLowerCase().contains(query) ??
+                          false) ||
+                      product.category.name.toLowerCase().contains(query);
+                }).toList();
 
                 final headerTitle = _categoryName ?? 'Tất cả sản phẩm';
                 final headerCount = '${products.length} sản phẩm';
@@ -248,6 +233,12 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          if (_categoryId != null)
+                            IconButton(
+                              tooltip: 'Tất cả sản phẩm',
+                              onPressed: _clearFilters,
+                              icon: const Icon(Icons.arrow_back),
+                            ),
                           Expanded(
                             child: Text(
                               headerTitle,
@@ -274,10 +265,10 @@ class _ProductListPageState extends State<ProductListPage> {
                                   ? 'Không tìm thấy sản phẩm'
                                   : 'Chưa có sản phẩm',
                               message: _hasFilters
-                                  ? 'Thử thay đổi hoặc xóa bộ lọc hiện tại.'
+                                  ? 'Thử từ khóa khác hoặc quay lại tất cả sản phẩm.'
                                   : 'Khi admin thêm sản phẩm, danh sách sẽ hiển thị ở đây.',
                               actionText: _hasFilters
-                                  ? 'Xóa bộ lọc'
+                                  ? 'Xem tất cả sản phẩm'
                                   : 'Tải lại',
                               onActionPressed: _hasFilters
                                   ? _clearFilters
@@ -285,43 +276,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             )
                           : RefreshIndicator(
                               onRefresh: _reloadProducts,
-                              child: GridView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  16,
-                                  89,
-                                ),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      mainAxisSpacing: 12,
-                                      crossAxisSpacing: 12,
-                                      childAspectRatio: 0.65,
-                                    ),
-                                itemCount: products.length,
-                                itemBuilder: (context, index) {
-                                  final product = products[index];
-
-                                  return ProductCard(
-                                    key: ValueKey(product.id),
-                                    product: product,
-                                    productApi: _productApi,
-                                    cartApi: _cartApi,
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute<void>(
-                                          builder: (_) => ProductDetailPage(
-                                            productId: product.id,
-                                            initialProduct: product,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
+                              child: _buildCatalog(products),
                             ),
                     ),
                   ],
@@ -333,13 +288,6 @@ class _ProductListPageState extends State<ProductListPage> {
       ),
     );
   }
-}
-
-class _FilterData {
-  const _FilterData({required this.categories, required this.brands});
-
-  final List<ProductCategory> categories;
-  final List<ProductBrand> brands;
 }
 
 class _ProductStateMessage extends StatelessWidget {
@@ -360,7 +308,7 @@ class _ProductStateMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

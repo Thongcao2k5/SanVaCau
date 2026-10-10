@@ -107,12 +107,20 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
     }
 
     const directItems = Array.isArray(req.body?.items) ? req.body.items : null;
+    const selectedIds = req.body?.cartItemIds;
+    if (selectedIds !== undefined && (!Array.isArray(selectedIds) || selectedIds.length === 0 ||
+      selectedIds.some((id: unknown) => typeof id !== "string" || !/^\d+$/.test(id)) ||
+      new Set(selectedIds).size !== selectedIds.length || directItems)) {
+      res.status(400).json({ success: false, message: "Invalid cart item selection" });
+      return;
+    }
     const cart = directItems
       ? null
       : await prisma.cart.findUnique({
           where: { customer_id: customerId },
           include: {
             cart_item: {
+              ...(selectedIds ? { where: { id: { in: selectedIds.map((id: string) => BigInt(id)) } } } : {}),
               include: {
                 product_variant: {
                   include: { product: true },
@@ -121,6 +129,11 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
             },
           },
         });
+
+    if (selectedIds && cart?.cart_item.length !== selectedIds.length) {
+      res.status(400).json({ success: false, message: "Selected cart items are unavailable" });
+      return;
+    }
 
     if (!directItems && (!cart || cart.cart_item.length === 0)) {
       res.status(400).json({ success: false, message: "Cart is empty" });
@@ -254,7 +267,7 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
       }
 
       if (cart) {
-        await tx.cart_item.deleteMany({ where: { cart_id: cart.id } });
+        await tx.cart_item.deleteMany({ where: { cart_id: cart.id, id: { in: cart.cart_item.map(item => item.id) } } });
         await tx.cart.update({
           where: { id: cart.id },
           data: { updated_at: new Date() },

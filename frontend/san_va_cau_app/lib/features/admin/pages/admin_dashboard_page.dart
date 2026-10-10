@@ -1,3 +1,5 @@
+import 'admin_branch_list_page.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -199,6 +201,20 @@ class _DashboardContent extends StatelessWidget {
             },
           ),
         ),
+        if (data.role == 'ADMIN')
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.store_outlined),
+              title: const Text('Quản lý chi nhánh'),
+              subtitle: const Text('Chọn và cập nhật ảnh chi nhánh'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AdminBranchListPage(),
+                ),
+              ),
+            ),
+          ),
         if (data.role == 'ADMIN') ...[
           const SizedBox(height: 16),
           Card(

@@ -14,6 +14,30 @@
 
 Không commit file `.env` thật. Các file `.env.example` chỉ chứa placeholder.
 
+## Thiết lập sau khi clone hoặc merge
+
+- Backend: chạy `npm ci`, tạo `backend/.env` theo `.env.example`, rồi chạy
+  `npx prisma generate`. Database đã có dữ liệu cần `npx prisma db push`
+  để bổ sung các trường theo schema hiện tại; không dùng tùy chọn bỏ qua cảnh báo mất dữ liệu.
+- Database mới: dùng snapshot theo `database/README.md`, sau đó chạy
+  `npm run seed:products` trong `backend` để bổ sung biến thể demo.
+- Flutter đã kiểm tra với Flutter **3.47.2 / Dart 3.13.2**. Trong
+  `frontend/san_va_cau_app`, chạy `flutter pub get`. Giữ `pubspec.lock` và
+  `backend/package-lock.json` khi merge để cài lại đúng phiên bản thư viện.
+- VS Code có đề xuất extension Dart và Flutter trong `.vscode/extensions.json`.
+  Android Studio cần plugin Flutter/Dart và trỏ tới Flutter SDK của máy đang dùng.
+  Không sao chép `.idea`, `node_modules`, `.dart_tool`, `build` hoặc `local.properties` từ máy khác.
+- Gửi OTP cần cấu hình `SMTP_*` trong `backend/.env`, với địa chỉ gửi được nhà cung cấp chấp nhận.
+- Android thật cùng Wi-Fi: thêm `--dart-define=API_BASE_URL=http://<IP_MAY_TINH>:3000/api`
+  vào Additional run args. Nếu dùng USB, chạy `adb reverse tcp:3000 tcp:3000`
+  và dùng `--dart-define=API_BASE_URL=http://127.0.0.1:3000/api`.
+- Ảnh chi nhánh admin tải lên lưu trong `backend/uploads`; thư mục này không đưa lên Git.
+  Khi chuyển máy triển khai, cần sao chép hoặc lưu trữ riêng ảnh tải lên.
+
+Thay đổi giao diện dùng các thư viện đã khai báo trong `pubspec.yaml`
+(bao gồm `image_picker`); phần cắt ảnh dùng Flutter SDK, không cần cài thêm
+thư viện thanh toán MoMo hoặc VNPAY.
+
 ## Yêu cầu
 
 - Flutter SDK tương thích Dart `^3.13.2`.
@@ -77,6 +101,15 @@ Password: Admin123456
 ```
 
 Hãy đổi mật khẩu này nếu triển khai ngoài máy local.
+
+### Bổ sung biến thể sản phẩm demo
+
+Catalog và seeder sản phẩm được tích hợp từ nhánh `feature/thinh_branch`.
+Trong thư mục `backend`, chạy `npm run seed:products` để bổ sung biến thể
+trọng lượng/cỡ cán vợt, màu/size giày và áo, gói quấn cán cùng tồn kho demo.
+Lệnh có thể chạy lại, giữ dữ liệu sản phẩm và tồn kho đã có, không đổi tài khoản
+hoặc lịch sân. Giá, cấu hình và tồn kho trong catalog chỉ là dữ liệu minh họa.
+Schema hiện tại vẫn giữ OTP, ảnh đại diện và khung đặt sân 30 phút.
 
 ### Dùng SQL thay Prisma
 

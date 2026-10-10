@@ -1,3 +1,5 @@
+import '../cart/widgets/cart_badge.dart';
+
 import 'dart:async';
 
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
@@ -56,10 +58,7 @@ class _MainShellState extends State<MainShell> {
       itemLabel: 'Đặt sân',
     ),
     BottomBarItem(
-      inActiveItem: Icon(
-        Icons.shopping_cart_outlined,
-        color: Color(0xFFFFD6D6),
-      ),
+      inActiveItem: CartBadge(color: Color(0xFFFFD6D6)),
       activeItem: _ActiveNavigationItem(
         icon: Icons.shopping_cart_rounded,
         label: 'Giỏ hàng',
@@ -110,6 +109,11 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _onTabSelected(int index) {
+    if (index == 3) {
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const CartPage()));
+      return;
+    }
     if (_navigationController.index != index) {
       _navigationController.jumpTo(index);
     }

@@ -14,6 +14,7 @@ class OrderApi {
     required String branchId,
     String? productVariantId,
     int? quantity,
+    List<String>? cartItemIds,
   }) async {
     final isBuyNow = productVariantId != null && quantity != null;
     final response = await _apiClient.post(
@@ -21,6 +22,7 @@ class OrderApi {
       token: await _readToken(),
       body: {
         'branchId': branchId,
+        if (!isBuyNow && cartItemIds != null) 'cartItemIds': cartItemIds,
         if (isBuyNow)
           'items': [
             {'productVariantId': productVariantId, 'quantity': quantity},

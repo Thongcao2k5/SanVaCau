@@ -230,8 +230,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Màu'), findsOneWidget);
-    expect(find.text('Size'), findsOneWidget);
+    expect(find.text('Chọn [Màu]'), findsOneWidget);
+    expect(find.text('Chọn [Size]'), findsOneWidget);
+    await tester.ensureVisible(find.text('Đen'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Đen'));
     await tester.pumpAndSettle();
 

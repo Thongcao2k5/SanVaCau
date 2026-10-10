@@ -28,6 +28,10 @@ class ProductVariant {
   final bool isActive;
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
+    final name = json['variantName']?.toString() ?? '';
+    final parts = name.replaceAll(' (DEMO)', '').split(' / ');
+    final hasPair = parts.length == 2;
+    final racket = hasPair && parts.first.startsWith('Trọng lượng ');
     return ProductVariant(
       id: json['id']?.toString() ?? '',
       productId: json['productId']?.toString() ?? '',
@@ -36,10 +40,33 @@ class ProductVariant {
       price: json['price']?.toString() ?? '0',
       imageUrl: json['imageUrl']?.toString(),
       stockQuantity: int.tryParse(json['stockQuantity']?.toString() ?? '') ?? 0,
-      option1Name: json['option1Name']?.toString(),
-      option1Value: json['option1Value']?.toString(),
-      option2Name: json['option2Name']?.toString(),
-      option2Value: json['option2Value']?.toString(),
+      option1Name:
+          json['option1Name']?.toString() ??
+          (hasPair
+              ? racket
+                    ? 'Trọng lượng'
+                    : 'Màu sắc'
+              : null),
+      option1Value:
+          json['option1Value']?.toString() ??
+          (hasPair ? parts.first.replaceFirst('Trọng lượng ', '') : null),
+      option2Name:
+          json['option2Name']?.toString() ??
+          (hasPair
+              ? racket
+                    ? 'Cỡ cán'
+                    : parts.last.startsWith('Gói ')
+                    ? 'Quy cách'
+                    : 'Size'
+              : null),
+      option2Value:
+          json['option2Value']?.toString() ??
+          (hasPair
+              ? parts.last.replaceFirst(
+                  RegExp(r'^(Cỡ cán |Size EU |Size )'),
+                  '',
+                )
+              : null),
       isActive: json['isActive'] == true,
     );
   }

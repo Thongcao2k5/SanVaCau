@@ -64,7 +64,7 @@ class FeaturedBranchesSection extends StatelessWidget {
                             height: double.infinity,
                             child: AppImage(
                               source: branch.imageUrl ?? '',
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                               fallback: const Icon(
                                 Icons.storefront_rounded,
                                 color: AppColors.primary,

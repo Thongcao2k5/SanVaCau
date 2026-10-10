@@ -207,7 +207,7 @@ class _AdminBannerListPageState extends State<AdminBannerListPage> {
                                           banner.imageUrl,
                                           width: 50,
                                           height: 50,
-                                          fit: BoxFit.cover,
+                                          fit: BoxFit.contain,
                                           errorBuilder: (_, _, _) => const Icon(
                                             Icons.image_not_supported,
                                           ),

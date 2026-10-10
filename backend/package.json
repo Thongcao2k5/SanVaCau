@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "seed": "prisma db seed",
+    "seed:products": "tsx src/database/seeds/seed-products.ts",
     "migrate:half-hour-slots": "tsx scripts/migrate-half-hour-slots.ts",
     "schedule:fill": "tsx scripts/fill-court-schedule.ts",
     "db:export-demo": "tsx scripts/export-demo-database.ts",

@@ -48,6 +48,50 @@ const _cartWithItem = Cart(
 );
 
 void main() {
+  testWidgets('quantity changes use API result without reloading the list', (
+    tester,
+  ) async {
+    final api = _UpdatingCartApi();
+    await tester.pumpWidget(MaterialApp(home: CartPage(cartApi: api)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Tăng số lượng'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.text('Giỏ hàng (2)'), findsOneWidget);
+    expect(find.text('240.000 đ'), findsOneWidget);
+    expect(api.loads, 1);
+  });
+  testWidgets('cart selection and prices fit on a narrow phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CartPage(cartApi: _FakeCartApi(initialCart: _cartWithItem)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Giỏ hàng (1)'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Thanh toán'))
+          .onPressed,
+      isNull,
+    );
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Thanh toán'))
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('120.000 đ'), findsNWidgets(2));
+  });
   testWidgets('only shows clear action when the cart has items', (
     tester,
   ) async {
@@ -119,4 +163,37 @@ void main() {
     expect(find.text('Không thể xóa giỏ hàng lúc này'), findsOneWidget);
     expect(find.byTooltip('Xóa toàn bộ giỏ hàng'), findsOneWidget);
   });
+}
+
+class _UpdatingCartApi extends _FakeCartApi {
+  _UpdatingCartApi() : super(initialCart: _cartWithItem);
+  int loads = 0;
+  @override
+  Future<Cart> getCart() async {
+    loads++;
+    return initialCart;
+  }
+
+  @override
+  Future<Cart> updateQuantity({
+    required String itemId,
+    required int quantity,
+  }) async {
+    final item = initialCart.items.first;
+    return Cart(
+      id: initialCart.id,
+      customerId: initialCart.customerId,
+      totalAmount: item.unitPrice * quantity,
+      items: [
+        CartItem(
+          id: item.id,
+          productVariantId: item.productVariantId,
+          quantity: quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.unitPrice * quantity,
+          variant: item.variant,
+        ),
+      ],
+    );
+  }
 }

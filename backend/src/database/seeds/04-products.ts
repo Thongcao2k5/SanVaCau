@@ -1,8 +1,5 @@
-import { PrismaClient, Prisma } from "@prisma/client";
-import { hashPassword } from "../../lib/auth.js";
+import { seedProducts, seedInventory } from "./product-seeder.js";
 import { prisma } from "../../lib/prisma.js";
-
-const timeOfDay = (hhmm: string) => new Date(`1970-01-01T${hhmm}:00.000Z`);
 
 const upsertByNaturalKey = async <T>(
   find: () => Promise<T | null>,
@@ -38,15 +35,7 @@ const seedCategories = async () => {
             is_active: true,
           },
         }),
-      (existing) =>
-        prisma.category.update({
-          where: { id: existing.id },
-          data: {
-            description: `Danh mục demo ${category.name}`,
-            sort_order: category.sortOrder,
-            is_active: true,
-          },
-        }),
+      (existing) => Promise.resolve(existing),
     );
     roots.set(category.name, saved.id);
   }
@@ -71,15 +60,7 @@ const seedCategories = async () => {
               is_active: true,
             },
           }),
-        (existing) =>
-          prisma.category.update({
-            where: { id: existing.id },
-            data: {
-              description: `Danh mục demo ${child.name}`,
-              sort_order: child.sortOrder,
-              is_active: true,
-            },
-          }),
+        (existing) => Promise.resolve(existing),
       );
     }
   }
@@ -91,10 +72,7 @@ const seedBrands = async () => {
   for (const name of ["Yonex", "Lining", "Victor", "Kawasaki", "SanVaCau"]) {
     await prisma.brand.upsert({
       where: { name },
-      update: {
-        description: `Thương hiệu demo ${name}`,
-        is_active: true,
-      },
+      update: {},
       create: {
         name,
         description: `Thương hiệu demo ${name}`,
@@ -104,169 +82,6 @@ const seedBrands = async () => {
   }
 
   console.log("[seed] brands done");
-};
-
-const getCategoryId = async (name: string) => {
-  const category = await prisma.category.findFirst({ where: { name, is_active: true } });
-  if (!category) throw new Error(`Missing category: ${name}`);
-  return category.id;
-};
-
-const getBrandId = async (name: string) => {
-  const brand = await prisma.brand.findUnique({ where: { name } });
-  if (!brand) throw new Error(`Missing brand: ${name}`);
-  return brand.id;
-};
-
-const seedProducts = async () => {
-  const products = [
-    {
-      name: "Yonex Astrox 88D Game",
-      category: "Vợt Yonex",
-      brand: "Yonex",
-      price: "2350000",
-      sku: "DEMO-YONEX-AX88D-GAME",
-      imageUrl: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80",
-      featured: true,
-    },
-    {
-      name: "Yonex Nanoflare 700 Play",
-      category: "Vợt Yonex",
-      brand: "Yonex",
-      price: "1490000",
-      sku: "DEMO-YONEX-NF700-PLAY",
-      imageUrl: "https://images.unsplash.com/photo-1613918431703-8671060938f3?auto=format&fit=crop&w=800&q=80",
-      featured: true,
-    },
-    {
-      name: "Lining Axforce Cannon",
-      category: "Vợt Lining",
-      brand: "Lining",
-      price: "1890000",
-      sku: "DEMO-LINING-AXFORCE-CANNON",
-      imageUrl: "https://images.unsplash.com/photo-1521537634581-0dced2efa2a3?auto=format&fit=crop&w=800&q=80",
-      featured: true,
-    },
-    {
-      name: "Victor Thruster Ryuga TD",
-      category: "Vợt cầu lông",
-      brand: "Victor",
-      price: "2150000",
-      sku: "DEMO-VICTOR-RYUGA-TD",
-      imageUrl: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80",
-      featured: false,
-    },
-    {
-      name: "Giày Yonex Power Cushion 65Z",
-      category: "Giày cầu lông",
-      brand: "Yonex",
-      price: "2190000",
-      sku: "DEMO-YONEX-SHOE-65Z",
-      imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
-      featured: true,
-    },
-    {
-      name: "Giày Lining Saga Lite",
-      category: "Giày cầu lông",
-      brand: "Lining",
-      price: "1390000",
-      sku: "DEMO-LINING-SAGA-LITE",
-      imageUrl: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80",
-      featured: false,
-    },
-    {
-      name: "Áo thể thao SanVaCau Pro",
-      category: "Áo thể thao",
-      brand: "SanVaCau",
-      price: "290000",
-      sku: "DEMO-SVC-SHIRT-PRO",
-      imageUrl: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80",
-      featured: true,
-    },
-    {
-      name: "Quấn cán vợt SanVaCau Comfort",
-      category: "Phụ kiện",
-      brand: "SanVaCau",
-      price: "45000",
-      sku: "DEMO-SVC-GRIP-COMFORT",
-      imageUrl: "https://images.unsplash.com/photo-1617083934555-ac7d4fed8889?auto=format&fit=crop&w=800&q=80",
-      featured: false,
-    },
-  ];
-
-  for (const item of products) {
-    const categoryId = await getCategoryId(item.category);
-    const brandId = await getBrandId(item.brand);
-    const product = await upsertByNaturalKey(
-      () => prisma.product.findFirst({ where: { name: item.name } }),
-      () =>
-        prisma.product.create({
-          data: {
-            category_id: categoryId,
-            brand_id: brandId,
-            name: item.name,
-            description: `Sản phẩm demo ${item.name} cho SanVaCau.`,
-            image_url: item.imageUrl,
-            is_active: true,
-            is_featured: item.featured,
-          },
-        }),
-      (existing) =>
-        prisma.product.update({
-          where: { id: existing.id },
-          data: {
-            category_id: categoryId,
-            brand_id: brandId,
-            description: `Sản phẩm demo ${item.name} cho SanVaCau.`,
-            image_url: item.imageUrl,
-            is_active: true,
-            is_featured: item.featured,
-            updated_at: new Date(),
-          },
-        }),
-    );
-
-    await prisma.product_variant.upsert({
-      where: { sku: item.sku },
-      update: {
-        product_id: product.id,
-        variant_name: "Tiêu chuẩn",
-        price: new Prisma.Decimal(item.price),
-        image_url: item.imageUrl,
-        is_active: true,
-      },
-      create: {
-        product_id: product.id,
-        sku: item.sku,
-        variant_name: "Tiêu chuẩn",
-        price: new Prisma.Decimal(item.price),
-        image_url: item.imageUrl,
-        is_active: true,
-      },
-    });
-  }
-
-  console.log("[seed] products and variants done");
-};
-
-const seedInventory = async () => {
-  const variants = await prisma.product_variant.findMany({ where: { sku: { startsWith: "DEMO-" } } });
-
-  for (const [index, variant] of variants.entries()) {
-    await prisma.inventory.upsert({
-      where: { product_variant_id: variant.id },
-      update: {
-        quantity: 20 + index,
-        updated_at: new Date(),
-      },
-      create: {
-        product_variant_id: variant.id,
-        quantity: 20 + index,
-      },
-    });
-  }
-
-  console.log("[seed] inventory done");
 };
 
 export { seedCategories, seedBrands, seedProducts, seedInventory };

@@ -5,7 +5,7 @@ class AppImage extends StatelessWidget {
     super.key,
     required this.source,
     required this.fallback,
-    this.fit = BoxFit.cover,
+    this.fit = BoxFit.contain,
     this.width,
     this.height,
   });
