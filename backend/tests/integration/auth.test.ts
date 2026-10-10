@@ -23,7 +23,7 @@ describe("Authentication Flow", () => {
     expect(requestOtp.status).toBe(202);
     return request.post("/api/auth/register/verify-otp").send({
       email: validCustomer.email,
-      code: requestOtp.body.data.debugOtp,
+      code: "123456",
     });
   };
 
@@ -163,15 +163,18 @@ describe("Authentication Flow", () => {
 
   it("Reset password with a valid email OTP", async () => {
     await registerCustomer();
-    const otpResponse = await request
+    await request
       .post("/api/auth/forgot-password/request-otp")
       .send({ email: validCustomer.email });
+
+    const verifyResponse = await request
+      .post("/api/auth/forgot-password/verify-otp")
+      .send({ email: validCustomer.email, code: "123456" });
 
     const resetResponse = await request
       .post("/api/auth/forgot-password/reset")
       .send({
-        email: validCustomer.email,
-        code: otpResponse.body.data.debugOtp,
+        resetToken: verifyResponse.body.data.resetToken,
         newPassword: "NewPassword123",
       });
 
@@ -190,15 +193,85 @@ describe("Authentication Flow", () => {
       .send({ email: validCustomer.email });
 
     const response = await request
-      .post("/api/auth/forgot-password/reset")
+      .post("/api/auth/forgot-password/verify-otp")
       .send({
         email: validCustomer.email,
         code: "000000",
-        newPassword: "NewPassword123",
       });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("OTP is invalid or expired");
+  });
+
+  it("Changes the authenticated user's email with a valid OTP", async () => {
+    const registerResponse = await registerCustomer();
+    const token = registerResponse.body.data.token;
+    const newEmail = "changed@example.com";
+
+    const requestResponse = await request
+      .post("/api/auth/email-change/request-otp")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ newEmail });
+
+    expect(requestResponse.status).toBe(202);
+
+    const verifyResponse = await request
+      .post("/api/auth/email-change/verify-otp")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ newEmail, code: "123456" });
+
+    expect(verifyResponse.status).toBe(200);
+    expect(verifyResponse.body.data.user.email).toBe(newEmail);
+    expect(
+      await prisma.app_user.findUnique({ where: { email: newEmail } }),
+    ).not.toBeNull();
+    expect(
+      await prisma.app_user.findUnique({ where: { email: validCustomer.email } }),
+    ).toBeNull();
+  });
+
+  it("Rejects requesting an email change to an existing email", async () => {
+    const registerResponse = await registerCustomer();
+    const token = registerResponse.body.data.token;
+    const { user: admin } = await createAdmin();
+
+    const response = await request
+      .post("/api/auth/email-change/request-otp")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ newEmail: admin.email });
+
+    expect(response.status).toBe(409);
+    expect(response.body.message).toBe("email already exists");
+  });
+
+  it("Rejects email change verification without authentication", async () => {
+    const response = await request
+      .post("/api/auth/email-change/verify-otp")
+      .send({ newEmail: "changed@example.com", code: "123456" });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("Uploads an avatar for the authenticated user", async () => {
+    const registerResponse = await registerCustomer();
+    const token = registerResponse.body.data.token;
+
+    const response = await request
+      .post("/api/uploads/avatar")
+      .set("Authorization", `Bearer ${token}`)
+      .attach("image", Buffer.from("fake image data"), {
+        filename: "avatar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.avatarUrl).toMatch(/^\/uploads\/images\/.+\.png$/);
+
+    const user = await prisma.app_user.findUnique({
+      where: { email: validCustomer.email },
+      select: { avatar_url: true },
+    });
+    expect(user?.avatar_url).toBe(response.body.data.avatarUrl);
   });
 
   it("Reject /dev/create-admin in production environment", async () => {

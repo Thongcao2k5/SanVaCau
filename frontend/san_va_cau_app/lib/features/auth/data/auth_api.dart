@@ -61,15 +61,58 @@ class AuthApi {
     return OtpRequestResult.fromResponse(response);
   }
 
-  Future<void> resetPassword({
+  Future<String> verifyPasswordResetOtp({
     required String email,
     required String code,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/forgot-password/verify-otp',
+      body: {'email': email, 'code': code},
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return data['resetToken']?.toString() ?? '';
+  }
+
+  Future<void> resetPassword({
+    required String resetToken,
     required String newPassword,
   }) async {
     await _apiClient.post(
       '/auth/forgot-password/reset',
-      body: {'email': email, 'code': code, 'newPassword': newPassword},
+      body: {'resetToken': resetToken, 'newPassword': newPassword},
     );
+  }
+
+  Future<OtpRequestResult> requestEmailChangeOtp(String newEmail) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null || token.isEmpty) {
+      throw const ApiException(statusCode: 401, message: 'Bạn chưa đăng nhập');
+    }
+
+    final response = await _apiClient.post(
+      '/auth/email-change/request-otp',
+      token: token,
+      body: {'newEmail': newEmail},
+    );
+    return OtpRequestResult.fromResponse(response);
+  }
+
+  Future<AuthUser> verifyEmailChangeOtp({
+    required String newEmail,
+    required String code,
+  }) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null || token.isEmpty) {
+      throw const ApiException(statusCode: 401, message: 'Bạn chưa đăng nhập');
+    }
+
+    final response = await _apiClient.post(
+      '/auth/email-change/verify-otp',
+      token: token,
+      body: {'newEmail': newEmail, 'code': code},
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
   }
 
   Future<AuthUser> getProfile() async {
@@ -107,6 +150,21 @@ class AuthApi {
 
     final data = response['data'] as Map<String, dynamic>;
     return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
+  }
+
+  Future<String> uploadAvatar(String filePath) async {
+    final token = await _tokenStorage.readToken();
+    if (token == null || token.isEmpty) {
+      throw const ApiException(statusCode: 401, message: 'Bạn chưa đăng nhập');
+    }
+
+    final response = await _apiClient.postMultipart(
+      '/uploads/avatar',
+      token: token,
+      filePath: filePath,
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    return data['avatarUrl']?.toString() ?? '';
   }
 
   Future<void> changePassword({
@@ -150,7 +208,6 @@ class OtpRequestResult {
   const OtpRequestResult({
     required this.expiresInSeconds,
     required this.resendAfterSeconds,
-    this.debugOtp,
   });
 
   factory OtpRequestResult.fromResponse(Map<String, dynamic> response) {
@@ -158,11 +215,9 @@ class OtpRequestResult {
     return OtpRequestResult(
       expiresInSeconds: (data['expiresInSeconds'] as num?)?.toInt() ?? 300,
       resendAfterSeconds: (data['resendAfterSeconds'] as num?)?.toInt() ?? 60,
-      debugOtp: data['debugOtp']?.toString(),
     );
   }
 
   final int expiresInSeconds;
   final int resendAfterSeconds;
-  final String? debugOtp;
 }

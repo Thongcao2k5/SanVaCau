@@ -6,6 +6,7 @@ class AuthUser {
     required this.role,
     required this.status,
     this.phone,
+    this.avatarUrl,
     this.branchId,
     this.mustChangePassword = false,
   });
@@ -14,6 +15,7 @@ class AuthUser {
   final String email;
   final String fullName;
   final String? phone;
+  final String? avatarUrl;
   final String role;
   final String status;
   final String? branchId;
@@ -25,6 +27,7 @@ class AuthUser {
       email: json['email']?.toString() ?? '',
       fullName: json['fullName']?.toString() ?? '',
       phone: json['phone']?.toString(),
+      avatarUrl: json['avatarUrl']?.toString(),
       role: json['role']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       branchId: json['branchId']?.toString(),

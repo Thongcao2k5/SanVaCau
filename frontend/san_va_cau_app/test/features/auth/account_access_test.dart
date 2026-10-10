@@ -5,6 +5,7 @@ import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
 import 'package:san_va_cau_app/features/auth/pages/account_page.dart';
 import 'package:san_va_cau_app/features/auth/pages/change_password_page.dart';
+import 'package:san_va_cau_app/features/auth/widgets/auth_primary_button.dart';
 import 'package:san_va_cau_app/features/notifications/data/notification_api.dart';
 
 class _FakeAuthApi extends AuthApi {
@@ -96,7 +97,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Đăng xuất'));
+    await tester.scrollUntilVisible(
+      find.text('Đăng xuất'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Đăng xuất'));
     await tester.pumpAndSettle();
@@ -126,7 +131,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Mật khẩu'),
       'Password123',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Đăng nhập'));
+    await tester.tap(find.widgetWithText(AuthPrimaryButton, 'Đăng nhập'));
     await tester.pump();
 
     expect(find.text('Email không đúng định dạng'), findsOneWidget);

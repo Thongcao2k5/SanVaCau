@@ -5,6 +5,7 @@ import fs from "fs";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
 import { createAuditLog } from "../lib/audit-log.js";
+import { prisma } from "../lib/prisma.js";
 
 export const uploadRouter = Router();
 
@@ -102,3 +103,47 @@ uploadRouter.post(
     });
   }
 );
+
+uploadRouter.post("/avatar", requireAuth, (req, res, next) => {
+  upload.single("image")(req, res, async (err: unknown) => {
+    try {
+      if (err) {
+        if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+          res.status(400).json({
+            success: false,
+            message: "File is too large. Max size is 5MB.",
+          });
+          return;
+        }
+        if (err instanceof Error && err.message === "LIMIT_UNEXPECTED_FILE_TYPE") {
+          res.status(400).json({
+            success: false,
+            message: "Invalid file type. Only JPEG, PNG, and WebP are allowed.",
+          });
+          return;
+        }
+        next(err);
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({ success: false, message: "No image file provided" });
+        return;
+      }
+
+      const avatarUrl = `/uploads/images/${req.file.filename}`;
+      await prisma.app_user.update({
+        where: { id: BigInt(req.user!.id) },
+        data: { avatar_url: avatarUrl, updated_at: new Date() },
+      });
+
+      res.json({
+        success: true,
+        message: "Avatar updated successfully",
+        data: { avatarUrl },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+});

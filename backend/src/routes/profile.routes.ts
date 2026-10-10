@@ -22,6 +22,7 @@ const toProfileResponse = (user: UserWithBranch) => ({
   email: user.email,
   fullName: user.full_name,
   phone: user.phone,
+  avatarUrl: user.avatar_url,
   role: user.role,
   status: user.status,
   branchId: user.branch_id?.toString() ?? null,

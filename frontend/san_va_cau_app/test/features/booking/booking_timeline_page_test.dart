@@ -5,6 +5,7 @@ import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/core/storage/token_storage.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
+import 'package:san_va_cau_app/features/auth/widgets/auth_primary_button.dart';
 import 'package:san_va_cau_app/core/theme/app_theme.dart';
 import 'package:san_va_cau_app/features/booking/data/booking_api.dart';
 import 'package:san_va_cau_app/features/booking/models/court.dart';
@@ -160,10 +161,8 @@ void main() {
         find.widgetWithText(TextFormField, 'Mật khẩu'),
         'Customer123',
       );
-      await tester.ensureVisible(
-        find.widgetWithText(FilledButton, 'Đăng nhập'),
-      );
-      await tester.tap(find.widgetWithText(FilledButton, 'Đăng nhập'));
+      await tester.ensureVisible(find.byType(AuthPrimaryButton));
+      await tester.tap(find.byType(AuthPrimaryButton));
       await tester.pumpAndSettle();
       expect(find.text('Đăng nhập để đặt sân'), findsNothing);
       expect(find.text('2 sân • 2 khung giờ'), findsOneWidget);

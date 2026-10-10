@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../core/constants/api_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/auth_api.dart';
 import '../models/auth_user.dart';
+import 'change_email_page.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({required this.user, super.key});
@@ -22,6 +27,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   bool _isSubmitting = false;
   String? _errorMessage;
+  XFile? _selectedAvatar;
 
   @override
   void initState() {
@@ -56,6 +62,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         fullName: _fullNameController.text.trim(),
         phone: phone.isEmpty ? null : phone,
       );
+      if (_selectedAvatar != null) {
+        await _authApi.uploadAvatar(_selectedAvatar!.path);
+      }
 
       if (!mounted) return;
 
@@ -85,6 +94,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     }
   }
 
+  Future<void> _pickAvatar() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 82,
+      maxWidth: 1200,
+    );
+    if (image != null && mounted) {
+      setState(() => _selectedAvatar = image);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +112,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _ProfileEditHeader(),
+          _ProfileEditHeader(
+            avatarUrl: widget.user.avatarUrl,
+            selectedAvatar: _selectedAvatar,
+            onPickAvatar: _pickAvatar,
+          ),
           const SizedBox(height: 16),
           Card(
             child: Padding(
@@ -114,6 +138,31 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           value == null || value.trim().isEmpty
                           ? 'Vui lòng nhập họ tên'
                           : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      initialValue: widget.user.email,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        suffixIcon: TextButton(
+                          onPressed: () async {
+                            final changed = await Navigator.of(context)
+                                .push<bool>(
+                                  MaterialPageRoute(
+                                    builder: (_) => ChangeEmailPage(
+                                      currentEmail: widget.user.email,
+                                    ),
+                                  ),
+                                );
+                            if (changed == true && context.mounted) {
+                              Navigator.of(context).pop(true);
+                            }
+                          },
+                          child: const Text('Thay đổi'),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -181,42 +230,71 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 }
 
 class _ProfileEditHeader extends StatelessWidget {
-  const _ProfileEditHeader();
+  const _ProfileEditHeader({
+    required this.avatarUrl,
+    required this.selectedAvatar,
+    required this.onPickAvatar,
+  });
+
+  final String? avatarUrl;
+  final XFile? selectedAvatar;
+  final VoidCallback onPickAvatar;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final ImageProvider<Object>? avatarImage = selectedAvatar != null
+        ? FileImage(File(selectedAvatar!.path))
+        : avatarUrl != null && avatarUrl!.isNotEmpty
+        ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl))
+        : null;
+
+    return Column(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.primarySoft,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.badge_outlined, color: AppColors.primary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Thông tin cá nhân',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: 46,
+              backgroundColor: AppColors.primarySoft,
+              backgroundImage: avatarImage,
+              child: avatarImage == null
+                  ? const Icon(
+                      Icons.person_rounded,
+                      size: 44,
+                      color: AppColors.primary,
+                    )
+                  : null,
+            ),
+            Positioned(
+              right: -4,
+              bottom: -4,
+              child: IconButton.filled(
+                tooltip: 'Chọn ảnh đại diện',
+                onPressed: onPickAvatar,
+                icon: const Icon(Icons.camera_alt_outlined, size: 19),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
+                  minimumSize: const Size(38, 38),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Cập nhật họ tên và số điện thoại dùng trong ứng dụng.',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary, height: 1.4),
-              ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Thông tin cá nhân',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Chạm biểu tượng máy ảnh để thay ảnh đại diện.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );

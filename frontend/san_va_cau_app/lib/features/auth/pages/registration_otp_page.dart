@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_colors.dart';
 import '../data/auth_api.dart';
+import '../widgets/auth_primary_button.dart';
+import '../widgets/otp_code_field.dart';
 
 class RegistrationOtpPage extends StatefulWidget {
   const RegistrationOtpPage({
@@ -11,7 +14,6 @@ class RegistrationOtpPage extends StatefulWidget {
     required this.password,
     required this.fullName,
     required this.phone,
-    required this.initialResult,
   });
 
   final AuthApi authApi;
@@ -19,7 +21,6 @@ class RegistrationOtpPage extends StatefulWidget {
   final String password;
   final String fullName;
   final String? phone;
-  final OtpRequestResult initialResult;
 
   @override
   State<RegistrationOtpPage> createState() => _RegistrationOtpPageState();
@@ -27,7 +28,6 @@ class RegistrationOtpPage extends StatefulWidget {
 
 class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
   final _codeController = TextEditingController();
-  late OtpRequestResult _result = widget.initialResult;
   bool _loading = false;
   String? _error;
 
@@ -65,13 +65,12 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
       _error = null;
     });
     try {
-      final result = await widget.authApi.requestRegistrationOtp(
+      await widget.authApi.requestRegistrationOtp(
         email: widget.email,
         password: widget.password,
         fullName: widget.fullName,
         phone: widget.phone,
       );
-      setState(() => _result = result);
     } on ApiException catch (error) {
       setState(() => _error = error.message);
     } finally {
@@ -83,29 +82,51 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Xác nhận email')),
     body: ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
       children: [
-        const Icon(Icons.mark_email_read_outlined, size: 64),
+        Center(
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.mark_email_read_rounded,
+              size: 32,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
         Text(
-          'Nhập mã OTP đã gửi đến\n${widget.email}',
+          'Xác nhận tài khoản',
           textAlign: TextAlign.center,
-        ),
-        if (_result.debugOtp != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Mã thử nghiệm: ${_result.debugOtp}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
           ),
-        ],
-        const SizedBox(height: 24),
-        TextField(
-          controller: _codeController,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Mã OTP đã được gửi đến\n${widget.email}',
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(labelText: 'Mã OTP'),
+          style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.borderMuted),
+          ),
+          child: OtpCodeField(
+            controller: _codeController,
+            enabled: !_loading,
+            onCompleted: (_) => _verify(),
+          ),
         ),
         if (_error != null)
           Text(
@@ -113,13 +134,23 @@ class _RegistrationOtpPageState extends State<RegistrationOtpPage> {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         const SizedBox(height: 12),
-        FilledButton(
+        AuthPrimaryButton(
+          label: _loading ? 'Đang xử lý...' : 'Xác nhận đăng ký',
+          icon: Icons.verified_user_outlined,
+          loading: _loading,
           onPressed: _loading ? null : _verify,
-          child: Text(_loading ? 'Đang xử lý...' : 'Xác nhận đăng ký'),
         ),
-        TextButton(
-          onPressed: _loading ? null : _resend,
-          child: const Text('Gửi lại mã'),
+        Center(
+          child: TextButton.icon(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              shape: const StadiumBorder(),
+            ),
+            onPressed: _loading ? null : _resend,
+            icon: const Icon(Icons.refresh_rounded, size: 19),
+            label: const Text('Gửi lại mã'),
+          ),
         ),
       ],
     ),

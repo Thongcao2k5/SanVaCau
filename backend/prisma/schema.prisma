@@ -13,6 +13,7 @@ model app_user {
   password_hash        String           @db.VarChar(255)
   full_name            String           @db.VarChar(150)
   phone                String?          @db.VarChar(20)
+  avatar_url           String?          @db.VarChar(1000)
   role                 String           @default("CUSTOMER") @db.VarChar(30)
   status               String           @default("ACTIVE") @db.VarChar(20)
   branch_id            BigInt?

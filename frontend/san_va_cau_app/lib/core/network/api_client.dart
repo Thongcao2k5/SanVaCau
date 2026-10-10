@@ -1,13 +1,15 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 import '../constants/api_config.dart';
 
 class ApiClient {
   ApiClient({http.Client? httpClient, String? baseUrl})
-      : baseUrl = baseUrl ?? ApiConfig.baseUrl,
-        _httpClient = httpClient ?? http.Client();
+    : baseUrl = baseUrl ?? ApiConfig.baseUrl,
+      _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
   final String baseUrl;
@@ -75,6 +77,35 @@ class ApiClient {
     return _decodeResponse(response);
   }
 
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required String filePath,
+    String fieldName = 'image',
+    String? token,
+  }) async {
+    final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+    const allowedImageTypes = {'image/jpeg', 'image/png', 'image/webp'};
+
+    if (!allowedImageTypes.contains(mimeType)) {
+      throw const ApiException(
+        statusCode: 400,
+        message: 'Định dạng ảnh không được hỗ trợ. Vui lòng chọn ảnh JPEG, PNG hoặc WebP.',
+      );
+    }
+
+    final request = http.MultipartRequest('POST', _buildUri(path));
+    request.headers.addAll(_buildHeaders(token)..remove('Content-Type'));
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        fieldName,
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      ),
+    );
+    final streamedResponse = await _httpClient.send(request);
+    return _decodeResponse(await http.Response.fromStream(streamedResponse));
+  }
+
   Map<String, String> _buildHeaders(String? token) {
     return {
       'Content-Type': 'application/json',
@@ -109,6 +140,12 @@ class ApiClient {
             'new password must be different from current password',
           )) {
             message = 'Mật khẩu mới phải khác mật khẩu hiện tại';
+          } else if (message.contains('Invalid file type')) {
+            message = 'Định dạng ảnh không được hỗ trợ. Vui lòng chọn ảnh JPEG, PNG hoặc WebP.';
+          } else if (message.contains('File is too large')) {
+            message = 'Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.';
+          } else if (message.contains('No image file provided')) {
+            message = 'Không tìm thấy ảnh để tải lên.';
           }
         } else if (response.statusCode == 401) {
           if (message.contains('invalid email or password')) {

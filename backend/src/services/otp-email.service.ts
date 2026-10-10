@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 type SendOtpEmailInput = {
   email: string;
   code: string;
-  purpose: "REGISTER" | "RESET_PASSWORD";
+  purpose: "REGISTER" | "RESET_PASSWORD" | "CHANGE_EMAIL";
 };
 
 export const sendOtpEmail = async ({ email, code, purpose }: SendOtpEmailInput) => {
@@ -28,18 +28,24 @@ export const sendOtpEmail = async ({ email, code, purpose }: SendOtpEmailInput) 
     auth: { user, pass: password },
   });
 
-  const isRegistration = purpose === "REGISTER";
+  const purposeText = purpose === "REGISTER"
+    ? "Xac nhan dang ky tai khoan"
+    : purpose === "CHANGE_EMAIL"
+      ? "Xac nhan thay doi email"
+      : "Xac nhan dat lai mat khau";
   await transporter.sendMail({
     from: `SanVaCau <${from}>`,
     to: email,
-    subject: isRegistration
+    subject: purpose === "REGISTER"
       ? "Ma OTP dang ky tai khoan SanVaCau"
-      : "Ma OTP dat lai mat khau SanVaCau",
+      : purpose === "CHANGE_EMAIL"
+        ? "Ma OTP thay doi email SanVaCau"
+        : "Ma OTP dat lai mat khau SanVaCau",
     text: `Ma OTP cua ban la ${code}. Ma co hieu luc trong 5 phut. Khong chia se ma nay voi bat ky ai.`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px">
         <h2 style="color:#d92128">SanVaCau</h2>
-        <p>${isRegistration ? "Xac nhan dang ky tai khoan" : "Xac nhan dat lai mat khau"}</p>
+        <p>${purposeText}</p>
         <p style="font-size:32px;font-weight:700;letter-spacing:8px">${code}</p>
         <p>Ma co hieu luc trong 5 phut. Khong chia se ma nay voi bat ky ai.</p>
       </div>

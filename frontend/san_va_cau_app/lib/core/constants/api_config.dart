@@ -1,17 +1,24 @@
 import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConfig {
   const ApiConfig._();
 
   /// Địa chỉ IP máy tính cá nhân trong mạng LAN sử dụng cho thiết bị thật (Android/iOS)
-  static const String pcIp = String.fromEnvironment('PC_IP', defaultValue: '172.16.0.209');
+  static const String pcIp = String.fromEnvironment(
+    'PC_IP',
+    defaultValue: '172.16.0.209',
+  );
 
   static String get defaultBaseUrl {
     if (kIsWeb) return 'http://localhost:3000/api';
 
     // Cờ xác định khi chạy trên thiết bị thật (Android/iOS)
-    const bool isPhysicalDevice = bool.fromEnvironment('IS_PHYSICAL_DEVICE', defaultValue: false);
+    const bool isPhysicalDevice = bool.fromEnvironment(
+      'IS_PHYSICAL_DEVICE',
+      defaultValue: false,
+    );
     const bool usePcIp = bool.fromEnvironment('USE_PC_IP', defaultValue: false);
 
     if (isPhysicalDevice || usePcIp) {
@@ -44,5 +51,15 @@ class ApiConfig {
       return envUrl;
     }
     return defaultBaseUrl;
+  }
+
+  static String resolveMediaUrl(String? value) {
+    if (value == null || value.isEmpty) return '';
+    final uri = Uri.tryParse(value);
+    if (uri != null && uri.hasScheme) return value;
+
+    final apiUri = Uri.parse(baseUrl);
+    final origin = apiUri.replace(path: '', query: null, fragment: null);
+    return origin.resolve(value).toString();
   }
 }

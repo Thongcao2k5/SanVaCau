@@ -56,12 +56,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Thông báo của tôi'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Thông báo của tôi'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(notificationApi.callCount, 1);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -300));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Thông báo của tôi'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quay lại'));
