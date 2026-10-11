@@ -38,6 +38,8 @@ Tài liệu: https://developers.momo.vn/v3/vi/docs/payment/api/wallet/onetime/
 
 ### VNPay Sandbox
 
+Hướng dẫn cho cả nhóm về bật/tắt Cloudflare Tunnel, cập nhật callback khi URL đổi và phần IPN cần làm tiếp: [Thanh toán local trong README gốc](../../README.md#thanh-toán-local-khi-nào-cần-cloudflare-tunnel).
+
 VNPay được bổ sung bên cạnh MoMo và tiền mặt. Đã cài `vnpay_payment_flutter: ^1.0.0`; dùng bảng thông báo của thư viện, mở URL thanh toán bằng `url_launcher`. Backend tạo URL và xác minh HMAC-SHA512, Flutter không chứa Hash Secret.
 
 Đăng ký Sandbox tại https://sandbox.vnpayment.vn/devreg/ để nhận TMN Code và Hash Secret. Điền trong `backend/.env`:

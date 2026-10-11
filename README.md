@@ -156,6 +156,56 @@ adb reverse tcp:3000 tcp:3000
 flutter run -d <DEVICE_ID> --dart-define=API_BASE_URL=http://127.0.0.1:3000/api
 ```
 
+## Thanh toán local: khi nào cần Cloudflare Tunnel?
+
+Cloudflare Tunnel đưa API cổng 3000 ra một URL HTTPS công khai để VNPAY/MoMo gọi về backend. Cửa sổ `cloudflared` là tiến trình tunnel, không phải màn hình xem giao dịch.
+
+| Mục đích | Dịch vụ cần chạy |
+| --- | --- |
+| Xem dữ liệu và lịch sử thanh toán trong app | PostgreSQL và API; app kết nối bằng LAN/USB/emulator như trên |
+| Thử thanh toán với callback trỏ về máy local | PostgreSQL, API và Cloudflare Tunnel |
+| Backend đã triển khai với HTTPS cố định | Backend/database trên server; không cần tunnel trên máy cá nhân |
+
+### Bật tunnel khi thử thanh toán
+
+1. Bật PostgreSQL và backend trước theo hướng dẫn trên. Giữ terminal API chạy.
+2. Cài [cloudflared](https://developers.cloudflare.com/tunnel/downloads/) trên máy thử nghiệm. Mở terminal thứ hai và chạy nếu đã có trong PATH:
+
+   ```powershell
+   cloudflared tunnel --url http://localhost:3000
+   ```
+
+   Trên máy Thức, file nằm ở `D:\tools\cloudflared.exe`; trong PowerShell chạy:
+
+   ```powershell
+   & 'D:\tools\cloudflared.exe' tunnel --url http://localhost:3000
+   ```
+
+3. Lấy URL `https://...trycloudflare.com` được in trong terminal. Thay `YOUR_PUBLIC_HOST` bằng hostname mới trong `backend/.env`:
+
+   ```env
+   VNPAY_RETURN_URL=https://YOUR_PUBLIC_HOST/api/payments/vnpay/return
+   MOMO_IPN_URL=https://YOUR_PUBLIC_HOST/api/payments/momo/ipn
+   MOMO_REDIRECT_URL=https://YOUR_PUBLIC_HOST/api/payments/momo/return
+   ```
+
+   Giữ các khóa Sandbox trong `.env` riêng của máy; lấy từ người phụ trách tích hợp của nhóm. Chỉ cấu hình MoMo khi đã có tài khoản/khóa Sandbox.
+4. Đăng ký URL `https://YOUR_PUBLIC_HOST/api/payments/vnpay/ipn` với VNPAY. Endpoint đã có trong code, nhưng việc đăng ký phía VNPAY đang chờ xác nhận. Khi hostname đổi, cần yêu cầu cập nhật IPN URL; URL đã gửi trước đó không dùng được cho tunnel mới.
+5. Khởi động lại API để đọc `.env` mới, rồi tạo giao dịch thử mới trong app. Giao dịch cũ có thể vẫn chứa Return URL cũ. Có thể thử mở `https://YOUR_PUBLIC_HOST/api/health` để kiểm tra tunnel tới được API.
+6. Giữ API, database và tiến trình tunnel chạy trong lúc thanh toán/nhận callback. Có thể thu nhỏ cửa sổ terminal. Khi kết thúc thử nghiệm, nhấn **Ctrl+C** ở terminal tunnel và API; tắt PostgreSQL riêng theo [hướng dẫn server local](backend/docs/chay-server-local.md).
+
+App vẫn có thể dùng `API_BASE_URL` LAN/USB để gọi API; URL HTTPS công khai dùng cho callback của cổng thanh toán. Nếu cho app kết nối qua tunnel thì dùng `--dart-define=API_BASE_URL=https://YOUR_PUBLIC_HOST/api` và chạy lại app.
+
+### Trạng thái thanh toán và phần cần làm tiếp
+
+- Thanh toán hiện là **Sandbox**, không thu tiền thật. Mua hàng có tiền mặt/VNPAY/MoMo; đặt sân chọn VNPAY/MoMo, nhiều sân thanh toán từng lịch.
+- **Return URL** đưa người dùng quay về app; không tự xác nhận đã trả tiền. **IPN** là thông báo từ máy chủ cổng thanh toán đến backend để cập nhật trạng thái sau khi kiểm tra chữ ký và thông tin giao dịch.
+- VNPAY đã có endpoint IPN và truy vấn `querydr`: nút **Kiểm tra kết quả** có thể xác nhận giao dịch qua backend ngay cả khi chưa nhận IPN. Kiểm tra chủ động thành công chưa chứng minh IPN đã được cấu hình.
+- Việc cần làm tiếp: chờ VNPAY xác nhận đăng ký IPN URL đang hoạt động, rồi kiểm thử trạng thái tự cập nhật khi không bấm **Kiểm tra kết quả**. Dùng hostname ổn định nếu nhóm cần thử lâu dài.
+- Mở trực tiếp `/api/payments/vnpay/ipn` trong trình duyệt mà không có tham số/chữ ký trả `RspCode: 97` là phản hồi từ chối callback không hợp lệ, không chứng minh thanh toán lỗi.
+
+Quick Tunnel có hostname mới mỗi lần tạo, ngừng hoạt động khi tiến trình dừng và chỉ phù hợp thử nghiệm. Xem [tài liệu Quick Tunnels của Cloudflare](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/). Khi triển khai lâu dài, dùng backend HTTPS và tên miền cố định để giữ nguyên IPN/Return URL.
+
 ## 4. Chạy kiểm thử
 
 ### Khung đặt sân 30 phút
