@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { createAuditLog } from "../lib/audit-log.js";
 import { createNotification } from "../lib/notification.js";
 
+
 export const paymentRouter = Router();
 
 // ── helpers ────────────────────────────────────────────────
@@ -33,6 +34,7 @@ const toPaymentResponse = (p: PaymentRow) => ({
   amount: p.amount.toString(),
   status: p.status,
   transactionRef: p.transaction_ref,
+  checkoutUrl: p.checkout_url,
   paidAt: p.paid_at?.toISOString() ?? null,
   failedAt: p.failed_at?.toISOString() ?? null,
   createdAt: p.created_at.toISOString(),
@@ -208,6 +210,11 @@ paymentRouter.patch("/:id/mock-success", requireAuth, async (req, res, next) => 
       return;
     }
 
+    if (!["CASH", "MOCK"].includes(payment.provider)) {
+      res.status(403).json({ success: false, message: "This payment cannot be completed through a demo endpoint" });
+      return;
+    }
+
     if (payment.status !== "PENDING") {
       res.status(400).json({ success: false, message: `Payment is already ${payment.status}` });
       return;
@@ -288,6 +295,11 @@ paymentRouter.patch("/:id/mock-fail", requireAuth, async (req, res, next) => {
 
     if (payment.user_id !== userId) {
       res.status(403).json({ success: false, message: "You can only update your own payment" });
+      return;
+    }
+
+    if (!["CASH", "MOCK"].includes(payment.provider)) {
+      res.status(403).json({ success: false, message: "This payment cannot be completed through a demo endpoint" });
       return;
     }
 

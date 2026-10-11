@@ -13,6 +13,8 @@ import '../data/booking_api.dart';
 import '../models/court.dart';
 import '../widgets/booking_timeline.dart';
 import 'court_detail_page.dart';
+import 'booking_payment_page.dart';
+import '../../payments/data/payment_api.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({
@@ -22,6 +24,7 @@ class BookingPage extends StatefulWidget {
     this.bookingApi,
     this.onTimelineVisibilityChanged,
     this.authApi,
+    this.paymentApi,
   });
 
   final Branch? initialBranch;
@@ -29,6 +32,7 @@ class BookingPage extends StatefulWidget {
   final BookingApi? bookingApi;
   final ValueChanged<bool>? onTimelineVisibilityChanged;
   final AuthApi? authApi;
+  final PaymentApi? paymentApi;
 
   @override
   State<BookingPage> createState() => _BookingPageState();
@@ -231,7 +235,7 @@ class _BookingPageState extends State<BookingPage> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Thanh toán tại sân. Bạn cần đăng nhập tài khoản khách hàng để xác nhận.',
+                'Thanh toán bằng VNPAY hoặc MoMo. Lịch đặt chỉ được ghi nhận đã thanh toán sau khi cổng thanh toán xác nhận.',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -251,16 +255,32 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Future<void> _submit() async {
+    final provider = await chooseBookingPayment(context);
+    if (provider == null || !mounted) return;
     setState(() => _submitting = true);
     try {
-      await _bookingApi.createBookings(
+      final paymentApi = widget.paymentApi ?? PaymentApi();
+      if (provider == 'VNPAY_SANDBOX') {
+        await paymentApi.ensureVnpayConfigured();
+      } else {
+        await paymentApi.ensureMomoConfigured();
+      }
+      final bookings = await _bookingApi.createBookings(
         bookingDate: _dateKey,
         courtSlots: _courtSlots,
+        paymentMethod: provider == 'VNPAY_SANDBOX' ? 'VNPAY' : 'MOMO',
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đặt sân thành công.')));
       _refresh();
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => BookingPaymentPage(
+            bookings: bookings,
+            provider: provider,
+            paymentApi: paymentApi,
+          ),
+        ),
+      );
     } on ApiException catch (error) {
       if (!mounted) return;
       if (error.statusCode == 401) {

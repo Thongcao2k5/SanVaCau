@@ -8,6 +8,9 @@ import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
 import 'package:san_va_cau_app/features/auth/widgets/auth_primary_button.dart';
 import 'package:san_va_cau_app/core/theme/app_theme.dart';
 import 'package:san_va_cau_app/features/booking/data/booking_api.dart';
+import 'package:san_va_cau_app/features/booking/models/booking.dart';
+import 'package:san_va_cau_app/features/payments/data/payment_api.dart';
+import 'package:san_va_cau_app/features/payments/models/payment.dart';
 import 'package:san_va_cau_app/features/booking/models/court.dart';
 import 'package:san_va_cau_app/features/booking/pages/booking_page.dart';
 import 'package:san_va_cau_app/features/branches/data/branch_api.dart';
@@ -30,6 +33,7 @@ class FakeBranches extends BranchApi {
 class FakeBooking extends BookingApi {
   final calls = <String>[];
   Map<String, List<String>>? bookedCourts;
+  String? method;
 
   bool fail = false;
   @override
@@ -70,11 +74,41 @@ class FakeBooking extends BookingApi {
   }
 
   @override
-  Future<void> createBookings({
+  Future<List<Booking>> createBookings({
     required String bookingDate,
     required Map<String, List<String>> courtSlots,
+    String paymentMethod = 'CASH',
   }) async {
     bookedCourts = courtSlots;
+    method = paymentMethod;
+    return [
+      for (final id in courtSlots.keys)
+        Booking.fromJson({
+          'id': id,
+          'court': {'id': id, 'name': 'Sân $id'},
+          'status': 'BOOKED',
+          'paymentStatus': 'UNPAID',
+          'totalAmount': '40000',
+        }),
+    ];
+  }
+}
+
+class FakePayments extends PaymentApi {
+  @override
+  Future<void> ensureVnpayConfigured() async {}
+  @override
+  Future<void> ensureMomoConfigured() async {}
+  @override
+  Future<Payment> createPayment({
+    required String targetType,
+    required String targetId,
+    required String provider,
+  }) async {
+    throw const ApiException(
+      statusCode: 503,
+      message: 'Cổng thanh toán tạm gián đoạn',
+    );
   }
 }
 
@@ -122,6 +156,7 @@ Future<void> pumpPage(
         branchApi: FakeBranches(),
         bookingApi: api,
         authApi: FakeLogin(),
+        paymentApi: FakePayments(),
       ),
     ),
   );
@@ -233,12 +268,20 @@ void main() {
     expect(find.text('Sân 2: 06:00 – 06:30'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Xác nhận đặt sân'));
     await tester.pumpAndSettle();
+    expect(api.bookedCourts, isNull);
+    await tester.tap(find.text('VNPAY'));
+    await tester.pumpAndSettle();
     expect(api.bookedCourts, {
       '1': ['1', '3'],
       '2': ['1'],
     });
 
-    expect(find.text('Đặt sân thành công.'), findsOneWidget);
+    expect(api.method, 'VNPAY');
+    expect(find.text('Cổng thanh toán tạm gián đoạn'), findsOneWidget);
+    expect(find.text('Đã thanh toán'), findsNothing);
+    expect(find.text('Thanh toán'), findsNWidgets(2));
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, 'TIẾP THEO'))

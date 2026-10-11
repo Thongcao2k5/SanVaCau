@@ -16,7 +16,11 @@ class PaymentApi {
     required String provider,
   }) async {
     final response = await _apiClient.post(
-      '/payments/mock',
+      provider == 'VNPAY_SANDBOX'
+          ? '/payments/vnpay'
+          : provider == 'MOMO_SANDBOX'
+          ? '/payments/momo'
+          : '/payments/mock',
       token: await _token(),
       body: {
         'targetType': targetType,
@@ -27,17 +31,25 @@ class PaymentApi {
     return _fromData(response['data']);
   }
 
-  Future<Payment> markSuccess(String paymentId) async {
-    final response = await _apiClient.patch(
-      '/payments/$paymentId/mock-success',
+  Future<void> ensureVnpayConfigured() async {
+    await _apiClient.get('/payments/vnpay/config', token: await _token());
+  }
+
+  Future<Payment> checkVnpay(String paymentId) async {
+    final response = await _apiClient.post(
+      '/payments/vnpay/$paymentId/check',
       token: await _token(),
     );
     return _fromData(response['data']);
   }
 
-  Future<Payment> markFailed(String paymentId) async {
-    final response = await _apiClient.patch(
-      '/payments/$paymentId/mock-fail',
+  Future<void> ensureMomoConfigured() async {
+    await _apiClient.get('/payments/momo/config', token: await _token());
+  }
+
+  Future<Payment> checkMomo(String paymentId) async {
+    final response = await _apiClient.post(
+      '/payments/momo/$paymentId/check',
       token: await _token(),
     );
     return _fromData(response['data']);

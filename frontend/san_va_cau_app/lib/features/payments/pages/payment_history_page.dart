@@ -4,6 +4,8 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/payment_api.dart';
 import '../models/payment.dart';
+import 'momo_payment_page.dart';
+import 'vnpay_payment_page.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
   const PaymentHistoryPage({super.key});
@@ -68,7 +70,27 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               itemCount: payments.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (_, index) => _PaymentCard(payment: payments[index]),
+              itemBuilder: (_, index) => InkWell(
+                onTap:
+                    [
+                          'MOMO_SANDBOX',
+                          'VNPAY_SANDBOX',
+                        ].contains(payments[index].provider) &&
+                        payments[index].status != 'PAID'
+                    ? () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                payments[index].provider == 'VNPAY_SANDBOX'
+                                ? VnpayPaymentPage(payment: payments[index])
+                                : MomoPaymentPage(payment: payments[index]),
+                          ),
+                        );
+                        if (mounted) _reload();
+                      }
+                    : null,
+                child: _PaymentCard(payment: payments[index]),
+              ),
             ),
           );
         },
@@ -129,7 +151,11 @@ class _PaymentCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    status,
+                    payment.provider == 'VNPAY_SANDBOX'
+                        ? '$status · VNPay Sandbox'
+                        : payment.provider == 'MOMO_SANDBOX'
+                        ? '$status · MoMo Sandbox'
+                        : status,
                     style: TextStyle(color: color, fontWeight: FontWeight.w700),
                   ),
                 ],

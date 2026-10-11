@@ -14,6 +14,8 @@
 
 Không commit file `.env` thật. Các file `.env.example` chỉ chứa placeholder.
 
+Hướng dẫn bật/tắt API và PostgreSQL thủ công trên máy hiện tại: [Chạy server local](backend/docs/chay-server-local.md).
+
 ## Thiết lập sau khi clone hoặc merge
 
 - Backend: chạy `npm ci`, tạo `backend/.env` theo `.env.example`, rồi chạy
@@ -35,8 +37,8 @@ Không commit file `.env` thật. Các file `.env.example` chỉ chứa placehol
   Khi chuyển máy triển khai, cần sao chép hoặc lưu trữ riêng ảnh tải lên.
 
 Thay đổi giao diện dùng các thư viện đã khai báo trong `pubspec.yaml`
-(bao gồm `image_picker`); phần cắt ảnh dùng Flutter SDK, không cần cài thêm
-thư viện thanh toán MoMo hoặc VNPAY.
+(bao gồm `image_picker`); phần cắt ảnh dùng Flutter SDK. Thanh toán Sandbox dùng
+`momo_payment_flutter` và `vnpay_payment_flutter`; cấu hình cổng thanh toán xem trong README của ứng dụng Flutter.
 
 ## Yêu cầu
 

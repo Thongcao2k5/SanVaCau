@@ -42,6 +42,8 @@ dependencies:
   image_picker: ^1.2.4
   mime: ^2.1.0
   http_parser: ^4.1.2
+  momo_payment_flutter: ^1.0.2
+  vnpay_payment_flutter: ^1.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

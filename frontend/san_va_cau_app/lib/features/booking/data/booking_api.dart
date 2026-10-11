@@ -69,22 +69,27 @@ class BookingApi {
     );
   }
 
-  Future<void> createBookings({
+  Future<List<Booking>> createBookings({
     required String bookingDate,
     required Map<String, List<String>> courtSlots,
+    String paymentMethod = 'CASH',
   }) async {
-    await _apiClient.post(
+    final response = await _apiClient.post(
       '/bookings/batch',
       token: await _readToken(),
       body: {
         'bookingDate': bookingDate,
-        'paymentMethod': 'CASH',
+        'paymentMethod': paymentMethod,
         'courts': [
           for (final entry in courtSlots.entries)
             {'courtId': entry.key, 'timeSlotIds': entry.value},
         ],
       },
     );
+    final data = response['data'] as Map<String, dynamic>;
+    return (data['bookings'] as List<dynamic>)
+        .map((item) => Booking.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<Booking>> getMyBookings() async {
