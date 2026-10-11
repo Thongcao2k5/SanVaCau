@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/support_api.dart';
 import '../models/support_ticket.dart';
 import '../support_display.dart';
@@ -9,25 +10,30 @@ import 'support_ticket_detail_page.dart';
 import 'support_ticket_form_page.dart';
 
 class SupportTicketListPage extends StatefulWidget {
-  const SupportTicketListPage({super.key});
+  const SupportTicketListPage({this.supportApi, super.key});
+
+  final SupportApi? supportApi;
 
   @override
   State<SupportTicketListPage> createState() => _SupportTicketListPageState();
 }
 
 class _SupportTicketListPageState extends State<SupportTicketListPage> {
-  final SupportApi _supportApi = SupportApi();
+  late final SupportApi _supportApi;
   late Future<List<SupportTicket>> _ticketsFuture;
 
   @override
   void initState() {
     super.initState();
+    _supportApi = widget.supportApi ?? SupportApi();
     _ticketsFuture = _supportApi.getMyTickets();
   }
 
   Future<void> _reload() async {
     final future = _supportApi.getMyTickets();
-    setState(() => _ticketsFuture = future);
+    setState(() {
+      _ticketsFuture = future;
+    });
     await future;
   }
 
@@ -99,10 +105,20 @@ class _SupportTicketListPageState extends State<SupportTicketListPage> {
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: tickets.length,
+              itemCount: tickets.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final ticket = tickets[index];
+                if (index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: AppPageIntro(
+                      icon: Icons.support_agent_rounded,
+                      title: 'Theo dõi hỗ trợ',
+                      subtitle: 'Mọi trao đổi với đội ngũ Sân Và Cầu được lưu tại đây.',
+                    ),
+                  );
+                }
+                final ticket = tickets[index - 1];
                 return _TicketCard(
                   ticket: ticket,
                   onTap: () => _openTicket(ticket),
@@ -126,8 +142,12 @@ class _TicketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = supportStatusColor(ticket.status);
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),

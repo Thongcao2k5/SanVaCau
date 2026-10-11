@@ -2,33 +2,42 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/address_api.dart';
 import '../models/customer_address.dart';
 import 'address_form_page.dart';
 
 class AddressListPage extends StatefulWidget {
-  const AddressListPage({this.selectionMode = false, super.key});
+  const AddressListPage({
+    this.selectionMode = false,
+    this.addressApi,
+    super.key,
+  });
 
   final bool selectionMode;
+  final AddressApi? addressApi;
 
   @override
   State<AddressListPage> createState() => _AddressListPageState();
 }
 
 class _AddressListPageState extends State<AddressListPage> {
-  final AddressApi _addressApi = AddressApi();
+  late final AddressApi _addressApi;
   late Future<List<CustomerAddress>> _addressesFuture;
   String? _processingId;
 
   @override
   void initState() {
     super.initState();
+    _addressApi = widget.addressApi ?? AddressApi();
     _addressesFuture = _addressApi.getAddresses();
   }
 
   Future<void> _reload() async {
     final future = _addressApi.getAddresses();
-    setState(() => _addressesFuture = future);
+    setState(() {
+      _addressesFuture = future;
+    });
     await future;
   }
 
@@ -98,71 +107,98 @@ class _AddressListPageState extends State<AddressListPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.selectionMode ? 'Chọn địa chỉ' : 'Địa chỉ của tôi'),
-        actions: [
-          IconButton(
-            tooltip: 'Thêm địa chỉ',
-            onPressed: _openForm,
-            icon: const Icon(Icons.add_location_alt_outlined),
-          ),
-        ],
+        actions: widget.selectionMode
+            ? [
+                IconButton(
+                  tooltip: 'Thêm địa chỉ',
+                  onPressed: _openForm,
+                  icon: const Icon(Icons.add_location_alt_outlined),
+                ),
+              ]
+            : null,
       ),
-      body: FutureBuilder<List<CustomerAddress>>(
-        future: _addressesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            final error = snapshot.error;
-            return _AddressState(
-              icon: Icons.location_off_outlined,
-              title: 'Không thể tải địa chỉ',
-              message: error is ApiException
-                  ? error.message
-                  : 'Vui lòng kiểm tra kết nối và thử lại.',
-              onAction: _reload,
-            );
-          }
+      body: Column(
+        children: [
+          if (!widget.selectionMode) ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: AppPageIntro(
+                icon: Icons.location_on_outlined,
+                title: 'Nơi nhận quen thuộc',
+                subtitle: 'Quản lý địa chỉ để đặt hàng nhanh và chính xác.',
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+          Expanded(
+            child: FutureBuilder<List<CustomerAddress>>(
+              future: _addressesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  final error = snapshot.error;
+                  return AppStateView(
+                    icon: Icons.location_off_outlined,
+                    title: 'Không thể tải địa chỉ',
+                    message: error is ApiException
+                        ? error.message
+                        : 'Vui lòng kiểm tra kết nối và thử lại.',
+                    actionLabel: 'Thử lại',
+                    onAction: _reload,
+                  );
+                }
 
-          final addresses = snapshot.data ?? const <CustomerAddress>[];
-          if (addresses.isEmpty) {
-            return _AddressState(
-              icon: Icons.add_location_alt_outlined,
-              title: 'Chưa có địa chỉ',
-              message: 'Thêm địa chỉ để chuẩn bị cho lựa chọn giao hàng.',
-              actionLabel: 'Thêm địa chỉ',
-              onAction: _openForm,
-            );
-          }
+                final addresses = snapshot.data ?? const <CustomerAddress>[];
+                if (addresses.isEmpty) {
+                  return AppStateView(
+                    icon: Icons.add_location_alt_outlined,
+                    title: 'Chưa có địa chỉ',
+                    message: 'Thêm địa chỉ để chuẩn bị cho lựa chọn giao hàng.',
+                    actionLabel: 'Thêm địa chỉ',
+                    onAction: _openForm,
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              itemCount: addresses.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final address = addresses[index];
-                return _AddressCard(
-                  address: address,
-                  isProcessing: _processingId == address.id,
-                  selectionMode: widget.selectionMode,
-                  onSelect: () => Navigator.of(context).pop(address),
-                  onEdit: () => _openForm(address),
-                  onSetDefault: () => _setDefault(address),
-                  onDelete: () => _delete(address),
+                return RefreshIndicator(
+                  onRefresh: _reload,
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      widget.selectionMode ? 16 : 0,
+                      16,
+                      widget.selectionMode ? 32 : 96,
+                    ),
+                    itemCount: addresses.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final address = addresses[index];
+                      return _AddressCard(
+                        address: address,
+                        isProcessing: _processingId == address.id,
+                        selectionMode: widget.selectionMode,
+                        onSelect: () => Navigator.of(context).pop(address),
+                        onEdit: () => _openForm(address),
+                        onSetDefault: () => _setDefault(address),
+                        onDelete: () => _delete(address),
+                      );
+                    },
+                  ),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openForm,
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm địa chỉ'),
-      ),
+      floatingActionButton: widget.selectionMode
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _openForm,
+              icon: const Icon(Icons.add),
+              label: const Text('Thêm địa chỉ'),
+            ),
     );
   }
 }
@@ -188,10 +224,16 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: selectionMode ? onSelect : null,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -279,55 +321,6 @@ class _AddressCard extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddressState extends StatelessWidget {
-  const _AddressState({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.onAction,
-    this.actionLabel = 'Thử lại',
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final VoidCallback onAction;
-  final String actionLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: AppColors.primary),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onAction, child: Text(actionLabel)),
-          ],
         ),
       ),
     );

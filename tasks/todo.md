@@ -1,43 +1,53 @@
-# Todo: Hoan thien lien ket Flutter - Backend
+# User-side completion checklist
 
-## Baseline da xong
+## Phase 1: Current changes
 
-- [x] Ho tro khach hang - commit `97244ee`.
-- [x] Dich vu vot theo chi nhanh - commit `7cc6e29`.
-- [x] Dieu huong tu thong bao - commit `08569ec`.
-- [x] So thong bao chua doc - commit `8b8dc0d`.
+- [x] Baseline analyze và focused tests
+- [x] Cart behavior được kiểm thử và ổn định
+- [x] Main shell cart tab được kiểm thử và ổn định
+- [x] Product variant selection được kiểm thử và ổn định
 
-## Phase 1: Quan ly danh gia ca nhan
+## Phase 2: Ordering without real payment
 
-- [x] Task 1: Them integration test cho `GET /reviews/me` va `PATCH /reviews/:id`.
-- [x] Task 2: Them Flutter API/model tests cho list va update review cua toi.
-- [x] Task 3: Them man hinh "Danh gia cua toi" va entry point tu trang Tai khoan.
-- [x] Task 4: Them luong sua rating/comment va reload du lieu that.
+- [x] Checkout states và lựa chọn fulfillment/voucher
+- [x] Order history/detail states
 
-## Checkpoint: Review management
+## Phase 3: Booking
 
-- [x] Backend typecheck va full test pass.
-- [x] Flutter analyze va full test pass.
-- [ ] Create/list/edit review chay that tren thiet bi.
-- [x] Moi task co commit rieng.
+- [x] Booking selection và consecutive slots
+- [x] Booking history/detail/cancel/review flow
 
-## Phase 2: Audit endpoint khach hang
+## Phase 4: Account
 
-- [x] Task 5: Tao `tasks/customer-endpoint-audit.md`.
-- [ ] Review va duyet danh sach gap.
-- [x] Task 6: Them bo loc san pham theo danh muc va thuong hieu.
-- [x] Task 7: Them luong xoa toan bo gio hang co xac nhan.
-- [x] Task 8: Xac nhan bo loc FAQ cuc bo va endpoint categories la du thua co chu dich.
-- [x] Task 9: Chot chien luoc public config, giu startup khong co request trung lap.
+- [x] OTP/register/password/email flows
+- [x] Profile/avatar/address/session/logout flows
 
-## Checkpoint: Customer endpoint coverage
+## Phase 5: Utilities
 
-- [x] Khong con gap `missing` muc do cao.
-- [x] Moi gap `partial` co quyet dinh ro rang.
-- [x] Full backend va Flutter test pass.
+- [x] Notifications/favorites/search
+- [x] Branches/news/racket service/support/help/contact/static pages
 
-## Phase 3: Nghiem thu cuoi
+## Final checkpoint
 
-- [x] Task 10: Chay full automated verification va build APK debug.
-- [x] Task 11: Kiem tra tren thiet bi va chup anh nghiem thu.
-- [x] Task 12: Review staged diff va commit hoan thien lien ket Flutter - Backend.
+- [x] Flutter analyze
+- [x] Full Flutter test suite
+- [x] Emulator/backend runtime smoke pass
+- [x] Git diff reviewed; no commit created
+
+## Account subpage redesign
+
+- [x] Shared account UI foundation
+- [x] Favorites redesign và sửa ảnh backend
+- [x] Help Center, contact và policy redesign
+- [x] Support ticket list/form/detail redesign
+- [x] Address form và edit review redesign
+- [x] Focused analyze/tests checkpoint
+- [x] Full analyze/test/emulator checkpoint
+
+## ChatGPT cohesion review
+
+- [x] Reconnect và xác minh workspace SanVaCau
+- [x] Review thiết kế bằng ChatGPT
+- [x] Đồng bộ booking/order/address/notification pages
+- [x] Focused tests, full suite và emulator smoke
+- [x] ChatGPT final review PASS

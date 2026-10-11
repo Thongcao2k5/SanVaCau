@@ -7,9 +7,14 @@ import '../models/support_ticket.dart';
 import '../support_display.dart';
 
 class SupportTicketDetailPage extends StatefulWidget {
-  const SupportTicketDetailPage({required this.ticketId, super.key});
+  const SupportTicketDetailPage({
+    required this.ticketId,
+    this.supportApi,
+    super.key,
+  });
 
   final String ticketId;
+  final SupportApi? supportApi;
 
   @override
   State<SupportTicketDetailPage> createState() =>
@@ -17,7 +22,7 @@ class SupportTicketDetailPage extends StatefulWidget {
 }
 
 class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
-  final SupportApi _supportApi = SupportApi();
+  late final SupportApi _supportApi;
   final TextEditingController _messageController = TextEditingController();
   late Future<SupportTicket> _ticketFuture;
   bool _isSending = false;
@@ -25,6 +30,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
   @override
   void initState() {
     super.initState();
+    _supportApi = widget.supportApi ?? SupportApi();
     _ticketFuture = _supportApi.getTicket(widget.ticketId);
   }
 
@@ -36,7 +42,9 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
 
   Future<void> _reload() async {
     final future = _supportApi.getTicket(widget.ticketId);
-    setState(() => _ticketFuture = future);
+    setState(() {
+      _ticketFuture = future;
+    });
     await future;
   }
 
@@ -148,6 +156,10 @@ class _TicketHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = supportStatusColor(ticket.status);
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -224,7 +236,7 @@ class _MessageBubble extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isStaff ? AppColors.surfaceMuted : AppColors.primarySoft,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.borderMuted),
           ),
           child: Column(

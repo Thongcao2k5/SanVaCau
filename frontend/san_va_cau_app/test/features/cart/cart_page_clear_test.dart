@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:san_va_cau_app/core/network/api_client.dart';
+import 'package:san_va_cau_app/core/theme/app_colors.dart';
 import 'package:san_va_cau_app/features/cart/data/cart_api.dart';
 import 'package:san_va_cau_app/features/cart/models/cart.dart';
 import 'package:san_va_cau_app/features/cart/pages/cart_page.dart';
 
 class _FakeCartApi extends CartApi {
-  _FakeCartApi({required this.initialCart, this.clearError});
+  _FakeCartApi({
+    required this.initialCart,
+    this.clearError,
+    this.removeError,
+    this.addError,
+  });
 
   final Cart initialCart;
   final Object? clearError;
+  final Object? removeError;
+  final Object? addError;
   int clearCallCount = 0;
+  int removeCallCount = 0;
+  int addCallCount = 0;
 
   @override
   Future<Cart> getCart() async => initialCart;
@@ -20,6 +30,23 @@ class _FakeCartApi extends CartApi {
     clearCallCount += 1;
     if (clearError case final error?) throw error;
     return _emptyCart;
+  }
+
+  @override
+  Future<Cart> removeItem(String itemId) async {
+    removeCallCount += 1;
+    if (removeError case final error?) throw error;
+    return _emptyCart;
+  }
+
+  @override
+  Future<Cart> addItem({
+    required String productVariantId,
+    required int quantity,
+  }) async {
+    addCallCount += 1;
+    if (addError case final error?) throw error;
+    return initialCart;
   }
 }
 
@@ -76,12 +103,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Giỏ hàng (1)'), findsOneWidget);
-    expect(
-      tester
-          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Thanh toán'))
-          .onPressed,
-      isNull,
-    );
+    expect(find.widgetWithText(FilledButton, 'Thanh toán'), findsNothing);
     await tester.tap(find.byType(Checkbox).first);
     await tester.pumpAndSettle();
     expect(
@@ -91,6 +113,93 @@ void main() {
       isNotNull,
     );
     expect(find.text('120.000 đ'), findsNWidgets(2));
+  });
+
+  testWidgets('swipe delete removes the item without a framework error', (
+    tester,
+  ) async {
+    final api = _FakeCartApi(initialCart: _cartWithItem);
+    await tester.pumpWidget(MaterialApp(home: CartPage(cartApi: api)));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.byType(Dismissible), const Offset(-600, 0), 2000);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(api.removeCallCount, 1);
+    expect(find.text('Giỏ hàng đang trống'), findsOneWidget);
+    expect(find.text('Đã xóa sản phẩm'), findsOneWidget);
+    final noticeMaterial = tester.widget<Material>(
+      find
+          .ancestor(
+            of: find.text('Đã xóa sản phẩm'),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(noticeMaterial.color, AppColors.primarySoft);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Đã xóa sản phẩm'), findsNothing);
+  });
+
+  testWidgets('restores the item when swipe delete fails', (tester) async {
+    final api = _FakeCartApi(
+      initialCart: _cartWithItem,
+      removeError: const ApiException(
+        statusCode: 500,
+        message: 'Không thể xóa sản phẩm lúc này',
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: CartPage(cartApi: api)));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.byType(Dismissible), const Offset(-600, 0), 2000);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(api.removeCallCount, 1);
+    expect(find.text('Vợt cầu lông'), findsOneWidget);
+    expect(find.text('Không thể xóa sản phẩm lúc này'), findsOneWidget);
+  });
+
+  testWidgets('keeps the item deleted when undo fails', (tester) async {
+    final api = _FakeCartApi(
+      initialCart: _cartWithItem,
+      addError: const ApiException(
+        statusCode: 500,
+        message: 'Không thể hoàn tác lúc này',
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: CartPage(cartApi: api)));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.byType(Dismissible), const Offset(-600, 0), 2000);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(api.addCallCount, 1);
+    expect(find.text('Giỏ hàng đang trống'), findsOneWidget);
+    expect(find.text('Vợt cầu lông'), findsNothing);
+    expect(find.text('Không thể hoàn tác lúc này'), findsOneWidget);
+  });
+
+  testWidgets('restores the item when undo succeeds', (tester) async {
+    final api = _FakeCartApi(initialCart: _cartWithItem);
+    await tester.pumpWidget(MaterialApp(home: CartPage(cartApi: api)));
+    await tester.pumpAndSettle();
+
+    await tester.fling(find.byType(Dismissible), const Offset(-600, 0), 2000);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(api.addCallCount, 1);
+    expect(find.text('Vợt cầu lông'), findsOneWidget);
+    expect(find.text('Giỏ hàng (1)'), findsOneWidget);
   });
   testWidgets('only shows clear action when the cart has items', (
     tester,
@@ -103,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Xóa toàn bộ giỏ hàng'), findsNothing);
-    expect(find.text('Giỏ hàng trống'), findsOneWidget);
+    expect(find.text('Giỏ hàng đang trống'), findsOneWidget);
   });
 
   testWidgets('cancelling the confirmation does not clear the cart', (
@@ -137,7 +246,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(api.clearCallCount, 1);
-    expect(find.text('Giỏ hàng trống'), findsOneWidget);
+    expect(find.text('Giỏ hàng đang trống'), findsOneWidget);
     expect(find.text('Đã xóa toàn bộ giỏ hàng'), findsOneWidget);
     expect(find.byTooltip('Xóa toàn bộ giỏ hàng'), findsNothing);
   });

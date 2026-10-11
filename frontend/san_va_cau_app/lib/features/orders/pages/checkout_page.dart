@@ -21,12 +21,24 @@ class CheckoutPage extends StatefulWidget {
     required this.cart,
     this.buyNowProductVariantId,
     this.buyNowQuantity,
+    this.branchApi,
+    this.orderApi,
+    this.fulfillmentApi,
+    this.paymentApi,
+    this.voucherApi,
+    this.addressPicker,
     super.key,
   });
 
   final Cart cart;
   final String? buyNowProductVariantId;
   final int? buyNowQuantity;
+  final BranchApi? branchApi;
+  final OrderApi? orderApi;
+  final FulfillmentApi? fulfillmentApi;
+  final PaymentApi? paymentApi;
+  final VoucherApi? voucherApi;
+  final Future<CustomerAddress?> Function(BuildContext context)? addressPicker;
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -52,11 +64,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    _branchApi = BranchApi();
-    _orderApi = OrderApi();
-    _fulfillmentApi = FulfillmentApi();
-    _paymentApi = PaymentApi();
-    _voucherApi = VoucherApi();
+    _branchApi = widget.branchApi ?? BranchApi();
+    _orderApi = widget.orderApi ?? OrderApi();
+    _fulfillmentApi = widget.fulfillmentApi ?? FulfillmentApi();
+    _paymentApi = widget.paymentApi ?? PaymentApi();
+    _voucherApi = widget.voucherApi ?? VoucherApi();
     _branchesFuture = _branchApi.getBranches();
   }
 
@@ -240,11 +252,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _selectAddress() async {
-    final address = await Navigator.of(context).push<CustomerAddress>(
-      MaterialPageRoute(
-        builder: (_) => const AddressListPage(selectionMode: true),
-      ),
-    );
+    final address = widget.addressPicker != null
+        ? await widget.addressPicker!(context)
+        : await Navigator.of(context).push<CustomerAddress>(
+            MaterialPageRoute(
+              builder: (_) => const AddressListPage(selectionMode: true),
+            ),
+          );
     if (address != null && mounted) {
       setState(() => _selectedAddress = address);
     }

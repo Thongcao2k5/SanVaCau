@@ -109,11 +109,6 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _onTabSelected(int index) {
-    if (index == 3) {
-      Navigator.of(context)
-          .push(MaterialPageRoute<void>(builder: (_) => const CartPage()));
-      return;
-    }
     if (_navigationController.index != index) {
       _navigationController.jumpTo(index);
     }
@@ -203,39 +198,40 @@ class _MainShellState extends State<MainShell> {
       },
       child: Scaffold(
         body: IndexedStack(index: _currentIndex, children: pages),
-        bottomNavigationBar: _currentIndex == 2 && _bookingTimelineVisible
-            ? null
-            : SafeArea(
-                top: false,
-                minimum: const EdgeInsets.only(bottom: 2),
-                child: AnimatedNotchBottomBar(
-                  notchBottomBarController: _navigationController,
-                  bottomBarItems: _navigationItems,
-                  onTap: _onTabSelected,
-                  color: _barColor,
-                  notchColor: AppColors.surface,
-                  showLabel: true,
-                  itemLabelStyle: const TextStyle(
-                    color: Color(0xFFFFE4E4),
-                    fontFamily: 'PlusJakartaSans',
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textOverflow: TextOverflow.visible,
-                  maxLine: 1,
-                  kIconSize: 25,
-                  kBottomRadius: 24,
-                  bottomBarHeight: 66,
-                  bottomBarWidth: 500,
-                  durationInMilliSeconds: 350,
-                  topMargin: 7,
-                  circleMargin: 7,
-                  elevation: 2,
-                  shadowElevation: 12,
-                  showShadow: true,
-                  removeMargins: false,
-                ),
+        bottomNavigationBar: Offstage(
+          offstage: timelineVisible,
+          child: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.only(bottom: 2),
+            child: AnimatedNotchBottomBar(
+              notchBottomBarController: _navigationController,
+              bottomBarItems: _navigationItems,
+              onTap: _onTabSelected,
+              color: _barColor,
+              notchColor: AppColors.surface,
+              showLabel: true,
+              itemLabelStyle: const TextStyle(
+                color: Color(0xFFFFE4E4),
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
               ),
+              textOverflow: TextOverflow.visible,
+              maxLine: 1,
+              kIconSize: 25,
+              kBottomRadius: 24,
+              bottomBarHeight: 66,
+              bottomBarWidth: 500,
+              durationInMilliSeconds: 350,
+              topMargin: 7,
+              circleMargin: 7,
+              elevation: 2,
+              shadowElevation: 12,
+              showShadow: true,
+              removeMargins: false,
+            ),
+          ),
+        ),
       ),
     );
   }

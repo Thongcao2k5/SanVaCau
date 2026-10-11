@@ -9,9 +9,16 @@ import '../models/order.dart';
 import '../models/order_fulfillment.dart';
 
 class OrderDetailPage extends StatefulWidget {
-  const OrderDetailPage({required this.order, super.key});
+  const OrderDetailPage({
+    required this.order,
+    this.orderApi,
+    this.fulfillmentApi,
+    super.key,
+  });
 
   final Order order;
+  final OrderApi? orderApi;
+  final FulfillmentApi? fulfillmentApi;
 
   @override
   State<OrderDetailPage> createState() => _OrderDetailPageState();
@@ -28,8 +35,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   @override
   void initState() {
     super.initState();
-    _orderApi = OrderApi();
-    _fulfillmentApi = FulfillmentApi();
+    _orderApi = widget.orderApi ?? OrderApi();
+    _fulfillmentApi = widget.fulfillmentApi ?? FulfillmentApi();
     _order = widget.order;
     _loadFulfillment();
   }

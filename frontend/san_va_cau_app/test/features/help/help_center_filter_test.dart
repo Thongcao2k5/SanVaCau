@@ -32,6 +32,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Chúng tôi có thể giúp gì?'), findsOneWidget);
     expect(find.text('Làm sao để đặt sân?'), findsOneWidget);
     expect(find.text('Làm sao để mua vợt?'), findsOneWidget);
 

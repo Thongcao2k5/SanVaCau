@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/booking_api.dart';
 import '../models/booking.dart';
 import 'booking_detail_page.dart';
 
 class BookingHistoryPage extends StatefulWidget {
-  const BookingHistoryPage({super.key});
+  const BookingHistoryPage({this.bookingApi, super.key});
+
+  final BookingApi? bookingApi;
 
   @override
   State<BookingHistoryPage> createState() => _BookingHistoryPageState();
@@ -20,165 +23,86 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _bookingApi = BookingApi();
+    _bookingApi = widget.bookingApi ?? BookingApi();
     _bookingsFuture = _bookingApi.getMyBookings();
   }
 
-  void _reloadBookings() {
+  Future<void> _reloadBookings() async {
+    final future = _bookingApi.getMyBookings();
     setState(() {
-      _bookingsFuture = _bookingApi.getMyBookings();
+      _bookingsFuture = future;
     });
+    await future;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      appBar: AppBar(
+        title: const Text('Lịch đặt sân'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _reloadBookings,
+            tooltip: 'Tải lại',
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Booking>>(
         future: _bookingsFuture,
         builder: (context, snapshot) {
-          return CustomScrollView(
-            slivers: [
-              // --- Gradient SliverAppBar ---
-              SliverAppBar(
-                expandedHeight: 120,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  title: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Lịch đặt sân',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      Text(
-                        'Quản lý các buổi đặt sân của bạn',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFDC2626), Color(0xFF991B1B)],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: -20,
-                          top: -20,
-                          child: Container(
-                            width: 140,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.06),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 40,
-                          bottom: -10,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.05),
-                            ),
-                          ),
-                        ),
-                        const Positioned(
-                          right: 20,
-                          top: 28,
-                          child: Icon(
-                            Icons.sports_tennis,
-                            size: 56,
-                            color: Colors.white12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.refresh_rounded,
-                      color: Colors.white,
-                    ),
-                    onPressed: _reloadBookings,
-                    tooltip: 'Tải lại',
-                  ),
-                ],
-              ),
-
-              // --- Body content ---
-              if (snapshot.connectionState == ConnectionState.waiting)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                )
-              else if (snapshot.hasError)
-                SliverFillRemaining(
-                  child: _ErrorState(
-                    message: snapshot.error is ApiException
-                        ? (snapshot.error as ApiException).message
-                        : 'Không thể tải lịch sử đặt sân',
-                    onRetry: _reloadBookings,
-                  ),
-                )
-              else if ((snapshot.data ?? []).isEmpty)
-                SliverFillRemaining(
-                  child: _EmptyState(onRetry: _reloadBookings),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final bookings = snapshot.data!;
-                      if (index >= bookings.length) return null;
-                      final booking = bookings[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _BookingCard(
-                          booking: booking,
-                          onTap: () async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    BookingDetailPage(booking: booking),
-                              ),
-                            );
-                            if (result == true) {
-                              _reloadBookings();
-                            }
-                          },
+          final bookings = snapshot.data ?? const <Booking>[];
+          Widget content;
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            content = const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            content = AppStateView(
+              icon: Icons.wifi_off_rounded,
+              title: 'Có lỗi xảy ra',
+              message: snapshot.error is ApiException
+                  ? (snapshot.error as ApiException).message
+                  : 'Không thể tải lịch sử đặt sân',
+              actionLabel: 'Thử lại',
+              onAction: _reloadBookings,
+            );
+          } else if (bookings.isEmpty) {
+            content = AppStateView(
+              icon: Icons.calendar_month_outlined,
+              title: 'Chưa có lịch đặt sân',
+              message: 'Các buổi đặt sân của bạn sẽ xuất hiện tại đây.',
+              actionLabel: 'Tải lại',
+              onAction: _reloadBookings,
+            );
+          } else {
+            content = RefreshIndicator(
+              onRefresh: _reloadBookings,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 32),
+                itemCount: bookings.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final booking = bookings[index];
+                  return _BookingCard(
+                    booking: booking,
+                    onTap: () async {
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              BookingDetailPage(booking: booking),
                         ),
                       );
-                    }, childCount: snapshot.data?.length ?? 0),
-                  ),
-                ),
-            ],
+                      if (result == true) await _reloadBookings();
+                    },
+                  );
+                },
+              ),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: content,
           );
         },
       ),
@@ -269,23 +193,22 @@ class _BookingCard extends StatelessWidget {
     final sc = _statusColor(booking.status);
 
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      elevation: 3,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top gradient accent bar
             Container(
               height: 4,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [sc, sc.withValues(alpha: 0.4)],
-                ),
+                color: sc,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
@@ -473,155 +396,6 @@ class _InfoChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Empty State ─────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFEBEB), Color(0xFFFFF1F0)],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.calendar_month_outlined,
-                size: 48,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Chưa có lịch đặt sân',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Bạn chưa tạo lịch đặt sân nào.\nHãy đặt sân và bắt đầu thi đấu!',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Tải lại'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Error State ─────────────────────────────────────────────────────────────
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF1F0),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.wifi_off_rounded,
-                size: 36,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Có lỗi xảy ra',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Thử lại'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

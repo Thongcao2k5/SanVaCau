@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/review_api.dart';
 import '../models/review.dart';
 
@@ -80,49 +81,57 @@ class _EditReviewPageState extends State<EditReviewPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                targetName,
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
+              AppPageIntro(
+                icon: Icons.rate_review_outlined,
+                title: targetName,
+                subtitle: 'Chia sẻ trải nghiệm thực tế để giúp cộng đồng lựa chọn tốt hơn.',
               ),
               const SizedBox(height: 20),
-              Text(
-                'Mức đánh giá',
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: List.generate(
-                  5,
-                  (index) => IconButton(
-                    tooltip: 'Chọn ${index + 1} sao',
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => setState(() => _rating = index + 1),
-                    icon: Icon(
-                      index < _rating ? Icons.star : Icons.star_border,
-                      color: AppColors.warning,
-                      size: 32,
+              AppSectionSurface(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mức đánh giá',
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(
+                        5,
+                        (index) => IconButton(
+                          tooltip: 'Chọn ${index + 1} sao',
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(() => _rating = index + 1),
+                          icon: Icon(
+                            index < _rating ? Icons.star : Icons.star_border,
+                            color: AppColors.warning,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _commentController,
+                      enabled: !_isSubmitting,
+                      minLines: 4,
+                      maxLines: 7,
+                      maxLength: 1000,
+                      maxLengthEnforcement: MaxLengthEnforcement.none,
+                      decoration: const InputDecoration(
+                        labelText: 'Nhận xét (tùy chọn)',
+                        alignLabelWithHint: true,
+                      ),
+                      validator: (value) => (value?.length ?? 0) > 1000
+                          ? 'Nhận xét tối đa 1000 ký tự'
+                          : null,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _commentController,
-                enabled: !_isSubmitting,
-                minLines: 4,
-                maxLines: 7,
-                maxLength: 1000,
-                maxLengthEnforcement: MaxLengthEnforcement.none,
-                decoration: const InputDecoration(
-                  labelText: 'Nhận xét (tùy chọn)',
-                  alignLabelWithHint: true,
-                ),
-                validator: (value) => (value?.length ?? 0) > 1000
-                    ? 'Nhận xét tối đa 1000 ký tự'
-                    : null,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(

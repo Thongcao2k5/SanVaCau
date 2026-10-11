@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/help_api.dart';
 import '../models/help_content.dart';
 import 'contact_page.dart';
@@ -68,6 +69,12 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
+                const AppPageIntro(
+                  icon: Icons.support_agent_rounded,
+                  title: 'Chúng tôi có thể giúp gì?',
+                  subtitle: 'Tìm câu trả lời nhanh hoặc gửi nội dung trực tiếp cho đội ngũ Sân Và Cầu.',
+                ),
+                const SizedBox(height: 16),
                 _ContactBanner(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -147,13 +154,24 @@ class _ContactBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderMuted),
       ),
       child: Row(
         children: [
-          const Icon(Icons.headset_mic_outlined, color: AppColors.primary),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.primary,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -224,6 +242,10 @@ class _FaqCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
       child: ExpansionTile(
         shape: const Border(),
         collapsedShape: const Border(),
@@ -256,6 +278,10 @@ class _PolicyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
       child: ListTile(
         minTileHeight: 64,
         leading: Icon(_pageIcon(page.type), color: AppColors.primary),

@@ -7,7 +7,9 @@ import '../data/branch_api.dart';
 import '../models/branch.dart';
 
 class BranchListPage extends StatefulWidget {
-  const BranchListPage({super.key});
+  const BranchListPage({this.branchApi, super.key});
+
+  final BranchApi? branchApi;
 
   @override
   State<BranchListPage> createState() => _BranchListPageState();
@@ -20,7 +22,7 @@ class _BranchListPageState extends State<BranchListPage> {
   @override
   void initState() {
     super.initState();
-    _branchApi = BranchApi();
+    _branchApi = widget.branchApi ?? BranchApi();
     _branchesFuture = _branchApi.getBranches();
   }
 

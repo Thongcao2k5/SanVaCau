@@ -304,11 +304,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       String? selectedValue,
       bool firstOption,
     ) {
+      final displayLabel = label
+          .replaceAll(RegExp(r'^Chọn\s*', caseSensitive: false), '')
+          .replaceAll(RegExp(r'[\[\]]'), '')
+          .trim();
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Chọn [$label]',
+            displayLabel.isEmpty ? 'Biến thể' : displayLabel,
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -325,23 +330,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 (variant) => variant.isActive && variant.stockQuantity > 0,
               );
               return ChoiceChip(
-                label: firstOption && label.toLowerCase().contains('màu')
-                    ? SizedBox(
-                        width: 80,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              height: 58,
-                              child: _optionImage(candidates.first.imageUrl),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(value),
-                          ],
-                        ),
-                      )
-                    : Text(value),
+                label: Text(value),
                 selected: selectedValue == value,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                visualDensity: VisualDensity.compact,
                 onSelected: !available || selectedValue == value
                     ? null
                     : (_) {
@@ -397,14 +389,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          hasOptions ? 'Lựa chọn sản phẩm' : 'Phân loại',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+        if (!hasOptions) ...[
+          Text(
+            'Phân loại',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
         if (hasOptions) ...[
           if (option1Name != null)
             optionGroup(

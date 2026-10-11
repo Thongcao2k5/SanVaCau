@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../constants/api_config.dart';
+
 class AppImage extends StatelessWidget {
   const AppImage({
     super.key,
@@ -33,7 +35,7 @@ class AppImage extends StatelessWidget {
     }
 
     return Image.network(
-      source,
+      ApiConfig.resolveMediaUrl(source),
       width: width,
       height: height,
       fit: fit,

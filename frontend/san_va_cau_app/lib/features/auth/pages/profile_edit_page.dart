@@ -11,9 +11,10 @@ import '../models/auth_user.dart';
 import 'change_email_page.dart';
 
 class ProfileEditPage extends StatefulWidget {
-  const ProfileEditPage({required this.user, super.key});
+  const ProfileEditPage({required this.user, this.authApi, super.key});
 
   final AuthUser user;
+  final AuthApi? authApi;
 
   @override
   State<ProfileEditPage> createState() => _ProfileEditPageState();
@@ -32,7 +33,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   @override
   void initState() {
     super.initState();
-    _authApi = AuthApi();
+    _authApi = widget.authApi ?? AuthApi();
     _fullNameController = TextEditingController(text: widget.user.fullName);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
   }

@@ -7,9 +7,10 @@ import '../data/news_api.dart';
 import '../models/news_article.dart';
 
 class NewsDetailPage extends StatefulWidget {
-  const NewsDetailPage({required this.newsId, super.key});
+  const NewsDetailPage({required this.newsId, this.newsApi, super.key});
 
   final String newsId;
+  final NewsApi? newsApi;
 
   @override
   State<NewsDetailPage> createState() => _NewsDetailPageState();
@@ -22,7 +23,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   @override
   void initState() {
     super.initState();
-    _newsApi = NewsApi();
+    _newsApi = widget.newsApi ?? NewsApi();
     _newsFuture = _newsApi.getNewsById(widget.newsId);
   }
 

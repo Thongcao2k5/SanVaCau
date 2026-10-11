@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../../booking/data/booking_api.dart';
 import '../../booking/models/booking.dart';
 import '../../booking/pages/booking_detail_page.dart';
@@ -12,7 +13,9 @@ import '../data/notification_api.dart';
 import '../models/notification_item.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  const NotificationsPage({this.notificationApi, super.key});
+
+  final NotificationApi? notificationApi;
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -29,7 +32,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void initState() {
     super.initState();
-    _api = NotificationApi();
+    _api = widget.notificationApi ?? NotificationApi();
     _loadNotifications();
   }
 
@@ -211,74 +214,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Có lỗi xảy ra',
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _loadNotifications,
-                child: const Text('Thử lại'),
-              ),
-            ],
-          ),
-        ),
+      return AppStateView(
+        icon: Icons.notifications_paused_outlined,
+        title: 'Có lỗi xảy ra',
+        message: _error!,
+        actionLabel: 'Thử lại',
+        onAction: _loadNotifications,
       );
     }
 
     if (_notifications.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.notifications_off_outlined,
-                size: 48,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Chưa có thông báo',
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Bạn chưa nhận được thông báo nào.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _loadNotifications,
-                child: const Text('Tải lại'),
-              ),
-            ],
-          ),
-        ),
+      return AppStateView(
+        icon: Icons.notifications_none_rounded,
+        title: 'Chưa có thông báo',
+        message:
+            'Tin mới về đơn hàng, lịch sân và hỗ trợ sẽ xuất hiện tại đây.',
+        actionLabel: 'Tải lại',
+        onAction: _loadNotifications,
       );
     }
 
@@ -331,17 +283,17 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: item.isRead
               ? AppColors.surface
               : AppColors.primary.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: item.isRead
-                ? AppColors.border
+                ? AppColors.borderMuted
                 : AppColors.primary.withValues(alpha: 0.3),
           ),
         ),

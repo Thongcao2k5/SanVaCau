@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../../products/pages/product_detail_page.dart';
 import '../data/favorite_api.dart';
 import '../models/favorite_item.dart';
 
 class FavoritesPage extends StatefulWidget {
-  const FavoritesPage({super.key});
+  const FavoritesPage({this.favoriteApi, super.key});
+
+  final FavoriteApi? favoriteApi;
 
   @override
   State<FavoritesPage> createState() => _FavoritesPageState();
@@ -20,7 +24,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   void initState() {
     super.initState();
-    _favoriteApi = FavoriteApi();
+    _favoriteApi = widget.favoriteApi ?? FavoriteApi();
     _favoritesFuture = _favoriteApi.getFavorites();
   }
 
@@ -34,193 +38,187 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Yêu thích của tôi')),
-      body: FutureBuilder<List<FavoriteItem>>(
-        future: _favoritesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Column(
+            children: [
+              const AppPageIntro(
+                icon: Icons.favorite_rounded,
+                title: 'Bộ sưu tập của bạn',
+                subtitle:
+                    'Lưu lại sản phẩm quan tâm để dễ dàng xem và mua sau.',
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: FutureBuilder<List<FavoriteItem>>(
+                  future: _favoritesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-          if (snapshot.hasError) {
-            final error = snapshot.error;
-            final message = error is ApiException
-                ? error.message
-                : 'Không thể tải danh sách yêu thích';
+                    if (snapshot.hasError) {
+                      final error = snapshot.error;
+                      final message = error is ApiException
+                          ? error.message
+                          : 'Không thể tải danh sách yêu thích';
 
-            return _FavoritesStateMessage(
-              icon: Icons.wifi_off_outlined,
-              title: 'Có lỗi xảy ra',
-              message: message,
-              actionText: 'Thử lại',
-              onActionPressed: _reloadFavorites,
-            );
-          }
+                      return AppStateView(
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Chưa thể tải yêu thích',
+                        message: message,
+                        actionLabel: 'Thử lại',
+                        onAction: _reloadFavorites,
+                      );
+                    }
 
-          final favorites = snapshot.data ?? const <FavoriteItem>[];
+                    final favorites = snapshot.data ?? const <FavoriteItem>[];
 
-          if (favorites.isEmpty) {
-            return _FavoritesStateMessage(
-              icon: Icons.favorite_border,
-              title: 'Chưa có sản phẩm',
-              message: 'Bạn chưa thêm sản phẩm nào vào danh sách yêu thích.',
-              actionText: 'Tải lại',
-              onActionPressed: _reloadFavorites,
-            );
-          }
+                    if (favorites.isEmpty) {
+                      return AppStateView(
+                        icon: Icons.favorite_border_rounded,
+                        title: 'Danh sách đang trống',
+                        message: 'Chạm biểu tượng trái tim ở sản phẩm bạn thích để lưu vào đây.',
+                        actionLabel: 'Tải lại',
+                        onAction: _reloadFavorites,
+                      );
+                    }
 
-          return RefreshIndicator(
-            onRefresh: () async => _reloadFavorites(),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: favorites.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = favorites[index];
-                return _FavoriteCard(item: item, onReload: _reloadFavorites);
-              },
-            ),
-          );
-        },
+                    return RefreshIndicator(
+                      onRefresh: () async => _reloadFavorites(),
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 32),
+                        itemCount: favorites.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => _FavoriteCard(
+                          key: ValueKey(favorites[index].id),
+                          item: favorites[index],
+                          onReload: _reloadFavorites,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _FavoriteCard extends StatelessWidget {
-  const _FavoriteCard({required this.item, required this.onReload});
+  const _FavoriteCard({required this.item, required this.onReload, super.key});
 
   final FavoriteItem item;
   final VoidCallback onReload;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        if (item.targetType == 'PRODUCT') {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productId: item.targetId),
-            ),
-          );
-          onReload(); // Reload in case it was unfavorited
-        }
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border),
+    final canOpen = item.targetType == 'PRODUCT';
+    return Semantics(
+      button: canOpen,
+      label: 'Mở ${item.targetName}',
+      child: Material(
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.borderMuted),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Container(
-                color: AppColors.background,
-                child: item.targetImageUrl.isNotEmpty
-                    ? Image.network(
-                        item.targetImageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                              Icons.broken_image,
-                              color: AppColors.textSecondary,
-                            ),
-                      )
-                    : const Icon(Icons.image, color: AppColors.textSecondary),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.targetName,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+        child: InkWell(
+          onTap: canOpen
+              ? () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ProductDetailPage(productId: item.targetId),
                     ),
-                    const SizedBox(height: 8),
-                    if (!item.isActive)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Ngừng kinh doanh',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.error,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                  ],
+                  );
+                  onReload();
+                }
+              : null,
+          child: SizedBox(
+            height: 124,
+            child: Row(
+              children: [
+                Container(
+                  width: 124,
+                  color: AppColors.surfaceMuted,
+                  padding: const EdgeInsets.all(10),
+                  child: AppImage(
+                    source: item.targetImageUrl,
+                    fit: BoxFit.contain,
+                    fallback: const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 34,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.targetName,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.3,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              item.isActive
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.info_outline_rounded,
+                              size: 18,
+                              color: item.isActive
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                item.isActive
+                                    ? 'Đang kinh doanh'
+                                    : 'Ngừng kinh doanh',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: item.isActive
+                                          ? AppColors.success
+                                          : AppColors.warning,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            if (canOpen)
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.textSecondary,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoritesStateMessage extends StatelessWidget {
-  const _FavoritesStateMessage({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.actionText,
-    required this.onActionPressed,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final String actionText;
-  final VoidCallback onActionPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 44, color: AppColors.primary),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onActionPressed, child: Text(actionText)),
-          ],
+          ),
         ),
       ),
     );

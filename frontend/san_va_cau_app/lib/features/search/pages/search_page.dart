@@ -12,7 +12,9 @@ import '../data/search_api.dart';
 import '../models/search_result.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({this.searchApi, super.key});
+
+  final SearchApi? searchApi;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -20,7 +22,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  final SearchApi _searchApi = SearchApi();
+  late final SearchApi _searchApi;
 
   Timer? _debounceTimer;
   String _currentQuery = '';
@@ -58,6 +60,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    _searchApi = widget.searchApi ?? SearchApi();
     _searchController.addListener(_onSearchChanged);
   }
 

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/help_api.dart';
 
 class ContactPage extends StatefulWidget {
-  const ContactPage({super.key});
+  const ContactPage({this.helpApi, super.key});
+
+  final HelpApi? helpApi;
 
   @override
   State<ContactPage> createState() => _ContactPageState();
@@ -18,7 +21,7 @@ class _ContactPageState extends State<ContactPage> {
   final _phoneController = TextEditingController();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
-  final HelpApi _helpApi = HelpApi();
+  late final HelpApi _helpApi;
 
   String _type = 'GENERAL';
   bool _isSubmitting = false;
@@ -30,6 +33,12 @@ class _ContactPageState extends State<ContactPage> {
     'COMPLAINT': 'Khiếu nại',
     'PARTNERSHIP': 'Hợp tác',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _helpApi = widget.helpApi ?? HelpApi();
+  }
 
   @override
   void dispose() {
@@ -103,100 +112,106 @@ class _ContactPageState extends State<ContactPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                'Gửi yêu cầu',
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Mô tả rõ nội dung để đội ngũ hỗ trợ xử lý nhanh hơn.',
-                style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+              const AppPageIntro(
+                icon: Icons.mark_email_unread_outlined,
+                title: 'Gửi lời nhắn cho chúng tôi',
+                subtitle: 'Cung cấp thông tin rõ ràng để đội ngũ hỗ trợ phản hồi nhanh và đúng vấn đề.',
               ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Họ tên',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Vui lòng nhập họ tên'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Email (không bắt buộc)',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                validator: (value) {
-                  final text = value?.trim() ?? '';
-                  if (text.isEmpty) return null;
-                  return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(text)
-                      ? null
-                      : 'Email chưa đúng định dạng';
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại (không bắt buộc)',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _type,
-                decoration: const InputDecoration(
-                  labelText: 'Loại yêu cầu',
-                  prefixIcon: Icon(Icons.category_outlined),
-                ),
-                items: _types.entries
-                    .map(
-                      (entry) => DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(entry.value),
+              AppSectionSurface(
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Họ tên',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
-                    )
-                    .toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (value) => setState(() => _type = value ?? 'GENERAL'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _subjectController,
-                textInputAction: TextInputAction.next,
-                maxLength: 200,
-                decoration: const InputDecoration(
-                  labelText: 'Tiêu đề',
-                  prefixIcon: Icon(Icons.subject_outlined),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? 'Vui lòng nhập họ tên'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Email (không bắt buộc)',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      validator: (value) {
+                        final text = value?.trim() ?? '';
+                        if (text.isEmpty) return null;
+                        return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                .hasMatch(text)
+                            ? null
+                            : 'Email chưa đúng định dạng';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Số điện thoại (không bắt buộc)',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _type,
+                      decoration: const InputDecoration(
+                        labelText: 'Loại yêu cầu',
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                      items: _types.entries
+                          .map(
+                            (entry) => DropdownMenuItem(
+                              value: entry.key,
+                              child: Text(entry.value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _isSubmitting
+                          ? null
+                          : (value) =>
+                                setState(() => _type = value ?? 'GENERAL'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _subjectController,
+                      textInputAction: TextInputAction.next,
+                      maxLength: 200,
+                      decoration: const InputDecoration(
+                        labelText: 'Tiêu đề',
+                        prefixIcon: Icon(Icons.subject_outlined),
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? 'Vui lòng nhập tiêu đề'
+                          : null,
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      controller: _messageController,
+                      minLines: 5,
+                      maxLines: 8,
+                      maxLength: 2000,
+                      decoration: const InputDecoration(
+                        labelText: 'Nội dung',
+                        alignLabelWithHint: true,
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                          ? 'Vui lòng nhập nội dung cần hỗ trợ'
+                          : null,
+                    ),
+                  ],
                 ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Vui lòng nhập tiêu đề'
-                    : null,
-              ),
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: _messageController,
-                minLines: 5,
-                maxLines: 8,
-                maxLength: 2000,
-                decoration: const InputDecoration(
-                  labelText: 'Nội dung',
-                  alignLabelWithHint: true,
-                ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Vui lòng nhập nội dung cần hỗ trợ'
-                    : null,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(

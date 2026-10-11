@@ -1,255 +1,127 @@
-# Ke hoach hoan thien lien ket Flutter - Backend
+# Implementation Plan: Hoàn thiện và nghiệm thu giao diện người dùng
 
-## Tong quan
+## Overview
 
-Trang thai da xac minh ngay 2026-10-06:
+Hoàn thiện phần ứng dụng dành cho khách hàng dựa trên các chức năng đã có, loại trừ tích hợp thanh toán thật. Công việc tập trung vào chốt các thay đổi đang dở, bổ sung bằng chứng kiểm thử cho các luồng quan trọng và sửa các lỗi được tái hiện bằng test hoặc kiểm tra runtime. Không thay đổi API contract, schema hay khu vực quản trị nếu không cần thiết cho luồng khách hàng.
 
-- Backend typecheck thanh cong va `62/62` test hien co pass.
-- Flutter `analyze` sach, `10/10` test pass va build APK debug thanh cong.
-- Ho tro khach hang, dich vu vot theo chi nhanh va dieu huong tu thong bao da duoc commit.
-- So thong bao chua doc da hoan thanh o commit `8b8dc0d`; day khong con la task dang do.
-- Khoang trong da xac nhan tiep theo la quan ly danh gia ca nhan. Backend co `GET /api/reviews/me` va `PATCH /api/reviews/:id`, nhung Flutter chua goi hai endpoint nay va chua co man hinh "Danh gia cua toi".
+## Architecture Decisions
 
-## Quyet dinh kien truc
+- Giữ nguyên kiến trúc feature hiện tại và các API contract đang dùng.
+- Mỗi luồng được nghiệm thu theo lát dọc: UI -> API client/fake -> trạng thái thành công/lỗi/rỗng -> widget test.
+- Mọi lỗi hành vi phải có test tái hiện trước khi sửa.
+- Không triển khai thanh toán thật; chỉ đảm bảo phần checkout trước điểm chuyển sang thanh toán hoạt động đúng.
+- Không commit, revert hoặc ghi đè các thay đổi có sẵn nếu chưa được người dùng yêu cầu.
 
-- Lam theo tung vertical slice va commit rieng sau khi test xanh.
-- Khong dua endpoint admin nhu dashboard, inventory, report va audit log vao app khach hang.
-- Giu `ReviewApi` la noi duy nhat goi review endpoints; UI khong goi `ApiClient` truc tiep.
-- Tai lai danh sach sau khi sua danh gia thanh cong, khong cap nhat UI bang du lieu doan.
-- Loi cua tinh nang phu khong duoc lam hong trang Tai khoan hoac cac luong khach hang khac.
-- Mo rong `GET /reviews/me` theo huong backward-compatible: giu `targetType`/`targetId` va them `target: { type, id, name }` de UI hien ten san pham/san ma khong tao N+1 request.
+## Task List
 
-## Do thi phu thuoc
+### Phase 1: Chốt thay đổi đang dở
 
-```text
-Review contract + backend tests
-        |
-        v
-Flutter ReviewApi + model tests
-        |
-        v
-Danh sach danh gia ca nhan
-        |
-        v
-Sua danh gia + reload danh sach
-        |
-        v
-Endpoint audit khach hang
-        |
-        v
-Full verification + device acceptance + screenshots
-```
+- [x] Task 1: Xác lập baseline bằng analyze và các test liên quan tới cart, main shell, product detail.
+- [x] Task 2: Chốt hành vi giỏ hàng: chọn sản phẩm, tăng/giảm, vuốt xóa, hoàn tác, xóa toàn bộ và chuyển checkout.
+- [x] Task 3: Chốt điều hướng tab giỏ hàng và lựa chọn biến thể ở chi tiết sản phẩm.
 
-## Danh sach task
+### Checkpoint: Current changes
 
-### Phase 1: Quan ly danh gia ca nhan
+- [x] Focused tests đều pass.
+- [x] Không có Flutter analyzer issue mới.
+- [x] Năm file thay đổi ban đầu được bảo toàn và chỉ chỉnh khi có lỗi đã xác định.
 
-#### Task 1: Khoa contract review ca nhan bang integration test
+### Phase 2: Luồng mua hàng không gồm thanh toán
 
-**Mo ta:** Them test backend cho `GET /reviews/me` va `PATCH /reviews/:id` truoc khi noi Flutter.
+- [x] Task 4: Bổ sung kiểm thử checkout cho tải dữ liệu, chọn chi nhánh/địa chỉ, pickup/delivery và voucher.
+- [x] Task 5: Bổ sung kiểm thử lịch sử và chi tiết đơn hàng, gồm loading/error/empty/status.
 
-**Acceptance criteria:**
+### Checkpoint: Ordering
 
-- User chi xem va sua duoc danh gia cua chinh minh.
-- Filter/pagination va validation rating `1..5`, comment toi da 1000 ky tu duoc test.
-- User khac sua review nhan `403`; review khong ton tai nhan `404`.
+- [x] Luồng cart -> checkout -> tạo đơn có bằng chứng kiểm thử.
+- [x] Lịch sử và chi tiết đơn hàng hiển thị ổn định.
 
-**Verification:**
+### Phase 3: Booking
 
-- `npm run typecheck`
-- `npm test -- review`
-- `npm test`
+- [x] Task 6: Kiểm thử chọn chi nhánh, sân, ngày, một hoặc nhiều slot liên tiếp.
+- [x] Task 7: Kiểm thử lịch sử, chi tiết, hủy booking và luồng đánh giá sân.
 
-**Dependencies:** Khong.
+### Phase 4: Tài khoản
 
-**Files likely touched:**
+- [x] Task 8: Kiểm thử đăng ký OTP, quên/đặt lại mật khẩu và đổi email.
+- [x] Task 9: Kiểm thử hồ sơ, avatar, địa chỉ, hết phiên đăng nhập và đăng xuất.
 
-- `backend/tests/integration/review.test.ts`
-- `backend/src/routes/review.routes.ts` chi khi test phat hien loi contract.
+### Phase 5: Tiện ích khách hàng
 
-**Estimated scope:** Medium, 1-2 files.
+- [x] Task 10: Kiểm thử thông báo, yêu thích và tìm kiếm tổng hợp.
+- [x] Task 11: Kiểm thử chi nhánh, tin tức, dịch vụ vợt, support, FAQ, liên hệ và chính sách.
 
-#### Task 2: Them Flutter API cho danh gia cua toi va cap nhat danh gia
+### Checkpoint: Complete
 
-**Mo ta:** Mo rong `ReviewApi` bang typed methods cho `GET /reviews/me` va `PATCH /reviews/:id`.
+- [x] `flutter analyze` sạch.
+- [x] Toàn bộ `flutter test` pass, không skip test.
+- [x] Runtime smoke test trên emulator (trang chủ và dịch vụ vợt nối backend thật) không có lỗi Flutter/framework nghiêm trọng.
+- [x] Git diff chỉ chứa thay đổi trong phạm vi phần user; không có commit mới.
 
-**Acceptance criteria:**
+## Risks and Mitigations
 
-- Request gui JWT va parse dung danh sach/pagination.
-- Update chi gui rating/comment da chuan hoa va parse review tra ve.
-- Thieu token, response hop le va response loi deu co unit test.
-
-**Verification:**
-
-- `flutter test test/features/reviews/review_api_test.dart`
-- `flutter analyze`
-
-**Dependencies:** Task 1.
-
-**Files likely touched:**
-
-- `frontend/san_va_cau_app/lib/features/reviews/data/review_api.dart`
-- `frontend/san_va_cau_app/lib/features/reviews/models/review.dart`
-- `frontend/san_va_cau_app/test/features/reviews/review_api_test.dart`
-
-**Estimated scope:** Medium, 2-3 files.
-
-#### Task 3: Xay man hinh Danh gia cua toi
-
-**Mo ta:** Them entry tu trang Tai khoan va man hinh liet ke review cua user.
-
-**Acceptance criteria:**
-
-- Co loading, empty, error/retry va pull-to-refresh states.
-- Moi item hien rating, comment, status, ngay cap nhat va target da duoc chot o decision gate.
-- Man hinh truy cap duoc tu muc "Danh gia cua toi" tren AccountPage.
-
-**Verification:**
-
-- Widget test cho loading/data/empty/error.
-- `flutter analyze`
-- Kiem tra tren emulator voi user co va khong co review.
-
-**Dependencies:** Task 2 va quyet dinh cach hien thi target.
-
-**Files likely touched:**
-
-- `frontend/san_va_cau_app/lib/features/reviews/pages/my_reviews_page.dart`
-- `frontend/san_va_cau_app/lib/features/auth/pages/account_page.dart`
-- `frontend/san_va_cau_app/test/features/reviews/my_reviews_page_test.dart`
-
-**Estimated scope:** Medium, 3 files.
-
-#### Task 4: Sua danh gia da gui
-
-**Mo ta:** Cho phep mo review cua minh, sua so sao/comment, gui PATCH va tai lai danh sach.
-
-**Acceptance criteria:**
-
-- Form nap gia tri hien tai va validate rating/comment giong backend.
-- Save co loading guard; thanh cong cap nhat du lieu that, that bai hien message va giu du lieu nhap.
-- Khong cho sua review cua user khac; backend van la lop bao ve cuoi.
-
-**Verification:**
-
-- Widget test cho edit success, validation va API error.
-- `flutter analyze`
-- `flutter test`
-- Kiem tra truc tiep: sua review, thoat/vao lai van thay du lieu moi.
-
-**Dependencies:** Task 3.
-
-**Files likely touched:**
-
-- `frontend/san_va_cau_app/lib/features/reviews/pages/my_reviews_page.dart`
-- `frontend/san_va_cau_app/lib/features/reviews/widgets/review_form.dart`
-- `frontend/san_va_cau_app/test/features/reviews/my_reviews_page_test.dart`
-
-**Estimated scope:** Medium, 2-3 files.
-
-### Checkpoint: Review management
-
-- Backend full test pass.
-- Flutter analyze va full test pass.
-- Create review cu khong bi regression.
-- List va edit review chay that tren emulator/dien thoai.
-- Moi task co commit rieng, khong gom file untracked ngoai pham vi.
-
-### Phase 2: Audit endpoint khach hang
-
-#### Task 5: Tao ma tran endpoint khach hang va Flutter coverage
-
-**Mo ta:** Liet ke endpoint public/customer, role, Flutter API caller, UI entry point, automated test va runtime evidence.
-
-**Acceptance criteria:**
-
-- Moi endpoint duoc danh dau `covered`, `partial`, `missing` hoac `admin-only`.
-- Khong danh dau covered neu chi co class API ma khong co UI entry point.
-- Moi gap co muc do uu tien va cach verify cu the.
-
-**Verification:**
-
-- Doi chieu `backend/src/routes/index.ts`, tung route file va `frontend/lib/features`.
-- Review ma tran voi nguoi dung truoc khi sua gap.
-
-**Dependencies:** Checkpoint review management.
-
-**Files likely touched:**
-
-- `tasks/customer-endpoint-audit.md`
-
-**Estimated scope:** Small, 1 file.
-
-#### Task 6+: Sua tung gap da duoc phe duyet
-
-**Mo ta:** Moi gap trong audit thanh mot vertical slice rieng; khong gom nhieu domain vao mot commit.
-
-**Acceptance criteria:**
-
-- Moi slice co API/model/UI/test neu can.
-- Khong dua admin-only endpoint vao app customer.
-- Test focused pass truoc khi chuyen gap tiep theo.
-
-**Verification:** Theo endpoint cu the, sau moi 2-3 slice chay full backend va Flutter suites.
-
-**Dependencies:** Task 5 va nguoi dung duyet danh sach gap.
-
-**Estimated scope:** Small/Medium cho moi gap.
-
-### Checkpoint: Customer endpoint coverage
-
-- Khong con gap `missing` muc do cao trong ma tran.
-- Tat ca gap `partial` co quyet dinh ro rang: hoan thien hoac chap nhan.
-- Full backend va Flutter test pass.
-
-### Phase 3: Nghiem thu cuoi
-
-#### Task 7: Full automated verification
-
-**Acceptance criteria:**
-
-- `npm run typecheck`, `npm test` pass.
-- `flutter analyze`, `flutter test`, `flutter build apk --debug` pass.
-- `git diff --check` sach; khong co secret/build output duoc stage.
-
-**Dependencies:** Checkpoint endpoint coverage.
-
-**Estimated scope:** Small.
-
-#### Task 8: Device acceptance va anh nghiem thu
-
-**Acceptance criteria:**
-
-- Kiem tra tren dien thoai/emulator: auth, san pham, cart/order/payment, booking, reviews, support, notifications, profile.
-- Kiem tra ca loading, empty, API error va session het han o cac man hinh quan trong.
-- Chup anh cac luong chinh sau khi du lieu da duoc xac nhan khong nhay cam.
-
-**Dependencies:** Task 7.
-
-**Estimated scope:** Medium.
-
-#### Task 9: Commit hoan thien lien ket Flutter - Backend
-
-**Acceptance criteria:**
-
-- Chi stage file thuoc cac task da nghiem thu.
-- Commit message ro pham vi va verification duoc ghi trong handoff.
-- Working tree khong con tracked change chua giai thich.
-
-**Dependencies:** Task 8 va nguoi dung nghiem thu anh.
-
-**Estimated scope:** Small.
-
-## Rui ro va cach giam thieu
-
-| Rui ro | Muc do | Giam thieu |
+| Risk | Impact | Mitigation |
 |---|---|---|
-| `GET /reviews/me` phai resolve target polymorphic | Trung binh | Batch query product/court theo trang, khong query tung review. |
-| Backend co route nhung khong co test integration | Cao | Task 1 va audit phai them evidence truoc khi goi la covered. |
-| UI co API class nhung khong co entry point | Trung binh | Ma tran Task 5 tach API caller va UI entry point. |
-| Test pass nhung device flow loi do network/session | Cao | Device acceptance bat buoc sau automated gates. |
-| File untracked lan vao commit | Trung binh | Stage theo path cu the va review staged diff truoc moi commit. |
+| Working tree đang có thay đổi lớn | Cao | Đọc diff trước mỗi lát, không revert và chỉ sửa đúng file liên quan |
+| Widget test phụ thuộc network/secure storage | Trung bình | Dùng fake API theo pattern test hiện có |
+| OTP phụ thuộc SMTP | Trung bình | Widget test trạng thái UI; kiểm tra tích hợp thật riêng khi backend/SMTP sẵn sàng |
+| Thanh toán mock chưa hoàn thiện | Thấp trong phạm vi này | Loại trừ tích hợp thanh toán thật khỏi tiêu chí hoàn thành |
 
-## Cau hoi mo
+## Open Questions
 
-- Anh nghiem thu se luu trong repo hay chi xuat ra thu muc ngoai repo de ban xem?
+- Không có câu hỏi chặn; tiếp tục theo phạm vi đã được người dùng xác nhận.
+
+## Extension: Redesign các trang con trong Tài khoản
+
+### Design contract
+
+- Giữ nguyên nhận diện hiện có: đỏ `AppColors.primary`, nền trắng hồng, Plus Jakarta Sans và icon Material nét thống nhất; không áp dụng bảng màu xanh do công cụ gợi ý vì không phù hợp thương hiệu hiện tại.
+- Phong cách: clean sport-commerce, content-first, tương phản cao, card có bán kính phân cấp 10/16/20, khoảng cách theo nhịp 4/8dp và chuyển động tối giản.
+- Mỗi trang phải có hierarchy rõ (header, mô tả ngắn, nội dung, CTA), touch target tối thiểu 48dp và đủ loading/error/empty/success state.
+- Không sửa `PaymentHistoryPage` và luồng thanh toán; không thay đổi API contract hoặc business logic.
+
+### Phase 6: Shared account UI foundation
+
+- [x] Task 12: Tạo các widget trình bày dùng chung cho header, section surface và empty/error state.
+  - Acceptance: dùng semantic color tokens; hỗ trợ nội dung dài và text scaling; không che safe area.
+  - Verification: widget tests mới và `flutter analyze`.
+  - Files: `lib/core/widgets/account_*`, `test/core/widgets/account_*`.
+
+### Phase 7: High-priority utility pages
+
+- [x] Task 13: Redesign Yêu thích, sửa cách resolve ảnh và bổ sung card sản phẩm có hierarchy rõ.
+  - Acceptance: ảnh backend hiển thị đúng; card có tên, trạng thái và affordance mở chi tiết; đủ loading/error/empty.
+  - Verification: focused widget tests và emulator.
+- [x] Task 14: Redesign Help Center, liên hệ và trang chính sách.
+  - Acceptance: FAQ/chính sách/liên hệ đồng bộ header và section; form có mô tả, validation và submit feedback rõ.
+  - Verification: focused widget tests và emulator.
+
+### Checkpoint: Utility pages
+
+- [x] `flutter analyze` sạch và focused tests pass.
+- [x] Kiểm tra trực tiếp Yêu thích và Help Center trên emulator.
+
+### Phase 8: Forms and support
+
+- [x] Task 15: Redesign danh sách, tạo và chi tiết support ticket.
+  - Acceptance: trạng thái ticket dễ quét; form được phân nhóm; composer và CTA không bị bàn phím che.
+  - Verification: support widget tests và emulator.
+- [x] Task 16: Redesign form địa chỉ và sửa đánh giá.
+  - Acceptance: input được nhóm theo ngữ nghĩa; CTA rõ; validation inline; giữ nguyên hành vi API.
+  - Verification: address/review widget tests và emulator.
+
+### Final checkpoint: Account redesign
+
+- [x] `flutter analyze` sạch.
+- [x] Toàn bộ `flutter test` pass.
+- [x] Kiểm tra màn hình nhỏ, text scaling và runtime emulator.
+- [x] Review diff; không commit, revert hoặc đụng vào phần thanh toán.
+
+## Extension: Cohesion review với ChatGPT
+
+- [x] Kết nối lại `Codex with ChatGPT · SanVaCau` và xác minh đúng workspace.
+- [x] ChatGPT review độc lập giao diện Tài khoản, giữ nguyên hệ đỏ–trắng và phong cách sport-commerce.
+- [x] Đồng bộ lịch sử đặt sân, lịch sử đơn hàng, danh sách địa chỉ và thông báo với shared account UI.
+- [x] Giữ nguyên màu trạng thái nghiệp vụ, selection mode của địa chỉ và toàn bộ phạm vi thanh toán.
+- [x] `flutter analyze` sạch, 252 test pass và smoke test emulator đạt.
+- [x] ChatGPT review sau triển khai: PASS, không có lỗi chặn.

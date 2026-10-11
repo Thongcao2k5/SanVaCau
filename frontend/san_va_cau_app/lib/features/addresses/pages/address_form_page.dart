@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/address_api.dart';
 import '../models/customer_address.dart';
 
 class AddressFormPage extends StatefulWidget {
-  const AddressFormPage({this.address, super.key});
+  const AddressFormPage({this.address, this.addressApi, super.key});
 
   final CustomerAddress? address;
+  final AddressApi? addressApi;
 
   @override
   State<AddressFormPage> createState() => _AddressFormPageState();
@@ -16,7 +18,7 @@ class AddressFormPage extends StatefulWidget {
 
 class _AddressFormPageState extends State<AddressFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final AddressApi _addressApi = AddressApi();
+  late final AddressApi _addressApi;
   late final TextEditingController _recipientController;
   late final TextEditingController _phoneController;
   late final TextEditingController _addressLineController;
@@ -32,6 +34,7 @@ class _AddressFormPageState extends State<AddressFormPage> {
   @override
   void initState() {
     super.initState();
+    _addressApi = widget.addressApi ?? AddressApi();
     final address = widget.address;
     _recipientController = TextEditingController(text: address?.recipientName);
     _phoneController = TextEditingController(text: address?.phone);
@@ -120,10 +123,19 @@ class _AddressFormPageState extends State<AddressFormPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              Text(
-                'Thông tin người nhận',
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
+              AppPageIntro(
+                icon: _isEditing
+                    ? Icons.edit_location_alt_outlined
+                    : Icons.add_location_alt_outlined,
+                title: _isEditing
+                    ? 'Cập nhật địa chỉ'
+                    : 'Địa chỉ giao hàng mới',
+                subtitle: 'Thông tin chính xác giúp đơn hàng được giao nhanh và thuận tiện hơn.',
+              ),
+              const SizedBox(height: 24),
+              const _AddressFormSectionTitle(
+                icon: Icons.person_outline_rounded,
+                title: 'Thông tin người nhận',
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -149,10 +161,9 @@ class _AddressFormPageState extends State<AddressFormPage> {
                 validator: _requiredValidator('Vui lòng nhập số điện thoại'),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Địa chỉ nhận hàng',
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
+              const _AddressFormSectionTitle(
+                icon: Icons.location_on_outlined,
+                title: 'Địa chỉ nhận hàng',
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -199,6 +210,10 @@ class _AddressFormPageState extends State<AddressFormPage> {
               ),
               const SizedBox(height: 8),
               Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppColors.borderMuted),
+                ),
                 child: SwitchListTile(
                   value: _isDefault,
                   onChanged: widget.address?.isDefault == true
@@ -238,5 +253,35 @@ class _AddressFormPageState extends State<AddressFormPage> {
 
   FormFieldValidator<String> _requiredValidator(String message) {
     return (value) => value == null || value.trim().isEmpty ? message : null;
+  }
+}
+
+class _AddressFormSectionTitle extends StatelessWidget {
+  const _AddressFormSectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
   }
 }

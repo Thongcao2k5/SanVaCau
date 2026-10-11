@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_page_components.dart';
 import '../data/order_api.dart';
 import '../models/order.dart';
 import 'order_detail_page.dart';
 
 class OrderHistoryPage extends StatefulWidget {
-  const OrderHistoryPage({super.key});
+  const OrderHistoryPage({this.orderApi, super.key});
+
+  final OrderApi? orderApi;
 
   @override
   State<OrderHistoryPage> createState() => _OrderHistoryPageState();
@@ -20,14 +23,16 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _orderApi = OrderApi();
+    _orderApi = widget.orderApi ?? OrderApi();
     _ordersFuture = _orderApi.getMyOrders();
   }
 
-  void _reloadOrders() {
+  Future<void> _reloadOrders() async {
+    final future = _orderApi.getMyOrders();
     setState(() {
-      _ordersFuture = _orderApi.getMyOrders();
+      _ordersFuture = future;
     });
+    await future;
   }
 
   @override
@@ -47,92 +52,51 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                 ? error.message
                 : 'Không thể tải lịch sử đơn hàng';
 
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 44,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Có lỗi xảy ra',
-                      style: Theme.of(context).textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(message, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _reloadOrders,
-                      child: const Text('Thử lại'),
-                    ),
-                  ],
-                ),
-              ),
+            return AppStateView(
+              icon: Icons.receipt_long_outlined,
+              title: 'Có lỗi xảy ra',
+              message: message,
+              actionLabel: 'Thử lại',
+              onAction: _reloadOrders,
             );
           }
 
           final orders = snapshot.data ?? [];
 
           if (orders.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.receipt_long_outlined,
-                      size: 44,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Chưa có đơn hàng',
-                      style: Theme.of(context).textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Bạn chưa tạo đơn hàng nào.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _reloadOrders,
-                      child: const Text('Tải lại'),
-                    ),
-                  ],
-                ),
-              ),
+            return AppStateView(
+              icon: Icons.shopping_bag_outlined,
+              title: 'Chưa có đơn hàng',
+              message: 'Các đơn hàng của bạn sẽ xuất hiện tại đây.',
+              actionLabel: 'Tải lại',
+              onAction: _reloadOrders,
             );
           }
 
-          return RefreshIndicator(
-            onRefresh: () async => _reloadOrders(),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: orders.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return _OrderCard(
-                  order: order,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => OrderDetailPage(order: order),
-                      ),
-                    );
-                    _reloadOrders(); // Reload orders in case status changed
-                  },
-                );
-              },
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: RefreshIndicator(
+              onRefresh: _reloadOrders,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 32),
+                itemCount: orders.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  return _OrderCard(
+                    order: order,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => OrderDetailPage(order: order),
+                        ),
+                      );
+                      await _reloadOrders();
+                    },
+                  );
+                },
+              ),
             ),
           );
         },
@@ -188,10 +152,16 @@ class _OrderCard extends StatelessWidget {
       order.status,
     );
 
-    return Card(
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
