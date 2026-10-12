@@ -9,7 +9,8 @@ import '../../branches/models/branch.dart';
 import '../../cart/models/cart.dart';
 import '../../payments/data/payment_api.dart';
 import '../../payments/models/payment.dart';
-import '../../payments/pages/mock_payment_page.dart';
+import '../../payments/pages/momo_payment_page.dart';
+import '../../payments/pages/vnpay_payment_page.dart';
 import '../../vouchers/data/voucher_api.dart';
 import '../../vouchers/models/voucher_quote.dart';
 import '../data/fulfillment_api.dart';
@@ -105,6 +106,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     Order? createdOrder;
     Payment? payment;
     try {
+      if (_paymentProvider == 'MOMO_SANDBOX') {
+        await _paymentApi.ensureMomoConfigured();
+      }
+      if (_paymentProvider == 'VNPAY_SANDBOX') {
+        await _paymentApi.ensureVnpayConfigured();
+      }
       createdOrder = await _orderApi.createOrder(
         branchId: _selectedBranch!.id,
         productVariantId: widget.buyNowProductVariantId,
@@ -138,9 +145,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
       if (!mounted) return;
 
-      if (_paymentProvider == 'MOCK') {
+      if (_paymentProvider == 'MOMO_SANDBOX' ||
+          _paymentProvider == 'VNPAY_SANDBOX') {
         final paid = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(builder: (_) => MockPaymentPage(payment: payment!)),
+          MaterialPageRoute(
+            builder: (_) => payment!.provider == 'VNPAY_SANDBOX'
+                ? VnpayPaymentPage(payment: payment)
+                : MomoPaymentPage(payment: payment),
+          ),
         );
         if (!mounted) return;
         if (paid != true) {
@@ -176,7 +188,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ? 'Đơn hàng đã được ghi nhận và sẽ giao đến địa chỉ bạn chọn.'
                 : _paymentProvider == 'CASH'
                 ? 'Đơn hàng đã được ghi nhận. Bạn sẽ thanh toán khi nhận tại cơ sở.'
-                : 'Đơn hàng đã được ghi nhận và thanh toán thành công.',
+                : 'Đơn hàng đã được ghi nhận. Thanh toán ${_paymentProvider == 'VNPAY_SANDBOX' ? 'VNPay' : 'MoMo'} Sandbox thành công.',
           ),
           actions: [
             FilledButton(
@@ -200,7 +212,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             builder: (context) => AlertDialog(
               title: const Text('Đơn hàng đã được tạo'),
               content: Text(
-                'Đơn #${createdOrder!.id} đã được tạo nhưng bước giao nhận hoặc thanh toán chưa hoàn tất. Vui lòng kiểm tra lại trong đơn hàng của tôi.',
+                'Đơn #${createdOrder!.id} đã được tạo nhưng bước giao nhận hoặc thanh toán chưa hoàn tất. ${e.message} Bạn có thể xem đơn hàng hoặc tiếp tục giao dịch trong Lịch sử thanh toán.',
               ),
               actions: [
                 FilledButton(
@@ -548,11 +560,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   label: Text('Tiền mặt'),
                                 ),
                                 ButtonSegment(
-                                  value: 'MOCK',
+                                  value: 'MOMO_SANDBOX',
                                   icon: Icon(
                                     Icons.account_balance_wallet_outlined,
                                   ),
-                                  label: Text('Mô phỏng'),
+                                  label: Text('MoMo'),
+                                ),
+                                ButtonSegment(
+                                  value: 'VNPAY_SANDBOX',
+                                  icon: Icon(Icons.account_balance_outlined),
+                                  label: Text('VNPay'),
                                 ),
                               ],
                               selected: {_paymentProvider},
@@ -566,7 +583,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             Text(
                               _paymentProvider == 'CASH'
                                   ? 'Thanh toán khi nhận hàng.'
-                                  : 'Dùng cổng mô phỏng để trình diễn luồng thanh toán.',
+                                  : 'Thanh toán thử nghiệm qua cổng ${_paymentProvider == 'VNPAY_SANDBOX' ? 'VNPay' : 'MoMo'} Sandbox.',
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                               ),

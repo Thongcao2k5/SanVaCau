@@ -10,6 +10,7 @@ class Payment {
     this.transactionRef,
     this.paidAt,
     this.failedAt,
+    this.checkoutUrl,
   });
 
   final String id;
@@ -19,6 +20,7 @@ class Payment {
   final String amount;
   final String status;
   final String? transactionRef;
+  final String? checkoutUrl;
   final DateTime createdAt;
   final DateTime? paidAt;
   final DateTime? failedAt;
@@ -32,6 +34,7 @@ class Payment {
       amount: json['amount']?.toString() ?? '0',
       status: json['status']?.toString() ?? 'PENDING',
       transactionRef: json['transactionRef']?.toString(),
+      checkoutUrl: json['checkoutUrl']?.toString(),
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime.now(),

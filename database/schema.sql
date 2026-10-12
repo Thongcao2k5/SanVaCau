@@ -326,6 +326,8 @@ CREATE TABLE "payment" (
     "amount" DECIMAL(18,2) NOT NULL,
     "status" VARCHAR(30) NOT NULL DEFAULT 'PENDING',
     "transaction_ref" VARCHAR(100),
+    "checkout_url" TEXT,
+    "gateway_trans_id" VARCHAR(100),
     "paid_at" TIMESTAMP(6),
     "failed_at" TIMESTAMP(6),
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
