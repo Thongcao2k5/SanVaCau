@@ -34,6 +34,7 @@ class _NewsListPageState extends State<NewsListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Tin tức')),
       body: FutureBuilder<List<NewsArticle>>(
         future: _newsFuture,
@@ -73,9 +74,9 @@ class _NewsListPageState extends State<NewsListPage> {
           return RefreshIndicator(
             onRefresh: () async => _reloadNews(),
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               itemCount: newsList.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 return _NewsCard(news: newsList[index]);
               },
@@ -94,78 +95,144 @@ class _NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderMuted),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => NewsDetailPage(newsId: news.id),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 150,
-              width: double.infinity,
-              child: news.thumbnailUrl.isEmpty
-                  ? Container(
-                      color: AppColors.background,
-                      child: const Icon(
-                        Icons.article_outlined,
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : AppImage(
-                      source: news.thumbnailUrl,
-                      fit: BoxFit.contain,
-                      fallback: Container(
-                        color: AppColors.background,
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          color: AppColors.textSecondary,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => NewsDetailPage(newsId: news.id),
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 8,
+                child: ClipRect(
+                  child: news.thumbnailUrl.isEmpty
+                      ? Container(
+                          color: AppColors.background,
+                          child: const Center(
+                            child: Icon(
+                              Icons.article_rounded,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        )
+                      : Transform.scale(
+                          scale: 1.08,
+                          child: AppImage(
+                            source: news.thumbnailUrl,
+                            fit: BoxFit.cover,
+                            fallback: Container(
+                              color: AppColors.primarySoft,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image_rounded,
+                                  size: 40,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (news.branch != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          news.branch!.name,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (news.branch != null) ...[
+                      const SizedBox(height: 10),
+                    ],
                     Text(
-                      news.branch!.name,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  Text(
-                    news.title,
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  if (news.summary.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      news.summary,
-                      maxLines: 3,
+                      news.title,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.4,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        height: 1.3,
                       ),
                     ),
+                    if (news.summary.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        news.summary,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_stories_rounded,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Đọc bài viết',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 20,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

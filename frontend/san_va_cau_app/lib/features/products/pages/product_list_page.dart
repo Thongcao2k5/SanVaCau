@@ -12,10 +12,16 @@ import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({super.key, this.productApi, this.cartApi});
+  const ProductListPage({
+    super.key,
+    this.productApi,
+    this.cartApi,
+    this.onCartPressed,
+  });
 
   final ProductApi? productApi;
   final CartApi? cartApi;
+  final VoidCallback? onCartPressed;
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -73,11 +79,30 @@ class _ProductListPageState extends State<ProductListPage> {
     cartApi: _cartApi,
     onTap: () => Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            ProductDetailPage(productId: product.id, initialProduct: product),
+        builder: (_) => ProductDetailPage(
+          productId: product.id,
+          initialProduct: product,
+          onCartPressed: widget.onCartPressed == null
+              ? null
+              : () {
+                  Navigator.of(context).pop();
+                  widget.onCartPressed!();
+                },
+        ),
       ),
     ),
   );
+
+  void _openCart() {
+    final onCartPressed = widget.onCartPressed;
+    if (onCartPressed != null) {
+      onCartPressed();
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => CartPage(cartApi: _cartApi)),
+    );
+  }
 
   Widget _buildCatalog(List<Product> products) {
     final groups = <String, List<Product>>{};
@@ -179,11 +204,7 @@ class _ProductListPageState extends State<ProductListPage> {
             tooltip: 'Giỏ hàng',
             color: Colors.white,
             icon: const CartBadge(),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CartPage(cartApi: _cartApi),
-              ),
-            ),
+            onPressed: _openCart,
           ),
           const SizedBox(width: 8),
         ],

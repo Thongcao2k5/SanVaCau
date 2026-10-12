@@ -10,11 +10,13 @@ class BranchDetailPage extends StatefulWidget {
   const BranchDetailPage({
     super.key,
     required this.branch,
-    required this.onBookPressed,
+    this.onBookPressed,
+    this.bookingApi,
   });
 
   final Branch branch;
-  final VoidCallback onBookPressed;
+  final VoidCallback? onBookPressed;
+  final BookingApi? bookingApi;
 
   @override
   State<BranchDetailPage> createState() => _BranchDetailPageState();
@@ -26,7 +28,12 @@ class _BranchDetailPageState extends State<BranchDetailPage> {
   @override
   void initState() {
     super.initState();
-    _courtsFuture = BookingApi().getCourts(branchId: widget.branch.id);
+    final api = widget.bookingApi ?? BookingApi();
+    _courtsFuture = api.getCourts(branchId: widget.branch.id);
+  }
+
+  String _shortTime(String value) {
+    return value.length >= 5 ? value.substring(0, 5) : value;
   }
 
   @override
@@ -35,163 +42,357 @@ class _BranchDetailPageState extends State<BranchDetailPage> {
     final description = branch.description?.trim();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết chi nhánh')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Chi tiết chi nhánh'),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.borderMuted),
+        ),
+      ),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: FilledButton.icon(
-          onPressed: widget.onBookPressed,
-          icon: const Icon(Icons.event_available_rounded),
-          label: const Text('Đặt sân tại chi nhánh này'),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(
+              top: BorderSide(color: AppColors.borderMuted, width: 1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SizedBox(
+            height: 54,
+            child: FilledButton.icon(
+              onPressed: () {
+                if (widget.onBookPressed != null) {
+                  widget.onBookPressed!();
+                } else {
+                  Navigator.of(context).pop(branch);
+                }
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.calendar_month_rounded, size: 22),
+              label: const Text('Đặt sân ngay'),
+            ),
+          ),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
+          // Hero banner with 16:9 ratio and cover fit
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: AppImage(
-              source: branch.imageUrl ?? '',
-              fit: BoxFit.contain,
-              fallback: Container(
-                color: AppColors.surfaceMuted,
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  size: 64,
-                  color: AppColors.primary,
+            child: ClipRect(
+              child: Transform.scale(
+                scale: 1.1,
+                child: AppImage(
+                  source: branch.imageUrl ?? '',
+                  fit: BoxFit.cover,
+                  fallback: Container(
+                    color: AppColors.primarySoft,
+                    child: const Center(
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        size: 56,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header with branch name and active status badge
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
                         branch.name,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          height: 1.3,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Chip(
-                      avatar: Icon(Icons.circle, size: 10),
-                      label: Text('Đang hoạt động'),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.successSoft,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            'Đang hoạt động',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+
+                // Description if available
                 if (description != null && description.isNotEmpty) ...[
-                  Text(
-                    'Giới thiệu',
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     description,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary, height: 1.5),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _InfoRow(
-                          icon: Icons.location_on_outlined,
-                          text: branch.address,
-                        ),
-                        const Divider(height: 24),
-                        _InfoRow(
-                          icon: Icons.schedule_rounded,
-                          text:
-                              '${_shortTime(branch.openingTime)} - ${_shortTime(branch.closingTime)}',
-                        ),
-                        if (branch.phone?.isNotEmpty == true) ...[
-                          const Divider(height: 24),
-                          _InfoRow(
-                            icon: Icons.phone_outlined,
-                            text: branch.phone!,
-                          ),
-                        ],
-                      ],
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.45,
                     ),
                   ),
+                ],
+
+                const SizedBox(height: 18),
+
+                // Information surface with icon containers
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderMuted),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _DetailInfoItem(
+                        icon: Icons.location_on_rounded,
+                        label: 'Địa chỉ',
+                        value: branch.address,
+                      ),
+                      const SizedBox(height: 16),
+                      _DetailInfoItem(
+                        icon: Icons.schedule_rounded,
+                        label: 'Giờ hoạt động',
+                        value:
+                            '${_shortTime(branch.openingTime)} - ${_shortTime(branch.closingTime)}',
+                      ),
+                      if (branch.phone?.isNotEmpty == true) ...[
+                        const SizedBox(height: 16),
+                        _DetailInfoItem(
+                          icon: Icons.call_rounded,
+                          label: 'Điện thoại',
+                          value: branch.phone!,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 24),
+
+                // Section title
                 Text(
                   'Sân tại chi nhánh',
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
+
+                // Court list
                 FutureBuilder<List<Court>>(
                   future: _courtsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.all(24),
                           child: CircularProgressIndicator(),
                         ),
                       );
                     }
 
                     if (snapshot.hasError) {
-                      return const _CourtMessage(
-                        icon: Icons.cloud_off_outlined,
-                        text: 'Không thể tải danh sách sân',
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.borderMuted),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.cloud_off_rounded,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Không thể tải danh sách sân',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }
 
                     final courts = snapshot.data ?? const <Court>[];
                     if (courts.isEmpty) {
-                      return const _CourtMessage(
-                        icon: Icons.sports_tennis_outlined,
-                        text: 'Chi nhánh chưa có sân đang hoạt động',
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.borderMuted),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.sports_tennis_rounded,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Chi nhánh chưa có sân đang hoạt động',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }
 
-                    return Card(
-                      child: Column(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < courts.length;
-                            index++
-                          ) ...[
-                            ListTile(
-                              leading: const Icon(
-                                Icons.sports_tennis_rounded,
-                                color: AppColors.primary,
-                              ),
-                              title: Text(
-                                courts[index].name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
+                    return Column(
+                      children: [
+                        for (final court in courts) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.borderMuted),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x04000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
                                 ),
-                              ),
-                              subtitle:
-                                  courts[index].description?.isNotEmpty == true
-                                  ? Text(
-                                      courts[index].description!,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  : null,
+                              ],
                             ),
-                            if (index < courts.length - 1)
-                              const Divider(height: 1, indent: 56),
-                          ],
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySoft,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.sports_tennis_rounded,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        court.name,
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      if (court.description?.isNotEmpty ==
+                                          true) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          court.description!,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
-                      ),
+                      ],
                     );
                   },
                 ),
@@ -202,56 +403,57 @@ class _BranchDetailPageState extends State<BranchDetailPage> {
       ),
     );
   }
-
-  String _shortTime(String value) {
-    return value.length >= 5 ? value.substring(0, 5) : value;
-  }
 }
 
-class _CourtMessage extends StatelessWidget {
-  const _CourtMessage({required this.icon, required this.text});
+class _DetailInfoItem extends StatelessWidget {
+  const _DetailInfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.textSecondary),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.primary, size: 22),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textPrimary, height: 1.4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+            ],
           ),
         ),
       ],

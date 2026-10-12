@@ -34,7 +34,7 @@ class HomeHeroSection extends StatefulWidget {
   const HomeHeroSection({
     required this.onBookCourtPressed,
     required this.onViewProductsPressed,
-    required this.onRacketServicePressed,
+    required this.onViewNewsPressed,
     required this.onViewBranchesPressed,
     this.banners = const [],
     super.key,
@@ -42,7 +42,7 @@ class HomeHeroSection extends StatefulWidget {
 
   final VoidCallback onBookCourtPressed;
   final VoidCallback onViewProductsPressed;
-  final VoidCallback onRacketServicePressed;
+  final VoidCallback onViewNewsPressed;
   final VoidCallback onViewBranchesPressed;
   final List<HomeBanner> banners;
 
@@ -79,12 +79,12 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
       onPressed: widget.onViewProductsPressed,
     ),
     _HeroSlide(
-      eyebrow: 'DỊCH VỤ VỢT',
-      title: 'Căng vợt đúng lực, chơi đúng phong độ.',
-      description: 'Chọn chi nhánh và dịch vụ phù hợp với bạn.',
-      cta: 'Xem dịch vụ',
-      icon: Icons.build_rounded,
-      onPressed: widget.onRacketServicePressed,
+      eyebrow: 'TIN TỨC CẦU LÔNG',
+      title: 'Cập nhật tin mới, bắt trọn nhịp cầu.',
+      description: 'Khám phá tin tức, sự kiện và mẹo chơi hữu ích.',
+      cta: 'Đọc tin mới nhất',
+      icon: Icons.newspaper_rounded,
+      onPressed: widget.onViewNewsPressed,
     ),
     _HeroSlide(
       eyebrow: 'HỆ THỐNG SANVACAU',
@@ -100,7 +100,7 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
   List<VoidCallback> get _positionalActions => [
     widget.onBookCourtPressed,
     widget.onViewProductsPressed,
-    widget.onRacketServicePressed,
+    widget.onViewNewsPressed,
     widget.onViewBranchesPressed,
   ];
 

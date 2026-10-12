@@ -19,7 +19,6 @@ class HomePage extends StatefulWidget {
     required this.onViewProductsPressed,
     required this.onViewNewsPressed,
     required this.onViewBranchesPressed,
-    required this.onRacketServicePressed,
     required this.onBookBranchPressed,
     super.key,
   });
@@ -28,7 +27,6 @@ class HomePage extends StatefulWidget {
   final VoidCallback onViewProductsPressed;
   final VoidCallback onViewNewsPressed;
   final VoidCallback onViewBranchesPressed;
-  final VoidCallback onRacketServicePressed;
   final ValueChanged<Branch> onBookBranchPressed;
 
   @override
@@ -105,7 +103,7 @@ class _HomePageState extends State<HomePage> {
               HomeHeroSection(
                 onBookCourtPressed: widget.onBookCourtPressed,
                 onViewProductsPressed: widget.onViewProductsPressed,
-                onRacketServicePressed: widget.onRacketServicePressed,
+                onViewNewsPressed: widget.onViewNewsPressed,
                 onViewBranchesPressed: widget.onViewBranchesPressed,
                 banners: banners,
               ),
@@ -114,7 +112,7 @@ class _HomePageState extends State<HomePage> {
               HomeQuickActions(
                 onBookCourtPressed: widget.onBookCourtPressed,
                 onViewProductsPressed: widget.onViewProductsPressed,
-                onRacketServicePressed: widget.onRacketServicePressed,
+                onViewNewsPressed: widget.onViewNewsPressed,
                 onViewBranchesPressed: widget.onViewBranchesPressed,
               ),
               // Data-dependent sections.
@@ -171,18 +169,16 @@ class _HomePageState extends State<HomePage> {
                         )
                         .toList(),
                     onViewAllPressed: widget.onViewBranchesPressed,
-                    onBranchPressed: (branch) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (detailContext) => BranchDetailPage(
-                            branch: branch,
-                            onBookPressed: () {
-                              Navigator.of(detailContext).pop();
-                              widget.onBookBranchPressed(branch);
-                            },
-                          ),
-                        ),
-                      );
+                    onBranchPressed: (branch) async {
+                      final selectedBranch = await Navigator.of(context)
+                          .push<Branch>(
+                            MaterialPageRoute<Branch>(
+                              builder: (_) => BranchDetailPage(branch: branch),
+                            ),
+                          );
+                      if (selectedBranch != null && context.mounted) {
+                        widget.onBookBranchPressed(selectedBranch);
+                      }
                     },
                   ),
                 ),

@@ -8,19 +8,30 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/pages/account_page.dart';
 import '../auth/data/auth_api.dart';
+import '../booking/data/booking_api.dart';
 import '../booking/pages/booking_page.dart';
+import '../branches/data/branch_api.dart';
 import '../branches/pages/branch_list_page.dart';
 import '../branches/models/branch.dart';
 import '../cart/pages/cart_page.dart';
+import '../cart/data/cart_api.dart';
 import '../home/home_page.dart';
 import '../news/pages/news_list_page.dart';
 import '../products/pages/product_list_page.dart';
-import '../racket_services/pages/racket_service_page.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, this.authApi});
+  const MainShell({
+    super.key,
+    this.authApi,
+    this.cartApi,
+    this.branchApi,
+    this.bookingApi,
+  });
 
   final AuthApi? authApi;
+  final CartApi? cartApi;
+  final BranchApi? branchApi;
+  final BookingApi? bookingApi;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -84,6 +95,7 @@ class _MainShellState extends State<MainShell> {
   Branch? _bookingBranch;
   int _bookingRevision = 0;
   bool _bookingTimelineVisible = false;
+  bool _cartCheckoutVisible = false;
   int _accountRevision = 0;
   bool _exitArmed = false;
   Timer? _exitTimer;
@@ -134,6 +146,14 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  void _onCartSelectionChanged(bool hasSelection) {
+    if (_cartCheckoutVisible == hasSelection) return;
+    setState(() {
+      _resetExitConfirmation();
+      _cartCheckoutVisible = hasSelection;
+    });
+  }
+
   @override
   void dispose() {
     _exitTimer?.cancel();
@@ -146,33 +166,39 @@ class _MainShellState extends State<MainShell> {
         .push(MaterialPageRoute<void>(builder: (_) => const NewsListPage()));
   }
 
-  void _openBranchPage() {
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => const BranchListPage()));
-  }
-
-  void _openRacketServicePage() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const RacketServicePage()));
+  Future<void> _openBranchPage() async {
+    final branch = await Navigator.of(context).push<Branch>(
+      MaterialPageRoute<Branch>(
+        builder: (_) => BranchListPage(
+          branchApi: widget.branchApi,
+          bookingApi: widget.bookingApi,
+        ),
+      ),
+    );
+    if (branch != null && mounted) {
+      _openBookingForBranch(branch);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final timelineVisible = _currentIndex == 2 && _bookingTimelineVisible;
+    final cartCheckoutVisible = _currentIndex == 3 && _cartCheckoutVisible;
+    final hideBottomNavigation = timelineVisible || cartCheckoutVisible;
     final pages = [
       HomePage(
         onBookCourtPressed: () => _onTabSelected(2),
         onViewProductsPressed: () => _onTabSelected(1),
         onViewNewsPressed: _openNewsPage,
         onViewBranchesPressed: _openBranchPage,
-        onRacketServicePressed: _openRacketServicePage,
         onBookBranchPressed: _openBookingForBranch,
       ),
-      const ProductListPage(),
+      ProductListPage(onCartPressed: () => _onTabSelected(3)),
       BookingPage(
         key: ValueKey('booking-${_bookingBranch?.id}-$_bookingRevision'),
         initialBranch: _bookingBranch,
+        branchApi: widget.branchApi,
+        bookingApi: widget.bookingApi,
         authApi: widget.authApi,
         onTimelineVisibilityChanged: (visible) {
           if (_bookingTimelineVisible != visible) {
@@ -183,7 +209,10 @@ class _MainShellState extends State<MainShell> {
           }
         },
       ),
-      const CartPage(),
+      CartPage(
+        cartApi: widget.cartApi,
+        onSelectionChanged: _onCartSelectionChanged,
+      ),
       AccountPage(
         key: ValueKey('account-$_accountRevision'),
         authApi: widget.authApi,
@@ -199,7 +228,7 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         body: IndexedStack(index: _currentIndex, children: pages),
         bottomNavigationBar: Offstage(
-          offstage: timelineVisible,
+          offstage: hideBottomNavigation,
           child: SafeArea(
             top: false,
             minimum: const EdgeInsets.only(bottom: 2),

@@ -6,7 +6,72 @@ import 'package:san_va_cau_app/app.dart';
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
+import 'package:san_va_cau_app/features/booking/data/booking_api.dart';
+import 'package:san_va_cau_app/features/booking/models/court.dart';
+import 'package:san_va_cau_app/features/branches/data/branch_api.dart';
+import 'package:san_va_cau_app/features/branches/models/branch.dart';
+import 'package:san_va_cau_app/features/cart/data/cart_api.dart';
+import 'package:san_va_cau_app/features/cart/models/cart.dart';
 import 'package:san_va_cau_app/features/main/main_shell.dart';
+
+const _shellBranch = Branch(
+  id: 'shell-branch-1',
+  name: 'Chi nhánh Landmark',
+  address: '208 Nguyễn Hữu Cảnh, Bình Thạnh',
+  openingTime: '06:00',
+  closingTime: '22:00',
+  status: 'ACTIVE',
+);
+
+class _NavigationBranchApi extends BranchApi {
+  @override
+  Future<List<Branch>> getBranches() async => const [_shellBranch];
+}
+
+class _NavigationBookingApi extends BookingApi {
+  @override
+  Future<List<Court>> getCourts({String? branchId}) async => const [
+    Court(
+      id: 'court-shell-1',
+      branchId: 'shell-branch-1',
+      name: 'Sân Trung Tâm',
+      status: 'ACTIVE',
+    ),
+  ];
+
+  @override
+  Future<List<BookingSlot>> getAvailability({
+    required String courtId,
+    required String date,
+  }) async => const [];
+}
+
+class _NavigationCartApi extends CartApi {
+  @override
+  Future<Cart> getCart() async => _cartWithItem;
+}
+
+const _cartWithItem = Cart(
+  id: '1',
+  customerId: '7',
+  items: [
+    CartItem(
+      id: '11',
+      productVariantId: '21',
+      quantity: 1,
+      unitPrice: 120000,
+      lineTotal: 120000,
+      variant: CartVariant(
+        id: '21',
+        sku: 'VOT-01',
+        variantName: '4U',
+        price: 120000,
+        product: CartProduct(id: '31', name: 'Vợt cầu lông'),
+      ),
+    ),
+  ],
+  totalAmount: 120000,
+);
 
 class _SessionAuth extends AuthApi {
   bool loggedIn = false;
@@ -146,5 +211,127 @@ void main() {
       );
       expect(indexedStack.index, 0);
     });
+
+    testWidgets(
+      'hides navigation while selected cart items show checkout summary',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MainShell(
+              authApi: _SessionAuth(),
+              cartApi: _NavigationCartApi(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Giỏ hàng').last);
+        await tester.pumpAndSettle();
+        expect(find.byType(AnimatedNotchBottomBar), findsOneWidget);
+        expect(find.widgetWithText(FilledButton, 'Thanh toán'), findsNothing);
+
+        await tester.tap(find.byType(Checkbox).first);
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Thanh toán'), findsOneWidget);
+        expect(find.byType(AnimatedNotchBottomBar), findsNothing);
+
+        await tester.tap(find.byType(Checkbox).first);
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Thanh toán'), findsNothing);
+        expect(find.byType(AnimatedNotchBottomBar), findsOneWidget);
+      },
+    );
+
+    testWidgets('product cart icon switches to the existing cart tab', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MainShell(
+            authApi: _SessionAuth(),
+            cartApi: _NavigationCartApi(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Sản phẩm').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Giỏ hàng'));
+      await tester.pumpAndSettle();
+
+      final indexedStack = tester.widget<IndexedStack>(
+        find.byType(IndexedStack),
+      );
+      expect(indexedStack.index, 3);
+      expect(find.text('Giỏ hàng (1)'), findsOneWidget);
+      expect(
+        Navigator.of(tester.element(find.byType(MainShell))).canPop(),
+        isFalse,
+      );
+    });
+
+    testWidgets(
+      'branch flow from branch list to detail and booking selects branch tab in MainShell',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MainShell(
+              authApi: _SessionAuth(),
+              cartApi: _NavigationCartApi(),
+              branchApi: _NavigationBranchApi(),
+              bookingApi: _NavigationBookingApi(),
+            ),
+          ),
+        );
+        await tester.pump();
+        tester.takeException();
+        await tester.pumpAndSettle();
+
+        // Tap quick action "Chi nhánh"
+        await tester.tap(find.text('Chi nhánh').first);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Chi nhánh Landmark'), findsOneWidget);
+
+        // Tap on branch card to open BranchDetailPage
+        await tester.tap(find.text('Chi nhánh Landmark'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Chi tiết chi nhánh'), findsOneWidget);
+        expect(
+          find.widgetWithText(FilledButton, 'Đặt sân ngay'),
+          findsOneWidget,
+        );
+
+        // Tap "Đặt sân ngay"
+        await tester.tap(find.widgetWithText(FilledButton, 'Đặt sân ngay'));
+        await tester.pumpAndSettle();
+
+        // Should return to MainShell, switched to Booking tab (index 2)
+        final indexedStack = tester.widget<IndexedStack>(
+          find.byType(IndexedStack),
+        );
+        expect(indexedStack.index, 2);
+
+        // Timeline is active for that branch, user is not asked to pick branch again
+        expect(find.text('Chi nhánh Landmark'), findsOneWidget);
+        expect(find.text('Bạn muốn chơi ở đâu?'), findsNothing);
+
+        // Bottom navigation is hidden while viewing the booking timeline
+        expect(find.byType(AnimatedNotchBottomBar), findsNothing);
+
+        // Back from timeline returns to branch picker in Booking tab and reveals bottom navigation
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Bạn muốn chơi ở đâu?'), findsOneWidget);
+        expect(find.byType(AnimatedNotchBottomBar), findsOneWidget);
+        final currentStack = tester.widget<IndexedStack>(
+          find.byType(IndexedStack),
+        );
+        expect(currentStack.index, 2);
+      },
+    );
   });
 }

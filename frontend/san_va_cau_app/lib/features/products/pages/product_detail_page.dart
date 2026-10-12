@@ -28,6 +28,7 @@ class ProductDetailPage extends StatefulWidget {
     this.productApi,
     this.favoriteApi,
     this.cartApi,
+    this.onCartPressed,
     super.key,
   });
 
@@ -36,6 +37,7 @@ class ProductDetailPage extends StatefulWidget {
   final ProductApi? productApi;
   final FavoriteApi? favoriteApi;
   final CartApi? cartApi;
+  final VoidCallback? onCartPressed;
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -608,9 +610,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           IconButton(
             tooltip: 'Giỏ hàng',
             icon: const CartBadge(),
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute<void>(builder: (_) => const CartPage())),
+            onPressed:
+                widget.onCartPressed ??
+                () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => CartPage(cartApi: _cartApi),
+                  ),
+                ),
           ),
           IconButton(
             onPressed: _isTogglingFavorite ? null : _toggleFavorite,

@@ -40,6 +40,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Chi tiết tin tức')),
       body: FutureBuilder<NewsArticle>(
         future: _newsFuture,
@@ -95,37 +96,53 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
               padding: const EdgeInsets.only(bottom: 40),
               children: [
                 if (news.thumbnailUrl.isNotEmpty)
-                  AppImage(
-                    source: news.thumbnailUrl,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.contain,
-                    fallback: Container(
-                      height: 200,
-                      width: double.infinity,
-                      color: AppColors.background,
-                      child: const Icon(
-                        Icons.broken_image_outlined,
-                        size: 40,
-                        color: AppColors.textSecondary,
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: ClipRect(
+                      child: Transform.scale(
+                        scale: 1.08,
+                        child: AppImage(
+                          source: news.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          fallback: Container(
+                            color: AppColors.primarySoft,
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image_rounded,
+                                size: 40,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (news.branch != null) ...[
-                        Text(
-                          news.branch!.name,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            news.branch!.name,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                       ],
                       Text(
                         news.title,
@@ -140,8 +157,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                         Row(
                           children: [
                             const Icon(
-                              Icons.access_time,
-                              size: 16,
+                              Icons.calendar_month_rounded,
+                              size: 18,
                               color: AppColors.textSecondary,
                             ),
                             const SizedBox(width: 4),
@@ -153,23 +170,35 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                           ],
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       if (news.summary.isNotEmpty) ...[
-                        Text(
-                          news.summary,
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                height: 1.5,
-                              ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderMuted),
+                          ),
+                          child: Text(
+                            news.summary,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                  height: 1.5,
+                                ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        const Divider(height: 32),
+                        const SizedBox(height: 24),
                       ],
                       Text(
                         news.content,
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(height: 1.6, fontSize: 15),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          height: 1.65,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),

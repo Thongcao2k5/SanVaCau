@@ -13,9 +13,10 @@ import '../models/cart.dart';
 import '../../orders/pages/checkout_page.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key, this.cartApi});
+  const CartPage({super.key, this.cartApi, this.onSelectionChanged});
 
   final CartApi? cartApi;
+  final ValueChanged<bool>? onSelectionChanged;
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -29,6 +30,19 @@ class _CartPageState extends State<CartPage> {
   final _selected = <String>{};
   final _dismissedItemIds = <String>{};
   final _itemKeyVersions = <String, int>{};
+  bool _lastReportedHasSelection = false;
+
+  void _notifySelectionChanged() {
+    final hasSelection = _selected.isNotEmpty;
+    if (_lastReportedHasSelection == hasSelection) return;
+    _lastReportedHasSelection = hasSelection;
+    widget.onSelectionChanged?.call(hasSelection);
+  }
+
+  void _updateSelection(VoidCallback update) {
+    setState(update);
+    _notifySelectionChanged();
+  }
 
   @override
   void initState() {
@@ -56,8 +70,10 @@ class _CartPageState extends State<CartPage> {
       _reloadCart();
     } else if (mounted) {
       setState(() {
+        _selected.retainAll(cart.items.map((item) => item.id));
         _cartFuture = Future.value(cart);
       });
+      _notifySelectionChanged();
     }
   }
 
@@ -70,8 +86,10 @@ class _CartPageState extends State<CartPage> {
           : await _cartApi.updateQuantity(itemId: item.id, quantity: quantity);
       if (mounted) {
         setState(() {
+          _selected.retainAll(cart.items.map((item) => item.id));
           _cartFuture = Future.value(cart);
         });
+        _notifySelectionChanged();
       }
     } catch (error) {
       if (mounted) {
@@ -114,6 +132,7 @@ class _CartPageState extends State<CartPage> {
         _cartFuture = Future.value(currentCart);
         _isUpdating = false;
       });
+      _notifySelectionChanged();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -158,6 +177,7 @@ class _CartPageState extends State<CartPage> {
         _dismissedItemIds.remove(item.id);
         _cartFuture = Future.value(restored);
       });
+      _notifySelectionChanged();
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -293,9 +313,11 @@ class _CartPageState extends State<CartPage> {
       if (!mounted) return;
 
       setState(() {
+        _selected.clear();
         _cartFuture = Future.value(emptyCart);
         _isClearingCart = false;
       });
+      _notifySelectionChanged();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đã xóa toàn bộ giỏ hàng')));
@@ -429,7 +451,7 @@ class _CartPageState extends State<CartPage> {
                         },
                         onDismissed: (_) {
                           final wasSelected = _selected.contains(item.id);
-                          setState(() {
+                          _updateSelection(() {
                             _selected.remove(item.id);
                             _dismissedItemIds.add(item.id);
                           });
@@ -446,7 +468,7 @@ class _CartPageState extends State<CartPage> {
                           busy: _isUpdating || _isClearingCart,
                           item: item,
                           selected: _selected.contains(item.id),
-                          onSelected: (value) => setState(() {
+                          onSelected: (value) => _updateSelection(() {
                             if (value) {
                               _selected.add(item.id);
                             } else {
@@ -479,13 +501,16 @@ class _CartPageState extends State<CartPage> {
                   allSelected: visibleItems.every(
                     (item) => _selected.contains(item.id),
                   ),
-                  onSelectAll: (value) => setState(() {
+                  onSelectAll: (value) => _updateSelection(() {
                     _selected.clear();
                     if (value) {
                       _selected.addAll(visibleItems.map((item) => item.id));
                     }
                   }),
-                  onCheckoutSuccess: _reloadCart,
+                  onCheckoutSuccess: () {
+                    _updateSelection(_selected.clear);
+                    _reloadCart();
+                  },
                 ),
             ],
           );

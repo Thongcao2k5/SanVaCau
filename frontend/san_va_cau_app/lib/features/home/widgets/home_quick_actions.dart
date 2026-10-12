@@ -7,14 +7,14 @@ class HomeQuickActions extends StatelessWidget {
   const HomeQuickActions({
     required this.onBookCourtPressed,
     required this.onViewProductsPressed,
-    required this.onRacketServicePressed,
+    required this.onViewNewsPressed,
     required this.onViewBranchesPressed,
     super.key,
   });
 
   final VoidCallback onBookCourtPressed;
   final VoidCallback onViewProductsPressed;
-  final VoidCallback onRacketServicePressed;
+  final VoidCallback onViewNewsPressed;
   final VoidCallback onViewBranchesPressed;
 
   @override
@@ -47,16 +47,16 @@ class HomeQuickActions extends StatelessWidget {
                 onTap: onViewProductsPressed,
               ),
               _QuickActionTile(
-                icon: Symbols.sports_tennis_rounded,
-                title: 'Dịch vụ vợt',
-                accentColor: const Color(0xFF4F46E5),
-                onTap: onRacketServicePressed,
-              ),
-              _QuickActionTile(
                 icon: Symbols.location_on_rounded,
                 title: 'Chi nhánh',
                 accentColor: const Color(0xFF0891B2),
                 onTap: onViewBranchesPressed,
+              ),
+              _QuickActionTile(
+                icon: Symbols.newspaper_rounded,
+                title: 'Tin tức',
+                accentColor: const Color(0xFF4F46E5),
+                onTap: onViewNewsPressed,
               ),
             ],
           ),

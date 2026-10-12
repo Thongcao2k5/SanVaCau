@@ -9,7 +9,7 @@ void main() {
     List<HomeBanner> banners = const [],
     VoidCallback? onBookCourt,
     VoidCallback? onViewProducts,
-    VoidCallback? onRacketService,
+    VoidCallback? onViewNews,
     VoidCallback? onViewBranches,
   }) {
     return MaterialApp(
@@ -20,7 +20,7 @@ void main() {
             banners: banners,
             onBookCourtPressed: onBookCourt ?? () {},
             onViewProductsPressed: onViewProducts ?? () {},
-            onRacketServicePressed: onRacketService ?? () {},
+            onViewNewsPressed: onViewNews ?? () {},
             onViewBranchesPressed: onViewBranches ?? () {},
           ),
         ),
@@ -61,7 +61,8 @@ void main() {
       // Swipe to slide 3.
       await tester.drag(find.byType(PageView), const Offset(-800, 0));
       await tester.pumpAndSettle();
-      expect(find.text('DỊCH VỤ VỢT'), findsOneWidget);
+      expect(find.text('TIN TỨC CẦU LÔNG'), findsOneWidget);
+      expect(find.text('DỊCH VỤ VỢT'), findsNothing);
 
       // Swipe to slide 4.
       await tester.drag(find.byType(PageView), const Offset(-800, 0));
@@ -98,7 +99,7 @@ void main() {
       // Remaining slides should be fallbacks.
       await tester.drag(find.byType(PageView), const Offset(-800, 0));
       await tester.pumpAndSettle();
-      expect(find.text('DỊCH VỤ VỢT'), findsOneWidget);
+      expect(find.text('TIN TỨC CẦU LÔNG'), findsOneWidget);
 
       await tester.drag(find.byType(PageView), const Offset(-800, 0));
       await tester.pumpAndSettle();
@@ -178,6 +179,22 @@ void main() {
       expect(productsPressed, isTrue);
     });
 
+    testWidgets('news CTA calls onViewNewsPressed', (tester) async {
+      var newsPressed = false;
+      await tester.pumpWidget(
+        buildTestApp(onViewNews: () => newsPressed = true),
+      );
+      await tester.pump();
+
+      await tester.drag(find.byType(PageView), const Offset(-800, 0));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(PageView), const Offset(-800, 0));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Đọc tin mới nhất'));
+      expect(newsPressed, isTrue);
+    });
+
     testWidgets('no overflow at 320dp width', (tester) async {
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1.0;
@@ -204,7 +221,7 @@ void main() {
                   banners: const [],
                   onBookCourtPressed: () {},
                   onViewProductsPressed: () {},
-                  onRacketServicePressed: () {},
+                  onViewNewsPressed: () {},
                   onViewBranchesPressed: () {},
                 ),
               ),

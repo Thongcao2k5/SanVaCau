@@ -7,7 +7,7 @@ void main() {
   Widget buildTestApp({
     VoidCallback? onBookCourt,
     VoidCallback? onViewProducts,
-    VoidCallback? onRacketService,
+    VoidCallback? onViewNews,
     VoidCallback? onViewBranches,
   }) {
     return MaterialApp(
@@ -16,7 +16,7 @@ void main() {
         body: HomeQuickActions(
           onBookCourtPressed: onBookCourt ?? () {},
           onViewProductsPressed: onViewProducts ?? () {},
-          onRacketServicePressed: onRacketService ?? () {},
+          onViewNewsPressed: onViewNews ?? () {},
           onViewBranchesPressed: onViewBranches ?? () {},
         ),
       ),
@@ -29,13 +29,23 @@ void main() {
 
       expect(find.text('Đặt sân'), findsOneWidget);
       expect(find.text('Mua sắm'), findsOneWidget);
-      expect(find.text('Dịch vụ vợt'), findsOneWidget);
+      expect(find.text('Tin tức'), findsOneWidget);
       expect(find.text('Chi nhánh'), findsOneWidget);
+      expect(find.text('Dịch vụ vợt'), findsNothing);
     });
 
     testWidgets('shows heading Tiện ích', (tester) async {
       await tester.pumpWidget(buildTestApp());
       expect(find.text('Tiện ích'), findsOneWidget);
+    });
+
+    testWidgets('shows Chi nhánh before Tin tức', (tester) async {
+      await tester.pumpWidget(buildTestApp());
+
+      expect(
+        tester.getCenter(find.text('Chi nhánh')).dx,
+        lessThan(tester.getCenter(find.text('Tin tức')).dx),
+      );
     });
 
     testWidgets('Đặt sân calls onBookCourtPressed', (tester) async {
@@ -54,12 +64,10 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('Dịch vụ vợt calls onRacketServicePressed', (tester) async {
+    testWidgets('Tin tức calls onViewNewsPressed', (tester) async {
       var pressed = false;
-      await tester.pumpWidget(
-        buildTestApp(onRacketService: () => pressed = true),
-      );
-      await tester.tap(find.text('Dịch vụ vợt'));
+      await tester.pumpWidget(buildTestApp(onViewNews: () => pressed = true));
+      await tester.tap(find.text('Tin tức'));
       expect(pressed, isTrue);
     });
 
@@ -92,7 +100,7 @@ void main() {
               body: HomeQuickActions(
                 onBookCourtPressed: () {},
                 onViewProductsPressed: () {},
-                onRacketServicePressed: () {},
+                onViewNewsPressed: () {},
                 onViewBranchesPressed: () {},
               ),
             ),
