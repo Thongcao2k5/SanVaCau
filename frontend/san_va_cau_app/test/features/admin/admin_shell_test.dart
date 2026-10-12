@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/features/admin/admin_shell.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
@@ -26,12 +30,15 @@ Widget _app({
   VoidCallback? onSessionChanged,
   AuthUser user = _admin,
   TextScaler? textScaler,
+  EdgeInsets safePadding = EdgeInsets.zero,
 }) {
   return MaterialApp(
+    theme: AppTheme.light(),
     builder: textScaler == null
         ? null
         : (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: textScaler, padding: safePadding),
             child: child!,
           ),
     home: AdminShell(
@@ -45,6 +52,62 @@ Widget _app({
 }
 
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    for (final role in ['ADMIN', 'BRANCH_MANAGER', 'STAFF']) {
+      testWidgets('all shell tabs at $size support large text and $role', (
+        tester,
+      ) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final user = AuthUser(
+          id: '1',
+          email: 'admin@example.com',
+          fullName: 'Tên người dùng dài để kiểm tra hiển thị',
+          role: role,
+          status: 'ACTIVE',
+        );
+        await tester.pumpWidget(
+          _app(
+            authApi: _FakeAuthApi(),
+            user: user,
+            textScaler: const TextScaler.linear(1.5),
+            safePadding: const EdgeInsets.only(top: 24, bottom: 24),
+          ),
+        );
+        await tester.pumpAndSettle();
+        for (final tab in ['Tổng quan', 'Vận hành', 'Quản lý', 'Tài khoản']) {
+          await tester.tap(find.text(tab));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: '$role $tab');
+          await expectAdminAccessibility(tester);
+          if (tab == 'Tài khoản') {
+            await tester.scrollUntilVisible(
+              find.text('Đăng xuất'),
+              150,
+              scrollable: find.byType(Scrollable).last,
+            );
+            await tester.pumpAndSettle();
+            final navigationTop = tester
+                .getTopLeft(find.byType(NavigationBar))
+                .dy;
+            final logoutBottom = tester
+                .getBottomRight(
+                  find.widgetWithText(OutlinedButton, 'Đăng xuất'),
+                )
+                .dy;
+            expect(logoutBottom, lessThanOrEqualTo(navigationTop));
+            await expectAdminAccessibility(tester);
+          }
+        }
+      });
+    }
+  }
   testWidgets('shows four-tab graphite admin navigation', (tester) async {
     await tester.pumpWidget(_app(authApi: _FakeAuthApi()));
     await tester.pumpAndSettle();

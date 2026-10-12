@@ -1,9 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/features/admin/theme/admin_theme.dart';
 import 'package:san_va_cau_app/features/admin/widgets/admin_ui.dart';
 
 void main() {
+  testWidgets(
+    'status badges have readable contrast and complete semantic labels',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AdminTheme.data(AppTheme.light()),
+          home: Scaffold(
+            body: Wrap(
+              children: [
+                for (final tone in AdminStatusTone.values)
+                  AdminStatusBadge(label: 'Trạng thái $tone', tone: tone),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectAdminAccessibility(tester);
+      final semantics = tester.ensureSemantics();
+      try {
+        for (final tone in AdminStatusTone.values) {
+          expect(
+            find.bySemanticsLabel('Trạng thái: Trạng thái $tone'),
+            findsOneWidget,
+          );
+        }
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'shared loading, error and empty states remain readable in landscape',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 375);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var retries = 0;
+      for (final loading in [true, false]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AdminTheme.data(AppTheme.light()),
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+              child: Scaffold(
+                body: AdminStateView(
+                  icon: Icons.cloud_off_rounded,
+                  title: loading
+                      ? 'Đang tải nội dung'
+                      : 'Không thể tải nội dung',
+                  message: 'Thông tin trạng thái rõ ràng, có thể đọc ở màn hình ngang.',
+                  isLoading: loading,
+                  actionLabel: loading ? null : 'Thử tải lại nội dung',
+                  onAction: () => retries++,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        if (!loading) {
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Thử tải lại nội dung'));
+          expect(retries, 1);
+          await expectAdminAccessibility(tester);
+        } else {
+          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        }
+      }
+    },
+  );
   testWidgets('shared admin components support large text', (tester) async {
     tester.view.physicalSize = const Size(320, 700);
     tester.view.devicePixelRatio = 1;

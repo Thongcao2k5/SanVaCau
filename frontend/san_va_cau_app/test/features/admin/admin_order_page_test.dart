@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_order_list_page.dart';
+import 'package:san_va_cau_app/features/admin/pages/admin_order_detail_page.dart';
+import 'package:san_va_cau_app/features/orders/data/fulfillment_api.dart';
+import 'package:san_va_cau_app/features/orders/models/order_fulfillment.dart';
 import 'package:san_va_cau_app/features/orders/data/order_api.dart';
 import 'package:san_va_cau_app/features/orders/models/order.dart';
 
@@ -39,7 +46,108 @@ Widget _app(OrderApi api) {
   return MaterialApp(home: AdminOrderListPage(orderApi: api));
 }
 
+class _FakeFulfillmentApi extends FulfillmentApi {
+  _FakeFulfillmentApi(this.type);
+  final String type;
+  @override
+  Future<OrderFulfillment?> getForOrder(String orderId) async =>
+      OrderFulfillment(
+        id: 'f1',
+        orderId: orderId,
+        fulfillmentType: type,
+        status: 'PENDING',
+        shippingFee: '0',
+        recipientName: 'Người nhận',
+        addressLine: 'Địa chỉ giao hàng đầy đủ',
+        phone: '0987654321',
+      );
+}
+
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    for (final type in ['DELIVERY', 'PICKUP']) {
+      testWidgets('order and $type detail at $size with large text', (
+        tester,
+      ) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final order = Order(
+          id: '99',
+          customerId: '1',
+          branchId: '2',
+          status: 'PENDING',
+          totalAmount: '999999999',
+          createdAt: DateTime(2026, 10, 12),
+          branch: const OrderBranch(
+            id: '2',
+            name: 'Chi nhánh có tên dài',
+            address: 'Địa chỉ',
+          ),
+          items: const [
+            OrderItem(
+              id: 'i1',
+              productVariantId: 'v1',
+              productName: 'Sản phẩm có tên dài',
+              variantName: 'Phân loại sản phẩm',
+              unitPrice: '999999999',
+              quantity: 3,
+            ),
+          ],
+        );
+        final api = _FakeOrderApi((status) async => [order]);
+        Widget app(Widget home) => MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: home,
+        );
+        await tester.pumpWidget(app(AdminOrderListPage(orderApi: api)));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectAdminAccessibility(tester);
+        await tester.pumpWidget(
+          app(
+            AdminOrderDetailPage(
+              orderId: '99',
+              orderApi: api,
+              fulfillmentApi: _FakeFulfillmentApi(type),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectAdminAccessibility(tester);
+        await tester.drag(find.byType(ListView).last, const Offset(0, -400));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectAdminAccessibility(tester);
+        await tester.scrollUntilVisible(
+          find.text('Tổng cộng'),
+          150,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView).last,
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectAdminAccessibility(tester);
+        expect(find.widgetWithText(ElevatedButton, 'Hủy đơn'), findsOneWidget);
+      });
+    }
+  }
+
   testWidgets('renders loading state initially', (tester) async {
     final api = _FakeOrderApi((status) async {
       await Future<void>.delayed(const Duration(milliseconds: 100));

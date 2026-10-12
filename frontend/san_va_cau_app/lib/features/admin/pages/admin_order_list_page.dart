@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import 'package:san_va_cau_app/core/theme/app_colors.dart';
 import 'package:san_va_cau_app/features/orders/data/order_api.dart';
 import 'package:san_va_cau_app/features/orders/models/order.dart';
@@ -48,85 +52,97 @@ class _AdminOrderListPageState extends State<AdminOrderListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Quản lý đơn hàng'), centerTitle: true),
-      body: Column(
-        children: [
-          _buildFilters(),
-          Expanded(
-            child: FutureBuilder<List<Order>>(
-              future: _ordersFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        appBar: AppBar(
+          title: const Text('Quản lý đơn hàng'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildFilters(),
+              Expanded(
+                child: FutureBuilder<List<Order>>(
+                  future: _ordersFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Đang tải đơn hàng'),
+                        ],
+                      );
+                    }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Không thể tải danh sách đơn hàng'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadOrders,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                    if (snapshot.hasError) {
+                      return AdminStateView(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'Không thể tải danh sách đơn hàng',
+                        actionLabel: 'Thử lại',
+                        onAction: _loadOrders,
+                      );
+                    }
 
-                final orders = snapshot.data ?? [];
+                    final orders = snapshot.data ?? [];
 
-                if (orders.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: _refresh,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.5,
-                          child: const Center(
-                            child: Text('Không có đơn hàng nào'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refresh,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: orders.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _OrderCard(
-                        order: orders[index],
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AdminOrderDetailPage(
-                                orderId: orders[index].id,
-                                orderApi: _api,
+                    if (orders.isEmpty) {
+                      return RefreshIndicator(
+                        onRefresh: _refresh,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.5,
+                              child: const AdminStateView(
+                                icon: Icons.shopping_bag_rounded,
+                                title: 'Không có đơn hàng nào',
+                                message: 'Thử chọn trạng thái khác.',
                               ),
                             ),
-                          );
-                          if (result == true) {
-                            _loadOrders();
-                          }
-                        },
+                          ],
+                        ),
                       );
-                    },
-                  ),
-                );
-              },
-            ),
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: orders.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return _OrderCard(
+                            order: orders[index],
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AdminOrderDetailPage(
+                                    orderId: orders[index].id,
+                                    orderApi: _api,
+                                  ),
+                                ),
+                              );
+                              if (result == true) {
+                                _loadOrders();
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -154,14 +170,17 @@ class _AdminOrderListPageState extends State<AdminOrderListPage> {
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _selectedStatus == value;
     return FilterChip(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => _onStatusChanged(value),
-      backgroundColor: AppColors.surface,
-      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+      backgroundColor: AdminTheme.surface,
+      selectedColor: AppColors.primarySoft,
       checkmarkColor: AppColors.primary,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textPrimary,
+        fontFamily: Theme.of(context).textTheme.labelLarge?.fontFamily,
+        color: isSelected ? AdminTheme.primaryText : AdminTheme.textPrimary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -207,31 +226,26 @@ class _OrderCard extends StatelessWidget {
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return AppColors.warning;
-      case 'READY_FOR_PICKUP':
-        return AppColors.info;
-      case 'COMPLETED':
-        return AppColors.success;
-      case 'CANCELLED':
-        return AppColors.primary;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
+  AdminStatusTone _getStatusTone(String status) => switch (status) {
+    'PENDING' => AdminStatusTone.warning,
+    'READY_FOR_PICKUP' => AdminStatusTone.info,
+    'COMPLETED' => AdminStatusTone.success,
+    'CANCELLED' => AdminStatusTone.danger,
+    _ => AdminStatusTone.neutral,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(order.status);
     final customerName = order.customer?.fullName ?? 'Khách lẻ';
     final customerPhone = order.customer?.phone ?? '';
 
     return Card(
-      elevation: 2,
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AdminTheme.cardRadius),
+        side: const BorderSide(color: AdminTheme.border),
+      ),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -239,37 +253,20 @@ class _OrderCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Đơn #${order.id}',
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Text(
+                    'Đơn #${order.id}',
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: statusColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: Text(
-                      _getStatusLabel(order.status),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  AdminStatusBadge(
+                    label: _getStatusLabel(order.status),
+                    tone: _getStatusTone(order.status),
                   ),
                 ],
               ),
@@ -277,9 +274,9 @@ class _OrderCard extends StatelessWidget {
               Row(
                 children: [
                   const Icon(
-                    Icons.person_outline,
+                    Icons.person_rounded,
                     size: 16,
-                    color: AppColors.textSecondary,
+                    color: AdminTheme.textSecondary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -298,9 +295,9 @@ class _OrderCard extends StatelessWidget {
               Row(
                 children: [
                   const Icon(
-                    Icons.storefront_outlined,
+                    Icons.storefront_rounded,
                     size: 16,
-                    color: AppColors.textSecondary,
+                    color: AdminTheme.textSecondary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -317,9 +314,9 @@ class _OrderCard extends StatelessWidget {
               Row(
                 children: [
                   const Icon(
-                    Icons.access_time,
+                    Icons.schedule_rounded,
                     size: 16,
-                    color: AppColors.textSecondary,
+                    color: AdminTheme.textSecondary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -334,13 +331,14 @@ class _OrderCard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Divider(height: 1),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   Text(
                     'Tổng tiền',
                     style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary),
+                        ?.copyWith(color: AdminTheme.textSecondary),
                   ),
                   Text(
                     _formatCurrency(order.totalAmount),

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/admin/data/admin_dashboard_api.dart';
 import 'package:san_va_cau_app/features/admin/models/admin_dashboard.dart';
@@ -21,6 +25,77 @@ Widget _app(AdminDashboardApi api) {
 }
 
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    testWidgets('dashboard accessibility and safe area at $size', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _FakeDashboardApi(
+        () async => const AdminDashboard(
+          role: 'ADMIN',
+          branchId: null,
+          date: '2026-10-12',
+          bookings: AdminBookingSummary(
+            total: 12,
+            booked: 4,
+            checkedIn: 2,
+            completed: 5,
+            cancelled: 1,
+          ),
+          orders: AdminOrderSummary(
+            total: 8,
+            pending: 2,
+            readyForPickup: 1,
+            completed: 5,
+            cancelled: 0,
+            revenueCompleted: 1250000,
+          ),
+          inventory: AdminInventorySummary(lowStockCount: 2, lowStockItems: []),
+          courts: AdminCourtSummary(active: 6, maintenance: 0, inactive: 0),
+          latestBookings: [],
+          latestOrders: [],
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(1.5),
+              padding: const EdgeInsets.only(top: 24, bottom: 24),
+            ),
+            child: child!,
+          ),
+          home: AdminDashboardPage(dashboardApi: api, embedded: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      for (final label in [
+        'Lịch đặt hôm nay',
+        'Doanh thu hoàn tất',
+        'Sắp hết hàng',
+        'Chưa có hoạt động gần đây',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(label),
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await expectAdminAccessibility(tester);
+      }
+    });
+  }
   testWidgets('renders loading state initially', (tester) async {
     final api = _FakeDashboardApi(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));

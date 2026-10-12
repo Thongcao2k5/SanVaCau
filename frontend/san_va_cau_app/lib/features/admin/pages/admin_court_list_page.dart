@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../booking/models/court.dart';
@@ -85,121 +88,135 @@ class _AdminCourtListPageState extends State<AdminCourtListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Sân • ${widget.branch.name}'),
-        actions: [
-          IconButton(
-            tooltip: 'Quản lý khung giờ',
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => AdminTimeSlotPage(courtApi: _api),
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Sân • ${widget.branch.name}'),
+          actions: [
+            IconButton(
+              tooltip: 'Quản lý khung giờ',
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => AdminTimeSlotPage(courtApi: _api),
+                ),
               ),
+              icon: const Icon(Icons.schedule_rounded),
             ),
-            icon: const Icon(Icons.schedule_rounded),
-          ),
-        ],
-      ),
-      body: FutureBuilder<List<Court>>(
-        future: _courtsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return _AdminCourtState(
-              icon: Icons.cloud_off_rounded,
-              message: 'Không thể tải danh sách sân',
-              actionLabel: 'Thử lại',
-              onAction: _reload,
-            );
-          }
-          final courts = snapshot.data ?? const <Court>[];
-          if (courts.isEmpty) {
-            return _AdminCourtState(
-              icon: Icons.sports_tennis_rounded,
-              message: 'Chi nhánh chưa có sân hoạt động',
-              actionLabel: 'Thêm sân đầu tiên',
-              onAction: _openForm,
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              _reload();
-              await _courtsFuture;
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-              itemCount: courts.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final court = courts[index];
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.sports_tennis_rounded,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    title: Text(
-                      court.name,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: Text(
-                      court.description?.trim().isNotEmpty == true
-                          ? court.description!
-                          : 'Chưa có mô tả',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (action) {
-                        if (action == 'edit') _openForm(court);
-                        if (action == 'price') {
-                          Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder: (_) =>
-                                  _CourtPricePage(court: court, api: _api),
-                            ),
-                          );
-                        }
-                        if (action == 'inactivate') _inactivate(court);
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Sửa sân')),
-                        PopupMenuItem(value: 'price', child: Text('Bảng giá')),
-                        PopupMenuItem(
-                          value: 'inactivate',
-                          child: Text('Ngừng hoạt động'),
-                        ),
-                      ],
-                    ),
-                    onTap: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            _CourtPricePage(court: court, api: _api),
-                      ),
-                    ),
-                  ),
+          ],
+        ),
+        body: SafeArea(
+          child: FutureBuilder<List<Court>>(
+            future: _courtsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return _AdminCourtState(
+                  icon: Icons.cloud_off_rounded,
+                  message: 'Không thể tải danh sách sân',
+                  actionLabel: 'Thử lại',
+                  onAction: _reload,
                 );
-              },
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openForm,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm sân'),
+              }
+              final courts = snapshot.data ?? const <Court>[];
+              if (courts.isEmpty) {
+                return _AdminCourtState(
+                  icon: Icons.sports_tennis_rounded,
+                  message: 'Chi nhánh chưa có sân hoạt động',
+                  actionLabel: 'Thêm sân đầu tiên',
+                  onAction: _openForm,
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: () async {
+                  _reload();
+                  await _courtsFuture;
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                  itemCount: courts.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final court = courts[index];
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                        leading: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(
+                              AdminTheme.cardRadius,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.sports_tennis_rounded,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        title: Text(
+                          court.name,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          court.description?.trim().isNotEmpty == true
+                              ? court.description!
+                              : 'Chưa có mô tả',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          tooltip: 'Thao tác sân',
+                          onSelected: (action) {
+                            if (action == 'edit') _openForm(court);
+                            if (action == 'price') {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      _CourtPricePage(court: court, api: _api),
+                                ),
+                              );
+                            }
+                            if (action == 'inactivate') _inactivate(court);
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Sửa sân'),
+                            ),
+                            PopupMenuItem(
+                              value: 'price',
+                              child: Text('Bảng giá'),
+                            ),
+                            PopupMenuItem(
+                              value: 'inactivate',
+                              child: Text('Ngừng hoạt động'),
+                            ),
+                          ],
+                        ),
+                        onTap: () => Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                _CourtPricePage(court: court, api: _api),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _openForm,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Thêm sân'),
+        ),
       ),
     );
   }
@@ -272,50 +289,60 @@ class _CourtFormPageState extends State<_CourtFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.court == null ? 'Thêm sân' : 'Sửa sân'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              widget.branch.name,
-              style: Theme.of(context).textTheme.titleMedium,
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.court == null ? 'Thêm sân' : 'Sửa sân'),
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(20),
+              children: [
+                Text(
+                  widget.branch.name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên sân',
+                    prefixIcon: Icon(Icons.sports_tennis_rounded),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Nhập tên sân'
+                      : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mô tả',
+                    alignLabelWithHint: true,
+                  ),
+                  minLines: 3,
+                  maxLines: 5,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: const TextStyle(color: AppColors.primary),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: Text(_saving ? 'Đang lưu...' : 'Lưu sân'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Tên sân',
-                prefixIcon: Icon(Icons.sports_tennis_rounded),
-              ),
-              textInputAction: TextInputAction.next,
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? 'Nhập tên sân' : null,
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Mô tả',
-                alignLabelWithHint: true,
-              ),
-              minLines: 3,
-              maxLines: 5,
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.primary)),
-            ],
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'Đang lưu...' : 'Lưu sân'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -430,57 +457,62 @@ class _CourtPricePageState extends State<_CourtPricePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Bảng giá • ${widget.court.name}')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null && _slots.isEmpty
-          ? _AdminCourtState(
-              icon: Icons.error_outline_rounded,
-              message: _error!,
-              actionLabel: 'Thử lại',
-              onAction: _load,
-            )
-          : ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Text(
-                  'Giá theo khung giờ',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Giá phải lớn hơn 0 và áp dụng cho một lượt đặt sân.',
-                ),
-                const SizedBox(height: 20),
-                for (final slot in _slots) ...[
-                  TextFormField(
-                    controller: _controllers[slot.id],
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText:
-                          '${_shortTime(slot.startTime)} – ${_shortTime(slot.endTime)}',
-                      suffixText: 'đ',
-                      prefixIcon: const Icon(Icons.payments_outlined),
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(title: Text('Bảng giá • ${widget.court.name}')),
+        body: SafeArea(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null && _slots.isEmpty
+              ? _AdminCourtState(
+                  icon: Icons.error_outline_rounded,
+                  message: _error!,
+                  actionLabel: 'Thử lại',
+                  onAction: _load,
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Text(
+                      'Giá theo khung giờ',
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (_error != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: AppColors.primary),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Đang lưu...' : 'Lưu bảng giá'),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Giá phải lớn hơn 0 và áp dụng cho một lượt đặt sân.',
+                    ),
+                    const SizedBox(height: 20),
+                    for (final slot in _slots) ...[
+                      TextFormField(
+                        controller: _controllers[slot.id],
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText:
+                              '${_shortTime(slot.startTime)} – ${_shortTime(slot.endTime)}',
+                          suffixText: 'đ',
+                          prefixIcon: const Icon(Icons.payments_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_error != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: AppColors.primary),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(_saving ? 'Đang lưu...' : 'Lưu bảng giá'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+        ),
+      ),
     );
   }
 }
@@ -560,69 +592,78 @@ class _AdminTimeSlotPageState extends State<AdminTimeSlotPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Khung giờ đặt sân')),
-      body: FutureBuilder<List<AdminTimeSlot>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return _AdminCourtState(
-              icon: Icons.cloud_off_rounded,
-              message: 'Không thể tải khung giờ',
-              actionLabel: 'Thử lại',
-              onAction: _reload,
-            );
-          }
-          final slots = snapshot.data ?? const <AdminTimeSlot>[];
-          if (slots.isEmpty) {
-            return _AdminCourtState(
-              icon: Icons.schedule_rounded,
-              message: 'Chưa có khung giờ hoạt động',
-              actionLabel: 'Thêm khung giờ',
-              onAction: _openForm,
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-            itemCount: slots.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final slot = slots[index];
-              return Card(
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.schedule_rounded,
-                    color: AppColors.primary,
-                  ),
-                  title: Text(
-                    '${_shortTime(slot.startTime)} – ${_shortTime(slot.endTime)}',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text('Thứ tự ${slot.sortOrder}'),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (action) {
-                      if (action == 'edit') _openForm(slot);
-                      if (action == 'disable') _inactivate(slot);
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa')),
-                      PopupMenuItem(value: 'disable', child: Text('Tắt')),
-                    ],
-                  ),
-                  onTap: () => _openForm(slot),
-                ),
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Khung giờ đặt sân')),
+        body: SafeArea(
+          child: FutureBuilder<List<AdminTimeSlot>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return _AdminCourtState(
+                  icon: Icons.cloud_off_rounded,
+                  message: 'Không thể tải khung giờ',
+                  actionLabel: 'Thử lại',
+                  onAction: _reload,
+                );
+              }
+              final slots = snapshot.data ?? const <AdminTimeSlot>[];
+              if (slots.isEmpty) {
+                return _AdminCourtState(
+                  icon: Icons.schedule_rounded,
+                  message: 'Chưa có khung giờ hoạt động',
+                  actionLabel: 'Thêm khung giờ',
+                  onAction: _openForm,
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                itemCount: slots.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final slot = slots[index];
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.schedule_rounded,
+                        color: AppColors.primary,
+                      ),
+                      title: Text(
+                        '${_shortTime(slot.startTime)} – ${_shortTime(slot.endTime)}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text('Thứ tự ${slot.sortOrder}'),
+                      trailing: PopupMenuButton<String>(
+                        tooltip: 'Thao tác khung giờ',
+                        onSelected: (action) {
+                          if (action == 'edit') _openForm(slot);
+                          if (action == 'disable') _inactivate(slot);
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Chỉnh sửa'),
+                          ),
+                          PopupMenuItem(value: 'disable', child: Text('Tắt')),
+                        ],
+                      ),
+                      onTap: () => _openForm(slot),
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openForm,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm khung giờ'),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _openForm,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Thêm khung giờ'),
+        ),
       ),
     );
   }
@@ -769,20 +810,11 @@ class _AdminCourtState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: AppColors.textSecondary),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            OutlinedButton(onPressed: onAction, child: Text(actionLabel)),
-          ],
-        ),
-      ),
+    return AdminStateView(
+      icon: icon,
+      title: message,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 }

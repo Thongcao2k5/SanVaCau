@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../products/data/product_api.dart';
 import '../../products/models/product.dart';
@@ -197,40 +200,44 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Chi tiết sản phẩm'),
-        centerTitle: true,
-        actions: [
-          if (widget.isAdmin && _product != null)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Sửa',
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminProductFormPage(
-                      product: _product,
-                      productApi: _api,
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        appBar: AppBar(
+          title: const Text('Chi tiết sản phẩm'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+          actions: [
+            if (widget.isAdmin && _product != null)
+              IconButton(
+                icon: const Icon(Icons.edit),
+                tooltip: 'Sửa',
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminProductFormPage(
+                        product: _product,
+                        productApi: _api,
+                      ),
                     ),
-                  ),
-                );
-                if (result == true) {
-                  _loadData();
-                }
-              },
-            ),
-          if (widget.isAdmin && _product != null && _product!.isActive)
-            IconButton(
-              icon: const Icon(Icons.visibility_off),
-              tooltip: 'Ẩn',
-              onPressed: _inactivateProduct,
-            ),
-        ],
+                  );
+                  if (result == true) {
+                    _loadData();
+                  }
+                },
+              ),
+            if (widget.isAdmin && _product != null && _product!.isActive)
+              IconButton(
+                icon: const Icon(Icons.visibility_off),
+                tooltip: 'Ẩn',
+                onPressed: _inactivateProduct,
+              ),
+          ],
+        ),
+        body: SafeArea(child: _buildBody()),
       ),
-      body: _buildBody(),
     );
   }
 
@@ -251,7 +258,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
             Text(
               'Lỗi: $_error',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: const TextStyle(color: AdminTheme.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _loadData, child: const Text('Thử lại')),
@@ -267,15 +274,16 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(16),
         children: [
           // Product Info Card
           Card(
             elevation: 0,
-            color: AppColors.surface,
+            color: AdminTheme.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.borderMuted),
+              borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+              side: const BorderSide(color: AdminTheme.border),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -289,8 +297,10 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceMuted,
-                          borderRadius: BorderRadius.circular(8),
+                          color: AdminTheme.canvas,
+                          borderRadius: BorderRadius.circular(
+                            AdminTheme.compactRadius,
+                          ),
                         ),
                         child:
                             _product!.imageUrl != null &&
@@ -299,13 +309,13 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                                 _product!.imageUrl!,
                                 fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: AppColors.textSecondary,
+                                  Icons.image_not_supported_rounded,
+                                  color: AdminTheme.textSecondary,
                                 ),
                               )
                             : const Icon(
-                                Icons.image_outlined,
-                                color: AppColors.textSecondary,
+                                Icons.image_rounded,
+                                color: AdminTheme.textSecondary,
                               ),
                       ),
                       const SizedBox(width: 16),
@@ -318,12 +328,12 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
+                                    color: AdminTheme.textPrimary,
                                   ),
                             ),
                             const SizedBox(height: 8),
                             _buildInfoRow(
-                              Icons.category_outlined,
+                              Icons.category_rounded,
                               'Danh mục:',
                               _product!.category.name,
                             ),
@@ -342,56 +352,18 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 8,
-                    runSpacing: 4,
+                    runSpacing: 8,
                     children: [
                       if (_product!.isFeatured)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warning.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: AppColors.warning.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: const Text(
-                            'Nổi bật',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.warning,
-                            ),
-                          ),
+                        const AdminStatusBadge(
+                          label: 'Nổi bật',
+                          tone: AdminStatusTone.warning,
                         ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _product!.isActive
-                              ? AppColors.success.withValues(alpha: 0.1)
-                              : AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: _product!.isActive
-                                ? AppColors.success.withValues(alpha: 0.3)
-                                : AppColors.primary.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Text(
-                          _product!.isActive ? 'Đang hoạt động' : 'Đã ẩn',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _product!.isActive
-                                ? AppColors.success
-                                : AppColors.primary,
-                          ),
-                        ),
+                      AdminStatusBadge(
+                        label: _product!.isActive ? 'Đang hoạt động' : 'Đã ẩn',
+                        tone: _product!.isActive
+                            ? AdminStatusTone.success
+                            : AdminStatusTone.danger,
                       ),
                     ],
                   ),
@@ -409,7 +381,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                     Text(
                       _product!.description!,
                       style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: AdminTheme.textSecondary),
                     ),
                   ],
                 ],
@@ -420,14 +392,15 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
           const SizedBox(height: 24),
 
           // Variants Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Text(
                 'Phân loại (${_variants.length})',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AdminTheme.textPrimary,
                 ),
               ),
               if (widget.isAdmin)
@@ -457,14 +430,14 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.borderMuted),
+                color: AdminTheme.surface,
+                borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+                border: Border.all(color: AdminTheme.border),
               ),
               child: const Center(
                 child: Text(
                   'Chưa có phân loại nào.',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: AdminTheme.textSecondary),
                 ),
               ),
             )
@@ -472,11 +445,11 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
             ..._variants.map((variant) {
               return Card(
                 elevation: 0,
-                color: AppColors.surface,
+                color: AdminTheme.surface,
                 margin: const EdgeInsets.only(bottom: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: AppColors.borderMuted),
+                  borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+                  side: const BorderSide(color: AdminTheme.border),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -484,10 +457,12 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                     children: [
                       Container(
                         width: 48,
-                        height: 48,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceMuted,
-                          borderRadius: BorderRadius.circular(8),
+                          color: AdminTheme.canvas,
+                          borderRadius: BorderRadius.circular(
+                            AdminTheme.compactRadius,
+                          ),
                         ),
                         child:
                             variant.imageUrl != null &&
@@ -496,13 +471,13 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                                 variant.imageUrl!,
                                 fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: AppColors.textSecondary,
+                                  Icons.image_not_supported_rounded,
+                                  color: AdminTheme.textSecondary,
                                 ),
                               )
                             : const Icon(
-                                Icons.image_outlined,
-                                color: AppColors.textSecondary,
+                                Icons.image_rounded,
+                                color: AdminTheme.textSecondary,
                               ),
                       ),
                       const SizedBox(width: 12),
@@ -523,7 +498,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                               'SKU: ${variant.sku}',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: AdminTheme.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -539,9 +514,10 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                       ),
                       if (widget.isAdmin)
                         PopupMenuButton<String>(
+                          tooltip: 'Thao tác phân loại',
                           icon: const Icon(
                             Icons.more_vert,
-                            color: AppColors.textSecondary,
+                            color: AdminTheme.textSecondary,
                           ),
                           onSelected: (value) async {
                             if (value == 'edit') {
@@ -599,28 +575,21 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+  Widget _buildInfoRow(IconData icon, String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: AdminTheme.textSecondary),
+      ),
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AdminTheme.textPrimary,
         ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }

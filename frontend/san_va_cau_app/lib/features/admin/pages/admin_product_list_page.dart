@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../products/data/product_api.dart';
 import '../../products/models/product.dart';
@@ -124,7 +127,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AdminTheme.canvas,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -132,96 +135,100 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Bộ lọc',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bộ lọc',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AdminTheme.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String?>(
-                      key: const Key('admin-product-category-filter'),
-                      initialValue: _selectedCategoryId,
-                      decoration: const InputDecoration(
-                        labelText: 'Danh mục',
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        key: const Key('admin-product-category-filter'),
+                        initialValue: _selectedCategoryId,
+                        decoration: const InputDecoration(
+                          labelText: 'Danh mục',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Tất cả danh mục'),
+                          ),
+                          ..._categories.map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          setSheetState(() => _selectedCategoryId = val);
+                        },
                       ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Tất cả danh mục'),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        key: const Key('admin-product-brand-filter'),
+                        initialValue: _selectedBrandId,
+                        decoration: const InputDecoration(
+                          labelText: 'Thương hiệu',
+                          border: OutlineInputBorder(),
                         ),
-                        ..._categories.map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Tất cả thương hiệu'),
                           ),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        setSheetState(() => _selectedCategoryId = val);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String?>(
-                      key: const Key('admin-product-brand-filter'),
-                      initialValue: _selectedBrandId,
-                      decoration: const InputDecoration(
-                        labelText: 'Thương hiệu',
-                        border: OutlineInputBorder(),
+                          ..._brands.map(
+                            (b) => DropdownMenuItem(
+                              value: b.id,
+                              child: Text(b.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          setSheetState(() => _selectedBrandId = val);
+                        },
                       ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Tất cả thương hiệu'),
-                        ),
-                        ..._brands.map(
-                          (b) => DropdownMenuItem(
-                            value: b.id,
-                            child: Text(b.name),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setSheetState(() {
+                                  _selectedCategoryId = null;
+                                  _selectedBrandId = null;
+                                });
+                                Navigator.pop(context);
+                                _loadProducts();
+                              },
+                              child: const Text('Xóa bộ lọc'),
+                            ),
                           ),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        setSheetState(() => _selectedBrandId = val);
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              setSheetState(() {
-                                _selectedCategoryId = null;
-                                _selectedBrandId = null;
-                              });
-                              Navigator.pop(context);
-                              _loadProducts();
-                            },
-                            child: const Text('Xóa bộ lọc'),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _loadProducts();
+                              },
+                              child: const Text('Áp dụng'),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _loadProducts();
-                            },
-                            child: const Text('Áp dụng'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -233,38 +240,43 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Quản lý sản phẩm'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterSheet,
-            tooltip: 'Lọc',
-          ),
-        ],
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        appBar: AppBar(
+          title: const Text('Quản lý sản phẩm'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: _showFilterSheet,
+              tooltip: 'Lọc',
+            ),
+          ],
+        ),
+        floatingActionButton: widget.isAdmin
+            ? FloatingActionButton(
+                tooltip: 'Thêm sản phẩm',
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminProductFormPage(productApi: _api),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadProducts();
+                  }
+                },
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+                child: const Icon(Icons.add),
+              )
+            : null,
+        body: SafeArea(child: _buildBody()),
       ),
-      floatingActionButton: widget.isAdmin
-          ? FloatingActionButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminProductFormPage(productApi: _api),
-                  ),
-                );
-                if (result == true) {
-                  _loadProducts();
-                }
-              },
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
-              child: const Icon(Icons.add),
-            )
-          : null,
-      body: _buildBody(),
     );
   }
 
@@ -276,24 +288,11 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
     }
 
     if (_error != null && _products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              'Lỗi: $_error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadInitialData,
-              child: const Text('Thử lại'),
-            ),
-          ],
-        ),
+      return AdminStateView(
+        icon: Icons.cloud_off_rounded,
+        title: 'Lỗi: $_error',
+        actionLabel: 'Thử lại',
+        onAction: _loadInitialData,
       );
     }
 
@@ -303,15 +302,15 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              Icons.inventory_2_outlined,
+              Icons.inventory_2_rounded,
               size: 64,
-              color: AppColors.textSecondary,
+              color: AdminTheme.textSecondary,
             ),
             const SizedBox(height: 16),
             Text(
               'Không tìm thấy sản phẩm nào.',
               style: Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: AppColors.textSecondary),
+                  ?.copyWith(color: AdminTheme.textSecondary),
             ),
           ],
         ),
@@ -350,10 +349,45 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
             ),
           ),
         ),
+        if (_selectedCategoryId != null || _selectedBrandId != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_selectedCategoryId != null)
+                  InputChip(
+                    label: Text(
+                      _categories
+                          .firstWhere((c) => c.id == _selectedCategoryId)
+                          .name,
+                    ),
+                    onDeleted: () {
+                      setState(() => _selectedCategoryId = null);
+                      _loadProducts();
+                    },
+                  ),
+                if (_selectedBrandId != null)
+                  InputChip(
+                    label: Text(
+                      _brands.firstWhere((b) => b.id == _selectedBrandId).name,
+                    ),
+                    onDeleted: () {
+                      setState(() => _selectedBrandId = null);
+                      _loadProducts();
+                    },
+                  ),
+              ],
+            ),
+          ),
         const SizedBox(height: 4),
         Expanded(
           child: visibleProducts.isEmpty
-              ? const Center(child: Text('Không có sản phẩm phù hợp'))
+              ? const AdminStateView(
+                  icon: Icons.search_off_rounded,
+                  title: 'Không có sản phẩm phù hợp',
+                )
               : RefreshIndicator(
                   onRefresh: _loadProducts,
                   color: AppColors.primary,
@@ -398,10 +432,10 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: AppColors.surface,
+      color: AdminTheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+        side: const BorderSide(color: AdminTheme.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -416,21 +450,21 @@ class _ProductCard extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AdminTheme.canvas,
+                  borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
                 ),
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
                     ? Image.network(
                         product.imageUrl!,
                         fit: BoxFit.contain,
                         errorBuilder: (_, _, _) => const Icon(
-                          Icons.image_not_supported_outlined,
-                          color: AppColors.textSecondary,
+                          Icons.image_not_supported_rounded,
+                          color: AdminTheme.textSecondary,
                         ),
                       )
                     : const Icon(
-                        Icons.image_outlined,
-                        color: AppColors.textSecondary,
+                        Icons.image_rounded,
+                        color: AdminTheme.textSecondary,
                       ),
               ),
               const SizedBox(width: 12),
@@ -443,7 +477,7 @@ class _ProductCard extends StatelessWidget {
                       product.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: AdminTheme.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -452,59 +486,26 @@ class _ProductCard extends StatelessWidget {
                     Text(
                       '${product.category.name}${product.brand != null ? ' • ${product.brand!.name}' : ''}',
                       style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: AdminTheme.textSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      runSpacing: 4,
+                      runSpacing: 8,
                       children: [
                         if (product.isFeatured)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: AppColors.warning.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: const Text(
-                              'Nổi bật',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.warning,
-                              ),
-                            ),
+                          const AdminStatusBadge(
+                            label: 'Nổi bật',
+                            tone: AdminStatusTone.warning,
                           ),
-                        if (!product.isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: const Text(
-                              'Đã ẩn',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
+                        AdminStatusBadge(
+                          label: product.isActive ? 'Đang hoạt động' : 'Đã ẩn',
+                          tone: product.isActive
+                              ? AdminStatusTone.success
+                              : AdminStatusTone.danger,
+                        ),
                       ],
                     ),
                   ],

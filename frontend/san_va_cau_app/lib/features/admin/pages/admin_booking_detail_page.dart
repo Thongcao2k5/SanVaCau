@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/core/theme/app_colors.dart';
 import 'package:san_va_cau_app/features/booking/data/booking_api.dart';
@@ -62,20 +66,14 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'BOOKED':
-        return AppColors.success;
-      case 'CHECKED_IN':
-        return AppColors.warning;
-      case 'COMPLETED':
-        return AppColors.info;
-      case 'CANCELLED':
-        return AppColors.primary;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
+  AdminStatusTone _getStatusTone(String status) =>
+      switch (status.toUpperCase()) {
+        'BOOKED' => AdminStatusTone.success,
+        'CHECKED_IN' => AdminStatusTone.warning,
+        'COMPLETED' => AdminStatusTone.info,
+        'CANCELLED' => AdminStatusTone.danger,
+        _ => AdminStatusTone.neutral,
+      };
 
   String _getPaymentLabel(String? paymentStatus) {
     switch (paymentStatus?.toUpperCase()) {
@@ -116,13 +114,13 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
       builder: (context) => AlertDialog(
         title: Text(dialogTitle),
         content: Text(dialogContent),
-        backgroundColor: AppColors.surface,
+        backgroundColor: AdminTheme.surface,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text(
               'Bỏ qua',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AdminTheme.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -137,7 +135,7 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted || _isUpdating) return;
 
     setState(() {
       _isUpdating = true;
@@ -192,379 +190,409 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
     final isFinal =
         _currentBooking.status == 'COMPLETED' ||
         _currentBooking.status == 'CANCELLED';
-    final statusColor = _getStatusColor(_currentBooking.status);
     final customerName = _currentBooking.customer?.fullName ?? 'Khách vãng lai';
     final customerPhone = _currentBooking.customer?.phone ?? 'Không có SĐT';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Chi tiết lịch đặt'), centerTitle: true),
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.all(16),
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        appBar: AppBar(
+          title: const Text('Chi tiết lịch đặt'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+        ),
+        body: SafeArea(
+          child: Stack(
             children: [
-              // Header
-              Card(
-                elevation: 0,
-                color: AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: AppColors.borderMuted),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Header
+                  Card(
+                    elevation: 0,
+                    color: AdminTheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AdminTheme.cardRadius,
+                      ),
+                      side: BorderSide(color: AdminTheme.border),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Lịch #${_currentBooking.id}',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            children: [
+                              Text(
+                                'Lịch #${_currentBooking.id}',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AdminTheme.textPrimary,
+                                    ),
+                              ),
+                              AdminStatusBadge(
+                                label: _getStatusLabel(_currentBooking.status),
+                                tone: _getStatusTone(_currentBooking.status),
+                              ),
+                            ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: statusColor.withValues(alpha: 0.5),
+                          const SizedBox(height: 16),
+                          _buildInfoRow(
+                            Icons.person_rounded,
+                            'Khách hàng:',
+                            customerName,
+                          ),
+                          if (customerPhone.isNotEmpty &&
+                              customerPhone != 'Không có SĐT')
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: _buildInfoRow(
+                                Icons.phone_rounded,
+                                'SĐT:',
+                                customerPhone,
                               ),
                             ),
-                            child: Text(
-                              _getStatusLabel(_currentBooking.status),
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: statusColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.location_on_rounded,
+                            'Chi nhánh:',
+                            _currentBooking.branch.name,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.sports_tennis_rounded,
+                            'Sân:',
+                            _currentBooking.court.name,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.calendar_today_rounded,
+                            'Ngày đặt:',
+                            _formatDateOnly(_currentBooking.bookingDate),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        Icons.person_outline,
-                        'Khách hàng:',
-                        customerName,
-                      ),
-                      if (customerPhone.isNotEmpty &&
-                          customerPhone != 'Không có SĐT')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildInfoRow(
-                            Icons.phone_outlined,
-                            'SĐT:',
-                            customerPhone,
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(
-                        Icons.location_on_outlined,
-                        'Chi nhánh:',
-                        _currentBooking.branch.name,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(
-                        Icons.sports_tennis_outlined,
-                        'Sân:',
-                        _currentBooking.court.name,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(
-                        Icons.calendar_today_outlined,
-                        'Ngày đặt:',
-                        _formatDateOnly(_currentBooking.bookingDate),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Timestamps
-              Card(
-                elevation: 0,
-                color: AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: AppColors.borderMuted),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Thời gian',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                  // Timestamps
+                  Card(
+                    elevation: 0,
+                    color: AdminTheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AdminTheme.cardRadius,
+                      ),
+                      side: BorderSide(color: AdminTheme.border),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Thời gian',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AdminTheme.textPrimary,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTimeRow('Tạo lúc', _currentBooking.createdAt),
+                          if (_currentBooking.checkedInAt != null) ...[
+                            const SizedBox(height: 8),
+                            _buildTimeRow(
+                              'Nhận sân',
+                              _currentBooking.checkedInAt,
                             ),
+                          ],
+                          if (_currentBooking.completedAt != null) ...[
+                            const SizedBox(height: 8),
+                            _buildTimeRow(
+                              'Hoàn tất',
+                              _currentBooking.completedAt,
+                            ),
+                          ],
+                          if (_currentBooking.cancelledAt != null) ...[
+                            const SizedBox(height: 8),
+                            _buildTimeRow(
+                              'Đã hủy',
+                              _currentBooking.cancelledAt,
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildTimeRow('Tạo lúc', _currentBooking.createdAt),
-                      if (_currentBooking.checkedInAt != null) ...[
-                        const SizedBox(height: 8),
-                        _buildTimeRow('Nhận sân', _currentBooking.checkedInAt),
-                      ],
-                      if (_currentBooking.completedAt != null) ...[
-                        const SizedBox(height: 8),
-                        _buildTimeRow('Hoàn tất', _currentBooking.completedAt),
-                      ],
-                      if (_currentBooking.cancelledAt != null) ...[
-                        const SizedBox(height: 8),
-                        _buildTimeRow('Đã hủy', _currentBooking.cancelledAt),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Slots
-              Text(
-                'Ca đặt sân',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ..._currentBooking.slots.map((slot) {
-                return Card(
-                  elevation: 0,
-                  color: AppColors.surface,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: AppColors.borderMuted),
+                  // Slots
+                  Text(
+                    'Ca đặt sân',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AdminTheme.textPrimary,
+                    ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceMuted,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.access_time_outlined,
-                            color: AppColors.textSecondary,
-                            size: 20,
-                          ),
+                  const SizedBox(height: 12),
+                  ..._currentBooking.slots.map((slot) {
+                    return Card(
+                      elevation: 0,
+                      color: AdminTheme.surface,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminTheme.cardRadius,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        side: BorderSide(color: AdminTheme.border),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AdminTheme.canvas,
+                                borderRadius: BorderRadius.circular(
+                                  AdminTheme.cardRadius,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.schedule_rounded,
+                                color: AdminTheme.textSecondary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${slot.startTime.length >= 5 ? slot.startTime.substring(0, 5) : slot.startTime} - ${slot.endTime.length >= 5 ? slot.endTime.substring(0, 5) : slot.endTime}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AdminTheme.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              _formatCurrency(slot.priceAtBooking),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 16),
+                  // Payment & Total Amount
+                  Card(
+                    elevation: 0,
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AdminTheme.cardRadius,
+                      ),
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '${slot.startTime.length >= 5 ? slot.startTime.substring(0, 5) : slot.startTime} - ${slot.endTime.length >= 5 ? slot.endTime.substring(0, 5) : slot.endTime}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                'Phương thức',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AdminTheme.textSecondary),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _currentBooking.paymentMethod ?? 'CASH',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AdminTheme.textPrimary,
+                                      ),
+                                  textAlign: TextAlign.right,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        Text(
-                          _formatCurrency(slot.priceAtBooking),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Thanh toán',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AdminTheme.textSecondary),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _getPaymentLabel(
+                                    _currentBooking.paymentStatus,
+                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            _currentBooking.paymentStatus
+                                                    ?.toUpperCase() ==
+                                                'PAID'
+                                            ? AppColors.success
+                                            : AdminTheme.textPrimary,
+                                      ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(height: 1, color: AppColors.border),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Tổng cộng',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AdminTheme.textPrimary,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _formatCurrency(_currentBooking.totalAmount),
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              }),
-
-              const SizedBox(height: 16),
-              // Payment & Total Amount
-              Card(
-                elevation: 0,
-                color: AppColors.primary.withValues(alpha: 0.05),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.2),
+                ],
+              ),
+              if (_isUpdating)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Colors.black26,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+            ],
+          ),
+        ),
+        bottomNavigationBar: isFinal
+            ? null
+            : Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AdminTheme.surface,
+                  border: const Border(
+                    top: BorderSide(color: AdminTheme.border),
+                  ),
+                ),
+                child: SafeArea(
+                  child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Phương thức',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _currentBooking.paymentMethod ?? 'CASH',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Thanh toán',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _getPaymentLabel(_currentBooking.paymentStatus),
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        _currentBooking.paymentStatus
-                                                ?.toUpperCase() ==
-                                            'PAID'
-                                        ? AppColors.success
-                                        : AppColors.textPrimary,
-                                  ),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(height: 1, color: AppColors.border),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Tổng cộng',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                      if (_currentBooking.status == 'BOOKED')
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isUpdating
+                                ? null
+                                : () => _updateStatus('CHECKED_IN'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(48, 56),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AdminTheme.compactRadius,
                                 ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _formatCurrency(_currentBooking.totalAmount),
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                              textAlign: TextAlign.right,
+                              ),
+                              backgroundColor: AdminTheme.primary,
+                              foregroundColor: AppColors.onPrimary,
                             ),
+                            child: const Text('Nhận sân'),
                           ),
-                        ],
+                        ),
+                      if (_currentBooking.status == 'CHECKED_IN')
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isUpdating
+                                ? null
+                                : () => _updateStatus('COMPLETED'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(48, 56),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AdminTheme.compactRadius,
+                                ),
+                              ),
+                              backgroundColor: AdminTheme.primary,
+                              foregroundColor: AppColors.onPrimary,
+                            ),
+                            child: const Text('Hoàn tất'),
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isUpdating
+                              ? null
+                              : () => _updateStatus('CANCELLED'),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(48, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AdminTheme.compactRadius,
+                              ),
+                            ),
+                            backgroundColor: AppColors.primarySoft,
+                            foregroundColor: AdminTheme.primaryText,
+                          ),
+                          child: const Text('Hủy lịch'),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
-          if (_isUpdating)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black26,
-                child: Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-              ),
-            ),
-        ],
       ),
-      bottomNavigationBar: isFinal
-          ? null
-          : Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
-                  children: [
-                    if (_currentBooking.status == 'BOOKED')
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isUpdating
-                              ? null
-                              : () => _updateStatus('CHECKED_IN'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.warning,
-                            foregroundColor: AppColors.onPrimary,
-                          ),
-                          child: const Text('Nhận sân'),
-                        ),
-                      ),
-                    if (_currentBooking.status == 'CHECKED_IN')
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isUpdating
-                              ? null
-                              : () => _updateStatus('COMPLETED'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.info,
-                            foregroundColor: AppColors.onPrimary,
-                          ),
-                          child: const Text('Hoàn tất'),
-                        ),
-                      ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isUpdating
-                            ? null
-                            : () => _updateStatus('CANCELLED'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.onPrimary,
-                        ),
-                        child: const Text('Hủy lịch'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 
@@ -572,18 +600,26 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.textSecondary),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+        Icon(icon, size: 18, color: AdminTheme.textSecondary),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.right,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: AdminTheme.textSecondary),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AdminTheme.textPrimary,
+                ),
+                textAlign: TextAlign.left,
+              ),
+            ],
           ),
         ),
       ],
@@ -594,13 +630,13 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+        Text(label, style: const TextStyle(color: AdminTheme.textSecondary)),
         Expanded(
           child: Text(
             _formatDate(date),
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AdminTheme.textPrimary,
             ),
             textAlign: TextAlign.right,
           ),

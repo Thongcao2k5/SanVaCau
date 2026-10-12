@@ -1,5 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_inventory_list_page.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_inventory_form_page.dart';
@@ -102,6 +108,18 @@ class FakeInventoryApi extends AdminInventoryApi {
   }
 }
 
+class PendingInventoryApi extends FakeInventoryApi {
+  final pending = Completer<AdminInventory>();
+  @override
+  Future<AdminInventory> updateInventoryQuantity({
+    required String inventoryId,
+    required int quantity,
+  }) {
+    updateCalls++;
+    return pending.future;
+  }
+}
+
 class FakeBranchApi extends BranchApi {
   @override
   Future<List<Branch>> getBranches() async => [
@@ -168,6 +186,118 @@ class FakeProductApi extends ProductApi {
 }
 
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    testWidgets('inventory and keyboard editor at $size with large text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = FakeInventoryApi();
+      Widget app(Widget home, {bool keyboard = false}) => MaterialApp(
+        theme: AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: const TextScaler.linear(1.5),
+            viewInsets: keyboard
+                ? const EdgeInsets.only(bottom: 180)
+                : EdgeInsets.zero,
+          ),
+          child: child!,
+        ),
+        home: home,
+      );
+      await tester.pumpWidget(
+        app(AdminInventoryListPage(role: 'ADMIN', inventoryApi: api)),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      await tester.scrollUntilVisible(
+        find.text('Sắp hết hàng · tồn kho thấp'),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      expect(find.text('Sắp hết hàng · tồn kho thấp'), findsOneWidget);
+      await tester.pumpWidget(
+        app(
+          AdminInventoryFormPage(
+            role: 'ADMIN',
+            inventory: api.mockInventories.first,
+            inventoryApi: api,
+          ),
+          keyboard: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('inventory-quantity-field')),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.enterText(
+        find.byKey(const Key('inventory-quantity-field')),
+        '12',
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('inventory-submit-button')),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+    });
+  }
+  testWidgets('inventory submit is locked while the request is pending', (
+    tester,
+  ) async {
+    final api = PendingInventoryApi();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AdminInventoryFormPage(
+          role: 'ADMIN',
+          inventory: api.mockInventories.first,
+          inventoryApi: api,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final button = find.byKey(const Key('inventory-submit-button'));
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pump();
+    expect(api.updateCalls, 1);
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+    api.pending.completeError(
+      const ApiException(statusCode: 500, message: 'Save failed'),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+  });
   group('Admin Inventory Page Tests', () {
     late FakeInventoryApi inventoryApi;
     late FakeBranchApi branchApi;

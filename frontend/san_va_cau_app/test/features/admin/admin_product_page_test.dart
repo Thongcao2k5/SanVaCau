@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_product_detail_page.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_product_form_page.dart';
@@ -10,6 +14,7 @@ import 'package:san_va_cau_app/features/products/models/product.dart';
 import 'package:san_va_cau_app/features/products/models/product_variant.dart';
 
 class FakeProductApi extends ProductApi {
+  int createProductCalls = 0;
   int getProductsCallCount = 0;
   String? lastCategoryId;
   String? lastBrandId;
@@ -92,6 +97,7 @@ class FakeProductApi extends ProductApi {
 
   @override
   Future<Product> createAdminProduct(Map<String, dynamic> body) async {
+    createProductCalls++;
     if (body['name'] == 'Conflict') {
       throw const ApiException(statusCode: 409, message: 'Conflict name');
     }
@@ -134,6 +140,97 @@ class FakeProductApi extends ProductApi {
 }
 
 void main() {
+  testWidgets('scrolled product form validates fields above the keyboard', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = FakeProductApi();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(viewInsets: const EdgeInsets.only(bottom: 250)),
+          child: child!,
+        ),
+        home: AdminProductFormPage(productApi: api),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byType(ElevatedButton),
+      150,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getBottomRight(find.byType(ElevatedButton)).dy,
+      lessThanOrEqualTo(550),
+    );
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Vui lòng nhập tên sản phẩm'), findsOneWidget);
+    expect(api.createProductCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    testWidgets('product pages at $size and text scale 1.5', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = FakeProductApi();
+      final pages = [
+        AdminProductListPage(isAdmin: true, productApi: api),
+        AdminProductDetailPage(productId: 'p1', isAdmin: true, productApi: api),
+        AdminProductFormPage(productApi: api),
+        AdminVariantFormPage(productId: 'p1', productApi: api),
+      ];
+      for (var i = 0; i < pages.length; i++) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light(),
+            key: ValueKey(i),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.5),
+                viewInsets: i > 1
+                    ? const EdgeInsets.only(bottom: 160)
+                    : EdgeInsets.zero,
+              ),
+              child: child!,
+            ),
+            home: pages[i],
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'page $i');
+        await expectAdminAccessibility(tester);
+        if (i == 0) {
+          await tester.tap(find.byTooltip('Lọc'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await tester.ensureVisible(find.text('Áp dụng'));
+          await tester.tap(find.text('Áp dụng'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+        if (find.byType(ListView).evaluate().isNotEmpty) {
+          await tester.drag(find.byType(ListView).last, const Offset(0, -2500));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: 'scrolled page $i');
+          await expectAdminAccessibility(tester);
+        }
+      }
+    });
+  }
   group('Admin Product Page Tests', () {
     late FakeProductApi productApi;
 
@@ -372,7 +469,7 @@ void main() {
         300,
         scrollable: formScrollable,
       );
-      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.ensureVisible(submitBtn);
       await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pump();
@@ -413,13 +510,14 @@ void main() {
         scrollable: formScrollable,
       );
       await tester.enterText(priceField, '150.5'); // Price
+      await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
         submitBtn,
         300,
         scrollable: formScrollable,
       );
-      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.ensureVisible(submitBtn);
       await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
@@ -437,12 +535,13 @@ void main() {
         scrollable: formScrollable,
       );
       await tester.enterText(skuField, 'SKU2'); // Good SKU
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         submitBtn,
         300,
         scrollable: formScrollable,
       );
-      await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+      await tester.ensureVisible(submitBtn);
       await tester.pumpAndSettle();
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();

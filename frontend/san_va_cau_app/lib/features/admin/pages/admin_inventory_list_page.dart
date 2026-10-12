@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../branches/data/branch_api.dart';
 import '../../products/data/product_api.dart';
@@ -138,62 +141,100 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Quản lý tồn kho'),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              key: const Key('inventory-search-field'),
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Tìm theo tên, SKU...',
-                prefixIcon: const Icon(Icons.search),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.borderMuted),
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        appBar: AppBar(
+          title: const Text('Quản lý tồn kho'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(
+              48 * MediaQuery.textScalerOf(context).scale(1) + 12,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                key: const Key('inventory-search-field'),
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Tìm theo tên, SKU...',
+                  prefixIcon: const Icon(Icons.search),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  filled: true,
+                  fillColor: AdminTheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AdminTheme.compactRadius,
+                    ),
+                    borderSide: const BorderSide(color: AdminTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AdminTheme.compactRadius,
+                    ),
+                    borderSide: const BorderSide(color: AdminTheme.border),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-      floatingActionButton: canMutate
-          ? FloatingActionButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminInventoryFormPage(
-                      role: widget.role,
-                      assignedBranchId: widget.assignedBranchId,
-                      inventoryApi: _api,
-                      productApi: widget.productApi,
-                      branchApi: _branchApi,
+        floatingActionButton: canMutate
+            ? FloatingActionButton(
+                tooltip: 'Thêm tồn kho',
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminInventoryFormPage(
+                        role: widget.role,
+                        assignedBranchId: widget.assignedBranchId,
+                        inventoryApi: _api,
+                        productApi: widget.productApi,
+                        branchApi: _branchApi,
+                      ),
                     ),
+                  );
+                  if (result == true) {
+                    _loadInventories();
+                  }
+                },
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+                child: const Icon(Icons.add),
+              )
+            : null,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: AdminSurface(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kho chung',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        canMutate
+                            ? 'Bạn có quyền cập nhật số lượng tồn kho.'
+                            : 'Bạn có quyền xem số lượng tồn kho.',
+                        style: const TextStyle(color: AdminTheme.textSecondary),
+                      ),
+                    ],
                   ),
-                );
-                if (result == true) {
-                  _loadInventories();
-                }
-              },
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
-              child: const Icon(Icons.add),
-            )
-          : null,
-      body: _buildBody(),
+                ),
+              ),
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -205,31 +246,11 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
     }
 
     if (_error != null && _allInventories.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Lỗi: $_error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadInitialData,
-                child: const Text('Thử lại'),
-              ),
-            ],
-          ),
-        ),
+      return AdminStateView(
+        icon: Icons.cloud_off_rounded,
+        title: 'Lỗi: $_error',
+        actionLabel: 'Thử lại',
+        onAction: _loadInitialData,
       );
     }
 
@@ -241,21 +262,9 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             alignment: Alignment.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 64,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Không tìm thấy tồn kho nào.',
-                  style: Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
+            child: const AdminStateView(
+              icon: Icons.inventory_2_rounded,
+              title: 'Không tìm thấy tồn kho nào.',
             ),
           ),
         ),
@@ -280,11 +289,11 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
 
           return Card(
             elevation: 0,
-            color: AppColors.surface,
+            color: AdminTheme.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
               side: BorderSide(
-                color: isLowStock ? AppColors.warning : AppColors.border,
+                color: isLowStock ? AppColors.warning : AdminTheme.border,
                 width: isLowStock ? 2 : 1,
               ),
             ),
@@ -327,7 +336,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
+                                      color: AdminTheme.textPrimary,
                                     ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -337,7 +346,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                                 variantName,
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
-                                      color: AppColors.textSecondary,
+                                      color: AdminTheme.textSecondary,
                                       fontWeight: FontWeight.w600,
                                     ),
                               ),
@@ -345,7 +354,7 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                               Text(
                                 'SKU: $sku',
                                 style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.textSecondary),
+                                    ?.copyWith(color: AdminTheme.textSecondary),
                               ),
                             ],
                           ),
@@ -359,12 +368,14 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                           decoration: BoxDecoration(
                             color: isLowStock
                                 ? AppColors.warningSoft
-                                : AppColors.surfaceMuted,
-                            borderRadius: BorderRadius.circular(8),
+                                : AdminTheme.canvas,
+                            borderRadius: BorderRadius.circular(
+                              AdminTheme.compactRadius,
+                            ),
                             border: Border.all(
                               color: isLowStock
                                   ? AppColors.warning.withValues(alpha: 0.3)
-                                  : AppColors.borderMuted,
+                                  : AdminTheme.border,
                             ),
                           ),
                           child: Column(
@@ -375,8 +386,8 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: isLowStock
-                                      ? AppColors.warning
-                                      : AppColors.textPrimary,
+                                      ? AdminTheme.warningText
+                                      : AdminTheme.textPrimary,
                                 ),
                               ),
                               Text(
@@ -384,8 +395,8 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: isLowStock
-                                      ? AppColors.warning
-                                      : AppColors.textSecondary,
+                                      ? AdminTheme.warningText
+                                      : AdminTheme.textSecondary,
                                 ),
                               ),
                             ],
@@ -393,40 +404,48 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
                         ),
                       ],
                     ),
+                    if (isLowStock) ...[
+                      const SizedBox(height: 12),
+                      const AdminStatusBadge(
+                        label: 'Sắp hết hàng · tồn kho thấp',
+                        tone: AdminStatusTone.warning,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     const Divider(height: 1),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Icon(
-                          Icons.store_outlined,
+                          Icons.storefront_rounded,
                           size: 16,
-                          color: AppColors.textSecondary,
+                          color: AdminTheme.textSecondary,
                         ),
                         const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'Kho chung',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          'Kho chung',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AdminTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const Icon(
-                          Icons.update_outlined,
+                          Icons.update_rounded,
                           size: 16,
-                          color: AppColors.textSecondary,
+                          color: AdminTheme.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(inv.updatedAt),
                           style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: AdminTheme.textSecondary,
                           ),
                         ),
                       ],

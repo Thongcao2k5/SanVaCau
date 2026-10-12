@@ -130,31 +130,33 @@ class AdminStatusBadge extends StatelessWidget {
     super.key,
     required this.label,
     this.tone = AdminStatusTone.neutral,
+    this.icon,
   });
 
   final String label;
   final AdminStatusTone tone;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final (foreground, background, icon) = switch (tone) {
+    final (foreground, background, defaultIcon) = switch (tone) {
       AdminStatusTone.info => (
         AdminTheme.info,
         AdminTheme.info.withValues(alpha: 0.1),
         Icons.info_outline_rounded,
       ),
       AdminStatusTone.success => (
-        AdminTheme.success,
+        AdminTheme.successText,
         AdminTheme.success.withValues(alpha: 0.1),
         Icons.check_circle_outline_rounded,
       ),
       AdminStatusTone.warning => (
-        AdminTheme.warning,
+        AdminTheme.warningText,
         AdminTheme.warning.withValues(alpha: 0.1),
         Icons.schedule_rounded,
       ),
       AdminStatusTone.danger => (
-        AdminTheme.primary,
+        AdminTheme.primaryText,
         AdminTheme.primary.withValues(alpha: 0.1),
         Icons.cancel_outlined,
       ),
@@ -166,6 +168,7 @@ class AdminStatusBadge extends StatelessWidget {
     };
     return Semantics(
       label: 'Trạng thái: $label',
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         decoration: BoxDecoration(
@@ -175,7 +178,7 @@ class AdminStatusBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: foreground),
+            Icon(icon ?? defaultIcon, size: 14, color: foreground),
             const SizedBox(width: 5),
             Flexible(
               child: Text(
@@ -201,6 +204,7 @@ class AdminStateView extends StatelessWidget {
     this.message,
     this.actionLabel,
     this.onAction,
+    this.isLoading = false,
   });
 
   final IconData icon;
@@ -208,46 +212,58 @@ class AdminStateView extends StatelessWidget {
   final String? message;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdminIconBox(icon: icon, color: AdminTheme.primary, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AdminTheme.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            if (message != null) ...[
-              const SizedBox(height: 6),
+    return Semantics(
+      liveRegion: true,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                CircularProgressIndicator(
+                  color: AdminTheme.primary,
+                  semanticsLabel: title,
+                )
+              else
+                AdminIconBox(icon: icon, color: AdminTheme.primary, size: 56),
+              const SizedBox(height: 16),
               Text(
-                message!,
+                title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AdminTheme.textSecondary, height: 1.4),
-              ),
-            ],
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 18),
-              SizedBox(
-                height: AdminTheme.touchTarget,
-                child: OutlinedButton.icon(
-                  onPressed: onAction,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(actionLabel!),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AdminTheme.textPrimary,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              if (message != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: AdminTheme.textSecondary, height: 1.4),
+                ),
+              ],
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 18),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AdminTheme.touchTarget,
+                  ),
+                  child: OutlinedButton.icon(
+                    onPressed: onAction,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(actionLabel!),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/features/admin/data/admin_court_api.dart';
 import 'package:san_va_cau_app/features/admin/models/admin_court.dart';
 import 'package:san_va_cau_app/features/admin/pages/admin_court_list_page.dart';
@@ -71,6 +75,42 @@ class _FakeCourtApi extends AdminCourtApi {
 }
 
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    testWidgets('court list and prices at $size with large text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: AdminCourtListPage(branch: _branch, courtApi: _FakeCourtApi()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      await tester.tap(find.text(_court.name));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      await tester.drag(find.byType(ListView).last, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+    });
+  }
   testWidgets('lists courts and opens their price editor', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

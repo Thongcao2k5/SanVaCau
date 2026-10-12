@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../branches/data/branch_api.dart';
@@ -129,7 +132,7 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit, color: AppColors.primary),
+              leading: const Icon(Icons.edit_rounded, color: AppColors.primary),
               title: const Text('Chỉnh sửa'),
               onTap: () {
                 Navigator.pop(context);
@@ -138,7 +141,10 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
             ),
             if (article.status != 'PUBLISHED')
               ListTile(
-                leading: const Icon(Icons.public, color: AppColors.success),
+                leading: const Icon(
+                  Icons.public_rounded,
+                  color: AppColors.success,
+                ),
                 title: const Text('Xuất bản'),
                 onTap: () {
                   Navigator.pop(context);
@@ -151,7 +157,10 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
               ),
             if (article.status != 'ARCHIVED')
               ListTile(
-                leading: const Icon(Icons.archive, color: AppColors.warning),
+                leading: const Icon(
+                  Icons.archive_rounded,
+                  color: AppColors.warning,
+                ),
                 title: const Text('Lưu trữ'),
                 onTap: () {
                   Navigator.pop(context);
@@ -171,130 +180,164 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.role != 'ADMIN') {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Quản lý tin tức')),
-        body: const Center(
-          child: Text('Bạn không có quyền truy cập trang này.'),
+      return Theme(
+        data: AdminTheme.data(Theme.of(context)),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('Quản lý tin tức')),
+          body: SafeArea(
+            child: const AdminStateView(
+              icon: Icons.lock_rounded,
+              title: 'Bạn không có quyền truy cập trang này.',
+            ),
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý tin tức'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildFilterChip('Đã xuất bản', 'PUBLISHED'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Bản nháp', 'DRAFT'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Lưu trữ', 'ARCHIVED'),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _error!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadData,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadData,
-                    child: _news.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: const [
-                              SizedBox(height: 100),
-                              Center(child: Text('Không có tin tức nào')),
-                            ],
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(
-                              bottom: 80,
-                              left: 16,
-                              right: 16,
-                            ),
-                            itemCount: _news.length,
-                            itemBuilder: (context, index) {
-                              final article = _news[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListTile(
-                                  title: Text(
-                                    article.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Quản lý tin tức'),
+          backgroundColor: AdminTheme.graphite,
+          foregroundColor: Colors.white,
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    _buildFilterChip('Đã xuất bản', 'PUBLISHED'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Bản nháp', 'DRAFT'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Lưu trữ', 'ARCHIVED'),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? const AdminStateView(
+                        icon: Icons.hourglass_top_rounded,
+                        title: 'Đang tải nội dung',
+                        isLoading: true,
+                      )
+                    : _error != null
+                    ? AdminStateView(
+                        icon: Icons.cloud_off_rounded,
+                        title: _error!,
+                        actionLabel: 'Thử lại',
+                        onAction: _loadData,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: _news.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 100),
+                                  AdminStateView(
+                                    icon: Icons.article_rounded,
+                                    title: 'Không có tin tức nào',
                                   ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        article.summary,
+                                ],
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.only(
+                                  bottom: 80,
+                                  left: 16,
+                                  right: 16,
+                                ),
+                                itemCount: _news.length,
+                                itemBuilder: (context, index) {
+                                  final article = _news[index];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: ListTile(
+                                      title: Text(
+                                        article.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Tác giả: ${article.authorName}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  trailing: _mutatingIds.contains(article.id)
-                                      ? const SizedBox.square(
-                                          dimension: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            article.summary,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        )
-                                      : IconButton(
-                                          icon: const Icon(Icons.more_vert),
-                                          onPressed: () =>
-                                              _showActionSheet(article),
-                                        ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
+                                          const SizedBox(height: 8),
+                                          AdminStatusBadge(
+                                            label: switch (article.status) {
+                                              'DRAFT' => 'Bản nháp',
+                                              'PUBLISHED' => 'Đã xuất bản',
+                                              'ARCHIVED' => 'Lưu trữ',
+                                              _ => article.status,
+                                            },
+                                            tone: switch (article.status) {
+                                              'PUBLISHED' =>
+                                                AdminStatusTone.success,
+                                              'DRAFT' =>
+                                                AdminStatusTone.warning,
+                                              _ => AdminStatusTone.neutral,
+                                            },
+                                            icon: switch (article.status) {
+                                              'DRAFT' =>
+                                                Icons.edit_note_rounded,
+                                              'PUBLISHED' =>
+                                                Icons.public_rounded,
+                                              _ => Icons.archive_rounded,
+                                            },
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Tác giả: ${article.authorName}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AdminTheme.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      trailing:
+                                          _mutatingIds.contains(article.id)
+                                          ? const SizedBox.square(
+                                              dimension: 24,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : IconButton(
+                                              tooltip: 'Thao tác tin tức',
+                                              icon: const Icon(Icons.more_vert),
+                                              onPressed: () =>
+                                                  _showActionSheet(article),
+                                            ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showForm(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+        ),
+        floatingActionButton: FloatingActionButton(
+          tooltip: 'Tạo tin tức',
+          onPressed: () => _showForm(),
+          backgroundColor: AdminTheme.primary,
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -437,85 +480,106 @@ class _AdminNewsFormPageState extends State<_AdminNewsFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.article == null ? 'Tạo tin tức' : 'Chỉnh sửa tin tức',
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.article == null ? 'Tạo tin tức' : 'Chỉnh sửa tin tức',
+          ),
         ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Tiêu đề *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Không được để trống' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _summaryController,
-              decoration: const InputDecoration(
-                labelText: 'Tóm tắt (Tùy chọn)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _contentController,
-              decoration: const InputDecoration(
-                labelText: 'Nội dung *',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 10,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Không được để trống' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _thumbnailController,
-              decoration: const InputDecoration(
-                labelText: 'URL Ảnh bìa (Tùy chọn)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (!_isLoadingBranches)
-              DropdownButtonFormField<String?>(
-                initialValue: _branchId,
-                decoration: const InputDecoration(
-                  labelText: 'Chi nhánh (Tùy chọn - Toàn hệ thống nếu trống)',
-                  border: OutlineInputBorder(),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(16),
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      enabled: !_isSubmitting,
+                      scrollPadding: const EdgeInsets.all(32),
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'Tiêu đề *'),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Không được để trống'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !_isSubmitting,
+                      scrollPadding: const EdgeInsets.all(32),
+                      controller: _summaryController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tóm tắt (Tùy chọn)',
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !_isSubmitting,
+                      scrollPadding: const EdgeInsets.all(32),
+                      controller: _contentController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nội dung *',
+                      ),
+                      maxLines: 10,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Không được để trống'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !_isSubmitting,
+                      scrollPadding: const EdgeInsets.all(32),
+                      controller: _thumbnailController,
+                      decoration: const InputDecoration(
+                        labelText: 'URL Ảnh bìa (Tùy chọn)',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (!_isLoadingBranches)
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        initialValue: _branchId,
+                        decoration: const InputDecoration(
+                          labelText: 'Chi nhánh (Tùy chọn)',
+                          helperText: 'Để trống để áp dụng toàn hệ thống.',
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Toàn hệ thống'),
+                          ),
+                          ..._branches.map(
+                            (b) => DropdownMenuItem(
+                              value: b.id,
+                              child: Text(b.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: _isSubmitting
+                            ? null
+                            : (v) => setState(() => _branchId = v),
+                      ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Lưu'),
+                    ),
+                  ],
                 ),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('Toàn hệ thống'),
-                  ),
-                  ..._branches.map(
-                    (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _branchId = v),
-              ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Lưu'),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

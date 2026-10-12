@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:san_va_cau_app/core/theme/app_theme.dart';
+
+import 'admin_test_accessibility.dart';
+
 import 'package:san_va_cau_app/features/admin/pages/admin_branch_list_page.dart';
 import 'package:san_va_cau_app/features/branches/data/branch_api.dart';
 import 'package:san_va_cau_app/features/branches/models/branch.dart';
@@ -62,6 +66,42 @@ class _FakeBranchApi extends BranchApi {
 }
 
 void main() {
+  for (final size in [
+    const Size(320, 800),
+    const Size(375, 800),
+    const Size(800, 375),
+  ]) {
+    testWidgets('branch list and settings at $size with large text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: AdminBranchListPage(branchApi: _FakeBranchApi()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      await tester.tap(find.text(_branch.name));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+      await tester.drag(find.byType(ListView).last, const Offset(0, -2500));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectAdminAccessibility(tester);
+    });
+  }
   testWidgets('updates featured state and home sort order', (tester) async {
     _useTallView(tester);
     final api = _FakeBranchApi();
