@@ -1,16 +1,12 @@
-import 'admin_branch_list_page.dart';
-
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../data/admin_dashboard_api.dart';
 import '../models/admin_dashboard.dart';
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
 import 'admin_booking_list_page.dart';
 import 'admin_inventory_list_page.dart';
 import 'admin_order_list_page.dart';
-import 'admin_product_list_page.dart';
-import 'admin_content_hub_page.dart';
-import 'admin_report_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({
@@ -38,42 +34,56 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   void _reload() {
+    final future = _api.getSummary();
     setState(() {
-      _dashboardFuture = _api.getSummary();
+      _dashboardFuture = future;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final body = FutureBuilder<AdminDashboard>(
-      future: _dashboardFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError || !snapshot.hasData) {
-          return _ErrorState(onRetry: _reload);
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            _reload();
-            await _dashboardFuture;
-          },
-          child: _DashboardContent(
-            data: snapshot.data!,
-            onRefresh: () {
+    final body = ColoredBox(
+      color: AdminTheme.canvas,
+      child: FutureBuilder<AdminDashboard>(
+        future: _dashboardFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return AdminStateView(
+              icon: Icons.cloud_off_rounded,
+              title: 'Không thể tải dữ liệu quản trị',
+              message: 'Kiểm tra kết nối rồi thử tải lại tổng quan.',
+              actionLabel: 'Thử lại',
+              onAction: _reload,
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: () async {
               _reload();
+              await _dashboardFuture;
             },
-          ),
-        );
-      },
+            child: _DashboardContent(data: snapshot.data!, onRefresh: _reload),
+          );
+        },
+      ),
     );
 
     if (widget.embedded) {
       return SafeArea(
         child: Column(
           children: [
-            _EmbeddedHeader(onRefresh: _reload),
+            AdminPageHeader(
+              title: 'Trung tâm vận hành',
+              subtitle: 'Theo dõi nhanh hoạt động hôm nay',
+              action: IconButton(
+                tooltip: 'Tải lại',
+                onPressed: _reload,
+                color: Colors.white,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ),
             Expanded(child: body),
           ],
         ),
@@ -81,6 +91,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
 
     return Scaffold(
+      backgroundColor: AdminTheme.canvas,
       appBar: AppBar(
         title: const Text('Tổng quan quản trị'),
         actions: [
@@ -96,35 +107,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 }
 
-class _EmbeddedHeader extends StatelessWidget {
-  const _EmbeddedHeader({required this.onRefresh});
-
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Tổng quan quản trị',
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Tải lại',
-            onPressed: onRefresh,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _DashboardContent extends StatelessWidget {
   const _DashboardContent({required this.data, required this.onRefresh});
 
@@ -133,209 +115,106 @@ class _DashboardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
       children: [
-        Text(
-          data.branchId == null
-              ? 'Toàn hệ thống • ${data.date}'
-              : 'Chi nhánh #${data.branchId} • ${data.date}',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.38,
-          children: [
-            _MetricCard(
-              label: 'Lịch đặt hôm nay',
-              value: '${data.bookings.total}',
-              detail: '${data.bookings.booked} đang chờ',
-              icon: Icons.calendar_month_outlined,
-              color: AppColors.info,
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdminBookingListPage(),
+        _ScopeBanner(data: data),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final singleColumn = constraints.maxWidth < 340 || textScale >= 1.3;
+            final cardWidth = singleColumn
+                ? constraints.maxWidth
+                : (constraints.maxWidth - 12) / 2;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: cardWidth,
+                  child: _MetricCard(
+                    label: 'Lịch đặt hôm nay',
+                    value: '${data.bookings.total}',
+                    detail: '${data.bookings.booked} đang chờ',
+                    icon: Icons.calendar_month_rounded,
+                    color: AdminTheme.info,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminBookingListPage(),
+                        ),
+                      );
+                      onRefresh();
+                    },
                   ),
-                );
-                onRefresh();
-              },
-            ),
-            _MetricCard(
-              label: 'Đơn hàng hôm nay',
-              value: '${data.orders.total}',
-              detail: '${data.orders.pending} chờ xử lý',
-              icon: Icons.receipt_long_outlined,
-              color: AppColors.primary,
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminOrderListPage()),
-                );
-                onRefresh();
-              },
-            ),
-            _MetricCard(
-              label: 'Doanh thu hoàn tất',
-              value: _money(data.orders.revenueCompleted),
-              detail: '${data.orders.completed} đơn hoàn tất',
-              icon: Icons.payments_outlined,
-              color: AppColors.success,
-            ),
-            _MetricCard(
-              label: 'Sắp hết hàng',
-              value: '${data.inventory.lowStockCount}',
-              detail: '${data.courts.active} sân hoạt động',
-              icon: Icons.inventory_2_outlined,
-              color: AppColors.warning,
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminInventoryListPage(
-                      role: data.role,
-                      assignedBranchId: data.branchId,
-                    ),
-                  ),
-                );
-                onRefresh();
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: AppColors.border),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            leading: const Icon(
-              Icons.analytics_outlined,
-              color: AppColors.primary,
-            ),
-            title: const Text(
-              'Báo cáo tổng hợp',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('Xem báo cáo tổng quan, sản phẩm và sân'),
-            trailing: const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-            ),
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AdminReportPage(role: data.role, branchId: data.branchId),
                 ),
-              );
-              onRefresh();
-            },
-          ),
-        ),
-        if (data.role == 'ADMIN')
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.store_outlined),
-              title: const Text('Quản lý chi nhánh'),
-              subtitle: const Text('Chọn và cập nhật ảnh chi nhánh'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AdminBranchListPage(),
+                SizedBox(
+                  width: cardWidth,
+                  child: _MetricCard(
+                    label: 'Đơn hàng hôm nay',
+                    value: '${data.orders.total}',
+                    detail: '${data.orders.pending} chờ xử lý',
+                    icon: Icons.receipt_long_rounded,
+                    color: AdminTheme.primary,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminOrderListPage(),
+                        ),
+                      );
+                      onRefresh();
+                    },
+                  ),
                 ),
-              ),
-            ),
-          ),
-        if (data.role == 'ADMIN') ...[
-          const SizedBox(height: 16),
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              leading: const Icon(
-                Icons.inventory_outlined,
-                color: AppColors.primary,
-              ),
-              title: const Text(
-                'Quản lý sản phẩm',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: const Text('Thêm, sửa, xóa sản phẩm và phân loại'),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdminProductListPage(isAdmin: true),
+                SizedBox(
+                  width: cardWidth,
+                  child: _MetricCard(
+                    label: 'Doanh thu hoàn tất',
+                    value: _money(data.orders.revenueCompleted),
+                    detail: '${data.orders.completed} đơn hoàn tất',
+                    icon: Icons.payments_rounded,
+                    color: AdminTheme.success,
                   ),
-                );
-                onRefresh();
-              },
-            ),
-          ),
-        ],
-        if (data.role == 'ADMIN') ...[
-          const SizedBox(height: 12),
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              leading: const Icon(
-                Icons.art_track_outlined,
-                color: AppColors.primary,
-              ),
-              title: const Text(
-                'Quản lý nội dung',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: const Text('Tin tức, banner, và gửi thông báo'),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminContentHubPage(role: data.role),
+                ),
+                SizedBox(
+                  width: cardWidth,
+                  child: _MetricCard(
+                    label: 'Sắp hết hàng',
+                    value: '${data.inventory.lowStockCount}',
+                    detail: '${data.courts.active} sân hoạt động',
+                    icon: Icons.inventory_2_rounded,
+                    color: AdminTheme.warning,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AdminInventoryListPage(
+                            role: data.role,
+                            assignedBranchId: data.branchId,
+                          ),
+                        ),
+                      );
+                      onRefresh();
+                    },
                   ),
-                );
-                onRefresh();
-              },
-            ),
-          ),
-        ],
+                ),
+              ],
+            );
+          },
+        ),
         if (data.inventory.lowStockItems.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          const _SectionTitle(title: 'Tồn kho cần chú ý'),
+          const SizedBox(height: 26),
+          const _SectionTitle(
+            title: 'Tồn kho cần chú ý',
+            subtitle: 'Ưu tiên kiểm tra các mặt hàng dưới ngưỡng',
+          ),
           const SizedBox(height: 10),
-          Card(
+          AdminSurface(
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
                 for (
@@ -349,23 +228,32 @@ class _DashboardContent extends StatelessWidget {
                     onRefresh: onRefresh,
                   ),
                   if (index < data.inventory.lowStockItems.length - 1)
-                    const Divider(),
+                    const Divider(height: 1, color: AdminTheme.border),
                 ],
               ],
             ),
           ),
         ],
-        const SizedBox(height: 24),
-        const _SectionTitle(title: 'Hoạt động gần đây'),
+        const SizedBox(height: 26),
+        const _SectionTitle(
+          title: 'Hoạt động gần đây',
+          subtitle: 'Lịch đặt và đơn hàng mới nhất',
+        ),
         const SizedBox(height: 10),
         if (data.latestBookings.isEmpty && data.latestOrders.isEmpty)
-          const _EmptyActivity()
+          const AdminSurface(
+            child: AdminStateView(
+              icon: Icons.inbox_rounded,
+              title: 'Chưa có hoạt động gần đây',
+              message: 'Dữ liệu mới sẽ xuất hiện tại đây.',
+            ),
+          )
         else ...[
           for (final booking in data.latestBookings)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: _ActivityTile(
-                icon: Icons.sports_tennis_outlined,
+                icon: Icons.sports_tennis_rounded,
                 title: 'Lịch #${booking.id} • ${booking.courtName}',
                 subtitle:
                     '${booking.customerName} • ${booking.branchName} • ${booking.date}',
@@ -374,15 +262,68 @@ class _DashboardContent extends StatelessWidget {
             ),
           for (final order in data.latestOrders)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: _ActivityTile(
-                icon: Icons.shopping_bag_outlined,
+                icon: Icons.shopping_bag_rounded,
                 title: 'Đơn #${order.id} • ${_money(order.totalAmount)}',
                 subtitle: '${order.customerName} • ${order.branchName}',
                 status: order.status,
               ),
             ),
         ],
+      ],
+    );
+  }
+}
+
+class _ScopeBanner extends StatelessWidget {
+  const _ScopeBanner({required this.data});
+
+  final AdminDashboard data;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = data.branchId == null
+        ? 'Toàn hệ thống'
+        : 'Chi nhánh #${data.branchId}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const AdminIconBox(
+              icon: Icons.today_rounded,
+              color: AdminTheme.info,
+              size: 42,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    scope,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AdminTheme.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    data.date,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AdminTheme.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        AdminStatusBadge(
+          label: _roleLabel(data.role),
+          tone: AdminStatusTone.neutral,
+        ),
       ],
     );
   }
@@ -407,67 +348,80 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
+    return AdminSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(icon, size: 20, color: color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+              AdminIconBox(icon: icon, color: color, size: 38),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AdminTheme.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
                   ),
-                ],
-              ),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w800,
                 ),
-              ),
-              Text(
-                detail,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 18),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AdminTheme.textPrimary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            detail,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AdminTheme.textSecondary),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+  const _SectionTitle({required this.title, required this.subtitle});
+
   final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium
-          ?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w800),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AdminTheme.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: AdminTheme.textSecondary),
+        ),
+      ],
     );
   }
 }
@@ -478,6 +432,7 @@ class _LowStockTile extends StatelessWidget {
     required this.data,
     required this.onRefresh,
   });
+
   final AdminLowStockItem item;
   final AdminDashboard data;
   final VoidCallback onRefresh;
@@ -485,21 +440,24 @@ class _LowStockTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.warning_amber, color: AppColors.warning),
+      minTileHeight: AdminTheme.touchTarget,
+      leading: const AdminIconBox(
+        icon: Icons.warning_amber_rounded,
+        color: AdminTheme.warning,
+        size: 40,
+      ),
       title: Text(
         item.variantName.isEmpty
             ? item.productName
             : '${item.productName} • ${item.variantName}',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: Text('${item.branchName} • SKU ${item.sku}'),
-      trailing: Text(
-        '${item.quantity}',
-        style: const TextStyle(
-          color: AppColors.warning,
-          fontWeight: FontWeight.w800,
-        ),
+      trailing: AdminStatusBadge(
+        label: '${item.quantity} còn lại',
+        tone: AdminStatusTone.warning,
       ),
       onTap: () async {
         await Navigator.push(
@@ -532,59 +490,39 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.primary),
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-        trailing: Text(
-          _statusLabel(status),
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyActivity extends StatelessWidget {
-  const _EmptyActivity();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Text(
-            'Chưa có hoạt động gần đây',
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textSecondary),
+    return AdminSurface(
+      child: Row(
+        children: [
+          AdminIconBox(icon: icon, color: AdminTheme.primary, size: 42),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AdminTheme.textSecondary),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.primary),
-            const SizedBox(height: 12),
-            const Text('Không thể tải dữ liệu quản trị'),
-            const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Thử lại')),
-          ],
-        ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: AdminStatusBadge(
+              label: _statusLabel(status),
+              tone: _statusTone(status),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -600,6 +538,15 @@ String _money(double value) {
   return '${buffer.toString()}đ';
 }
 
+String _roleLabel(String role) {
+  return switch (role) {
+    'ADMIN' => 'Quản trị viên',
+    'BRANCH_MANAGER' => 'Quản lý chi nhánh',
+    'STAFF' => 'Nhân viên',
+    _ => role,
+  };
+}
+
 String _statusLabel(String status) {
   return switch (status) {
     'PENDING' => 'Chờ xử lý',
@@ -609,5 +556,15 @@ String _statusLabel(String status) {
     'COMPLETED' => 'Hoàn tất',
     'CANCELLED' => 'Đã hủy',
     _ => status,
+  };
+}
+
+AdminStatusTone _statusTone(String status) {
+  return switch (status) {
+    'PENDING' || 'BOOKED' || 'READY_FOR_PICKUP' => AdminStatusTone.warning,
+    'CHECKED_IN' => AdminStatusTone.info,
+    'COMPLETED' => AdminStatusTone.success,
+    'CANCELLED' => AdminStatusTone.danger,
+    _ => AdminStatusTone.neutral,
   };
 }

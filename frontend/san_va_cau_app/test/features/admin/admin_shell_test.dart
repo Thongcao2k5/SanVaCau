@@ -25,8 +25,15 @@ Widget _app({
   required _FakeAuthApi authApi,
   VoidCallback? onSessionChanged,
   AuthUser user = _admin,
+  TextScaler? textScaler,
 }) {
   return MaterialApp(
+    builder: textScaler == null
+        ? null
+        : (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            child: child!,
+          ),
     home: AdminShell(
       user: user,
       authApi: authApi,
@@ -126,5 +133,25 @@ void main() {
     expect(find.text('Không có chức năng quản lý được cấp'), findsOneWidget);
     expect(find.text('Sản phẩm'), findsNothing);
     expect(find.text('Nội dung trang chủ'), findsNothing);
+  });
+
+  testWidgets('hub remains usable at 320dp and text scale 1.5', (tester) async {
+    tester.view.physicalSize = const Size(320, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      _app(authApi: _FakeAuthApi(), textScaler: const TextScaler.linear(1.5)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vận hành'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Theo dõi và xử lý hoạt động hằng ngày'), findsOneWidget);
+    expect(find.text('Lịch đặt sân'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

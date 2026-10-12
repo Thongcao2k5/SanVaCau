@@ -70,11 +70,12 @@ void main() {
     await tester.pumpWidget(_app(api));
     await tester.pumpAndSettle();
 
-    expect(find.text('Toàn hệ thống • 2026-10-06'), findsOneWidget);
+    expect(find.text('Toàn hệ thống'), findsOneWidget);
+    expect(find.text('2026-10-06'), findsOneWidget);
     expect(find.text('Chưa có hoạt động gần đây'), findsOneWidget);
     expect(find.text('Quản lý nhân viên'), findsNothing);
-    expect(find.text('Quản lý nội dung'), findsOneWidget);
-    expect(find.text('Báo cáo tổng hợp'), findsOneWidget);
+    expect(find.text('Quản lý nội dung'), findsNothing);
+    expect(find.text('Báo cáo tổng hợp'), findsNothing);
 
     final inventoryCard = find
         .ancestor(of: find.text('Sắp hết hàng'), matching: find.byType(InkWell))
@@ -154,7 +155,8 @@ void main() {
     await tester.pumpWidget(_app(api));
     await tester.pumpAndSettle();
 
-    expect(find.text('Chi nhánh #1 • 2026-10-06'), findsOneWidget);
+    expect(find.text('Chi nhánh #1'), findsOneWidget);
+    expect(find.text('2026-10-06'), findsOneWidget);
     expect(find.textContaining('Lịch #99'), findsOneWidget);
     expect(find.textContaining('Đơn #88'), findsOneWidget);
     expect(find.textContaining('Racket'), findsOneWidget);
@@ -202,7 +204,7 @@ void main() {
     await tester.tap(find.text('Thử lại'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Toàn hệ thống • 2026-10-06'), findsOneWidget);
+    expect(find.text('Toàn hệ thống'), findsOneWidget);
   });
 
   testWidgets('Dashboard hides ADMIN entries for STAFF and BRANCH_MANAGER', (
@@ -255,7 +257,64 @@ void main() {
 
       expect(find.text('Quản lý nhân viên'), findsNothing, reason: role);
       expect(find.text('Quản lý nội dung'), findsNothing, reason: role);
-      expect(find.text('Báo cáo tổng hợp'), findsOneWidget, reason: role);
+      expect(find.text('Báo cáo tổng hợp'), findsNothing, reason: role);
     }
+  });
+
+  testWidgets('stays readable at 320dp and text scale 1.5', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = _FakeDashboardApi(
+      () async => const AdminDashboard(
+        role: 'ADMIN',
+        branchId: null,
+        date: '2026-10-12',
+        bookings: AdminBookingSummary(
+          total: 12,
+          booked: 4,
+          checkedIn: 2,
+          completed: 5,
+          cancelled: 1,
+        ),
+        orders: AdminOrderSummary(
+          total: 8,
+          pending: 2,
+          readyForPickup: 1,
+          completed: 5,
+          cancelled: 0,
+          revenueCompleted: 1250000,
+        ),
+        inventory: AdminInventorySummary(lowStockCount: 2, lowStockItems: []),
+        courts: AdminCourtSummary(active: 6, maintenance: 0, inactive: 0),
+        latestBookings: [],
+        latestOrders: [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 900),
+            textScaler: TextScaler.linear(1.5),
+          ),
+          child: AdminDashboardPage(dashboardApi: api, embedded: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trung tâm vận hành'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Lịch đặt hôm nay'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Lịch đặt hôm nay'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

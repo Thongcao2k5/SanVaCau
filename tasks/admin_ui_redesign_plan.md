@@ -394,9 +394,9 @@ Cập nhật mục này sau mỗi lát cắt để phiên sau biết chính xác
 
 - [x] Hoàn thiện và push toàn bộ luồng chức năng admin — commit `62ce028`.
 - [x] Chốt hướng thiết kế graphite + nền sáng + điểm nhấn đỏ SanVaCau.
-- [ ] Task 1 — Nền tảng giao diện admin.
-- [ ] Task 2 — AdminShell và hub.
-- [ ] Task 3 — Dashboard.
+- [x] Task 1 — Nền tảng giao diện admin: thêm token, surface, header, icon box, status badge và state view dùng chung.
+- [x] Task 2 — AdminShell và hub: graphite navigation/header ngắn, content nền sáng, module cards và account tab đồng bộ.
+- [x] Task 3 — Dashboard: metric responsive, badge có text/icon, bỏ shortcut quản lý/báo cáo trùng lặp.
 - [ ] Checkpoint A — Chờ người dùng duyệt hình ảnh.
 - [ ] Task 4 — Nhóm Vận hành.
 - [ ] Task 5 — Sản phẩm.
@@ -405,3 +405,11 @@ Cập nhật mục này sau mỗi lát cắt để phiên sau biết chính xác
 - [ ] Task 7 — Nội dung trang chủ.
 - [ ] Task 8 — Responsive/accessibility/regression.
 - [ ] Checkpoint C — Chạy máy thật, chụp ảnh, chờ yêu cầu commit/push.
+
+### Kết quả kiểm tra gần nhất — 2026-10-12
+
+- `flutter analyze`: No issues found.
+- `flutter test`: 287/287 tests passed.
+- Focused tests cho component, AdminShell và Dashboard: 13/13 passed.
+- Đã kiểm tra widget ở 320dp và text scale 1.5.
+- Thay đổi redesign hiện nằm trong working tree, chưa commit hoặc push.

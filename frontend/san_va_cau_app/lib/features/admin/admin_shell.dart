@@ -11,6 +11,8 @@ import 'pages/admin_dashboard_page.dart';
 import 'pages/admin_inventory_list_page.dart';
 import 'pages/admin_order_list_page.dart';
 import 'pages/admin_product_list_page.dart';
+import 'theme/admin_theme.dart';
+import 'widgets/admin_ui.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({
@@ -33,7 +35,6 @@ class AdminShell extends StatefulWidget {
 }
 
 class _AdminShellState extends State<AdminShell> {
-  static const _graphite = Color(0xFF17191D);
   static const _items = <NavigationDestination>[
     NavigationDestination(
       icon: Icon(Icons.dashboard_outlined),
@@ -170,23 +171,24 @@ class _AdminShellState extends State<AdminShell> {
     ];
 
     return Scaffold(
+      backgroundColor: AdminTheme.canvas,
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
-          backgroundColor: _graphite,
+          backgroundColor: AdminTheme.graphite,
           indicatorColor: AppColors.primary,
           iconTheme: WidgetStateProperty.resolveWith((states) {
             return IconThemeData(
               color: states.contains(WidgetState.selected)
                   ? Colors.white
-                  : const Color(0xFFB7BBC2),
+                  : AdminTheme.navigationMuted,
             );
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             return TextStyle(
               color: states.contains(WidgetState.selected)
                   ? Colors.white
-                  : const Color(0xFFB7BBC2),
+                  : AdminTheme.navigationMuted,
               fontSize: 11,
               fontWeight: states.contains(WidgetState.selected)
                   ? FontWeight.w700
@@ -195,6 +197,7 @@ class _AdminShellState extends State<AdminShell> {
           }),
         ),
         child: NavigationBar(
+          height: 72,
           selectedIndex: _currentIndex,
           destinations: _items,
           onDestinationSelected: (index) {
@@ -220,29 +223,27 @@ class _AdminModuleHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 20),
-          if (modules.isEmpty)
-            const _NoPermissionState()
-          else
-            for (final module in modules) ...[
-              _AdminModuleCard(module: module),
-              const SizedBox(height: 12),
-            ],
-        ],
+      child: ColoredBox(
+        color: AdminTheme.canvas,
+        child: Column(
+          children: [
+            AdminPageHeader(title: title, subtitle: subtitle),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                children: [
+                  if (modules.isEmpty)
+                    const _NoPermissionState()
+                  else
+                    for (final module in modules) ...[
+                      _AdminModuleCard(module: module),
+                      const SizedBox(height: 12),
+                    ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -271,57 +272,36 @@ class _AdminModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderMuted),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: module.onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: module.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
+    return AdminSurface(
+      onTap: module.onOpen,
+      child: Row(
+        children: [
+          AdminIconBox(icon: module.icon, color: module.color),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  module.title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-                child: Icon(module.icon, color: module.color),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      module.title,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      module.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 3),
+                Text(
+                  module.description,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary, height: 1.35),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.arrow_forward_rounded,
+            size: 20,
+            color: AdminTheme.textSecondary,
+          ),
+        ],
       ),
     );
   }
@@ -332,27 +312,11 @@ class _NoPermissionState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderMuted),
-      ),
-      child: const Column(
-        children: [
-          Icon(
-            Icons.lock_outline_rounded,
-            size: 42,
-            color: AppColors.textSecondary,
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Không có chức năng quản lý được cấp',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ],
+    return const AdminSurface(
+      child: AdminStateView(
+        icon: Icons.lock_outline_rounded,
+        title: 'Không có chức năng quản lý được cấp',
+        message: 'Tài khoản hiện tại chỉ có quyền sử dụng các tác vụ vận hành.',
       ),
     );
   }
@@ -373,75 +337,115 @@ class _AdminAccountTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Tài khoản quản trị')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF202329),
-              borderRadius: BorderRadius.circular(20),
+    return SafeArea(
+      child: ColoredBox(
+        color: AdminTheme.canvas,
+        child: Column(
+          children: [
+            const AdminPageHeader(
+              title: 'Tài khoản quản trị',
+              subtitle: 'Thông tin phiên làm việc và quyền truy cập',
             ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(
-                    Icons.admin_panel_settings_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.fullName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AdminTheme.graphiteSurface,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 28,
+                          backgroundColor: AppColors.primary,
+                          child: Icon(
+                            Icons.admin_panel_settings_rounded,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _roleLabel(user.role),
-                        style: const TextStyle(color: Color(0xFFB7BBC2)),
-                      ),
-                    ],
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.fullName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _roleLabel(user.role),
+                                style: const TextStyle(
+                                  color: AdminTheme.navigationMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  AdminSurface(
+                    onTap: onOpenUserApp,
+                    child: const Row(
+                      children: [
+                        AdminIconBox(
+                          icon: Icons.phone_android_rounded,
+                          color: AdminTheme.info,
+                        ),
+                        SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Xem ứng dụng người dùng',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Mở giao diện khách hàng để kiểm tra',
+                                style: TextStyle(
+                                  color: AdminTheme.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AdminTheme.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: isLoggingOut ? null : onLogout,
+                      icon: isLoggingOut
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.logout_rounded),
+                      label: const Text('Đăng xuất'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.borderMuted),
-            ),
-            leading: const Icon(Icons.phone_android_rounded),
-            title: const Text('Xem ứng dụng người dùng'),
-            subtitle: const Text('Mở giao diện khách hàng để kiểm tra'),
-            trailing: const Icon(Icons.arrow_forward_rounded),
-            onTap: onOpenUserApp,
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: isLoggingOut ? null : onLogout,
-            icon: isLoggingOut
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout_rounded),
-            label: const Text('Đăng xuất'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
