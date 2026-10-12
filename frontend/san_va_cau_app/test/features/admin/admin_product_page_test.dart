@@ -31,6 +31,20 @@ class FakeProductApi extends ProductApi {
       category: const ProductCategory(id: 'c1', name: 'Cat 1'),
       brand: const ProductBrand(id: 'b1', name: 'Brand 1'),
     ),
+    Product(
+      id: 'p2',
+      categoryId: 'c1',
+      brandId: 'b1',
+      name: 'Vợt luyện tập',
+      description: 'Sản phẩm thường',
+      imageUrl: 'img2.jpg',
+      isActive: true,
+      isFeatured: false,
+      createdAt: DateTime(2023),
+      updatedAt: DateTime(2023),
+      category: const ProductCategory(id: 'c1', name: 'Cat 1'),
+      brand: const ProductBrand(id: 'b1', name: 'Brand 1'),
+    ),
   ];
 
   final List<ProductVariant> mockVariants = [
@@ -183,6 +197,32 @@ void main() {
       await tester.tap(find.text('Thử lại'));
       await tester.pumpAndSettle();
       expect(find.text('Product 1'), findsOneWidget);
+    });
+
+    testWidgets('searches locally and filters featured products', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createListWidget(true));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Tìm sản phẩm, danh mục, thương hiệu'),
+        'luyện tập',
+      );
+      await tester.pump();
+      expect(find.text('Vợt luyện tập'), findsOneWidget);
+      expect(find.text('Product 1'), findsNothing);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Tìm sản phẩm, danh mục, thương hiệu'),
+        '',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Chỉ sản phẩm nổi bật'));
+      await tester.pump();
+
+      expect(find.text('Product 1'), findsOneWidget);
+      expect(find.text('Vợt luyện tập'), findsNothing);
     });
 
     testWidgets(

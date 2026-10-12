@@ -26,12 +26,16 @@ class MainShell extends StatefulWidget {
     this.cartApi,
     this.branchApi,
     this.bookingApi,
+    this.onSessionChanged,
+    this.confirmExitOnBack = true,
   });
 
   final AuthApi? authApi;
   final CartApi? cartApi;
   final BranchApi? branchApi;
   final BookingApi? bookingApi;
+  final VoidCallback? onSessionChanged;
+  final bool confirmExitOnBack;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -216,14 +220,17 @@ class _MainShellState extends State<MainShell> {
       AccountPage(
         key: ValueKey('account-$_accountRevision'),
         authApi: widget.authApi,
+        onSessionChanged: widget.onSessionChanged,
       ),
     ];
 
     return PopScope(
-      canPop: _exitArmed && !timelineVisible,
+      canPop: !timelineVisible && (!widget.confirmExitOnBack || _exitArmed),
       onPopInvokedWithResult: (didPop, result) {
         // The timeline handles Back by returning to the branch list.
-        if (!didPop && !timelineVisible) _confirmExit();
+        if (!didPop && !timelineVisible && widget.confirmExitOnBack) {
+          _confirmExit();
+        }
       },
       child: Scaffold(
         body: IndexedStack(index: _currentIndex, children: pages),

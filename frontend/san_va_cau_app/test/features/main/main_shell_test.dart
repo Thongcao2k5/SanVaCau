@@ -2,7 +2,6 @@ import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_not
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:san_va_cau_app/app.dart';
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
@@ -159,10 +158,10 @@ void main() {
   });
   group('MainShell bottom navigation', () {
     testWidgets('contains five destinations in correct order', (tester) async {
-      await tester.pumpWidget(const SanVaCauApp());
+      await tester.pumpWidget(
+        MaterialApp(home: MainShell(authApi: _SessionAuth())),
+      );
       await tester.pump();
-
-      // Consume the ApiException caused by the test environment.
       tester.takeException();
       await tester.pump();
 
@@ -178,7 +177,9 @@ void main() {
     });
 
     testWidgets('preserves selected tab via IndexedStack', (tester) async {
-      await tester.pumpWidget(const SanVaCauApp());
+      await tester.pumpWidget(
+        MaterialApp(home: MainShell(authApi: _SessionAuth())),
+      );
       await tester.pump();
       tester.takeException();
       await tester.pump();
@@ -200,7 +201,9 @@ void main() {
     });
 
     testWidgets('home tab is selected by default', (tester) async {
-      await tester.pumpWidget(const SanVaCauApp());
+      await tester.pumpWidget(
+        MaterialApp(home: MainShell(authApi: _SessionAuth())),
+      );
       await tester.pump();
       tester.takeException();
       await tester.pump();

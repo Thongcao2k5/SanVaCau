@@ -32,12 +32,34 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
 
   String? _selectedCategoryId;
   String? _selectedBrandId;
+  final TextEditingController _searchController = TextEditingController();
+  bool _featuredOnly = false;
 
   @override
   void initState() {
     super.initState();
     _api = widget.productApi ?? ProductApi();
+    _searchController.addListener(_applyLocalFilters);
     _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _applyLocalFilters() => setState(() {});
+
+  List<Product> get _visibleProducts {
+    final query = _searchController.text.trim().toLowerCase();
+    return _products.where((product) {
+      if (_featuredOnly && !product.isFeatured) return false;
+      if (query.isEmpty) return true;
+      return product.name.toLowerCase().contains(query) ||
+          product.category.name.toLowerCase().contains(query) ||
+          (product.brand?.name.toLowerCase().contains(query) ?? false);
+    }).toList();
   }
 
   Future<void> _loadInitialData() async {
@@ -296,35 +318,72 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadProducts,
-      color: AppColors.primary,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16).copyWith(bottom: 80),
-        itemCount: _products.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final product = _products[index];
-          return _ProductCard(
-            product: product,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AdminProductDetailPage(
-                    productId: product.id,
-                    isAdmin: widget.isAdmin,
-                    productApi: _api,
+    final visibleProducts = _visibleProducts;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Tìm sản phẩm, danh mục, thương hiệu',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _searchController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Xóa tìm kiếm',
+                      onPressed: _searchController.clear,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: FilterChip(
+              label: const Text('Chỉ sản phẩm nổi bật'),
+              avatar: const Icon(Icons.star_rounded, size: 18),
+              selected: _featuredOnly,
+              onSelected: (value) => setState(() => _featuredOnly = value),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: visibleProducts.isEmpty
+              ? const Center(child: Text('Không có sản phẩm phù hợp'))
+              : RefreshIndicator(
+                  onRefresh: _loadProducts,
+                  color: AppColors.primary,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16).copyWith(bottom: 80),
+                    itemCount: visibleProducts.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final product = visibleProducts[index];
+                      return _ProductCard(
+                        product: product,
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminProductDetailPage(
+                                productId: product.id,
+                                isAdmin: widget.isAdmin,
+                                productApi: _api,
+                              ),
+                            ),
+                          );
+                          if (result == true) _loadProducts();
+                        },
+                      );
+                    },
                   ),
                 ),
-              );
-              if (result == true) {
-                _loadProducts();
-              }
-            },
-          );
-        },
-      ),
+        ),
+      ],
     );
   }
 }

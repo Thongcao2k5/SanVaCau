@@ -72,6 +72,16 @@ class FakeApiClient implements ApiClient {
   }
 
   @override
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, String>? queryParameters,
+    Map<String, dynamic>? body,
+    String? token,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Map<String, dynamic>> delete(
     String path, {
     Map<String, String>? queryParameters,

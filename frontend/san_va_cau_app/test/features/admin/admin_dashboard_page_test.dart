@@ -72,7 +72,7 @@ void main() {
 
     expect(find.text('Toàn hệ thống • 2026-10-06'), findsOneWidget);
     expect(find.text('Chưa có hoạt động gần đây'), findsOneWidget);
-    expect(find.text('Quản lý nhân viên'), findsOneWidget);
+    expect(find.text('Quản lý nhân viên'), findsNothing);
     expect(find.text('Quản lý nội dung'), findsOneWidget);
     expect(find.text('Báo cáo tổng hợp'), findsOneWidget);
 

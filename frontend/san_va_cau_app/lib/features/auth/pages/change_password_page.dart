@@ -5,7 +5,9 @@ import '../../../core/theme/app_colors.dart';
 import '../data/auth_api.dart';
 
 class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+  const ChangePasswordPage({super.key, this.authApi});
+
+  final AuthApi? authApi;
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -27,7 +29,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   void initState() {
     super.initState();
-    _authApi = AuthApi();
+    _authApi = widget.authApi ?? AuthApi();
   }
 
   @override

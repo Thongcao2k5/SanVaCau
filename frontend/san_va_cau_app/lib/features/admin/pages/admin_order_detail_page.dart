@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:san_va_cau_app/core/network/api_client.dart';
 import 'package:san_va_cau_app/core/theme/app_colors.dart';
 import 'package:san_va_cau_app/features/orders/data/order_api.dart';
+import 'package:san_va_cau_app/features/orders/data/fulfillment_api.dart';
 import 'package:san_va_cau_app/features/orders/models/order.dart';
+import 'package:san_va_cau_app/features/orders/models/order_fulfillment.dart';
 
 class AdminOrderDetailPage extends StatefulWidget {
-  const AdminOrderDetailPage({super.key, required this.orderId, this.orderApi});
+  const AdminOrderDetailPage({
+    super.key,
+    required this.orderId,
+    this.orderApi,
+    this.fulfillmentApi,
+  });
 
   final String orderId;
   final OrderApi? orderApi;
+  final FulfillmentApi? fulfillmentApi;
 
   @override
   State<AdminOrderDetailPage> createState() => _AdminOrderDetailPageState();
@@ -16,7 +24,10 @@ class AdminOrderDetailPage extends StatefulWidget {
 
 class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   late final OrderApi _api = widget.orderApi ?? OrderApi();
+  late final FulfillmentApi _fulfillmentApi =
+      widget.fulfillmentApi ?? FulfillmentApi();
   Future<Order>? _orderFuture;
+  Future<OrderFulfillment?>? _fulfillmentFuture;
   bool _isUpdating = false;
 
   @override
@@ -28,6 +39,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   void _loadOrder() {
     setState(() {
       _orderFuture = _api.getAdminOrderById(widget.orderId);
+      _fulfillmentFuture = _fulfillmentApi.getForOrder(widget.orderId);
     });
   }
 
@@ -270,6 +282,38 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
                           ],
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    FutureBuilder<OrderFulfillment?>(
+                      future: _fulfillmentFuture,
+                      builder: (context, fulfillmentSnapshot) {
+                        if (fulfillmentSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Card(
+                            child: ListTile(
+                              leading: Icon(Icons.local_shipping_outlined),
+                              title: Text('Thông tin giao nhận'),
+                              subtitle: Text('Đang tải...'),
+                            ),
+                          );
+                        }
+                        if (fulfillmentSnapshot.hasError) {
+                          return const Card(
+                            child: ListTile(
+                              leading: Icon(Icons.local_shipping_outlined),
+                              title: Text('Thông tin giao nhận'),
+                              subtitle: Text(
+                                'Không thể tải thông tin giao nhận',
+                              ),
+                            ),
+                          );
+                        }
+                        return _FulfillmentCard(
+                          fulfillment: fulfillmentSnapshot.data,
+                          branchName: order.branch?.name,
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -554,6 +598,69 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
       ],
+    );
+  }
+}
+
+class _FulfillmentCard extends StatelessWidget {
+  const _FulfillmentCard({this.fulfillment, this.branchName});
+
+  final OrderFulfillment? fulfillment;
+  final String? branchName;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = fulfillment;
+    final isDelivery = data?.isDelivery == true;
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.borderMuted),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isDelivery
+                      ? Icons.local_shipping_rounded
+                      : Icons.storefront_rounded,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  isDelivery ? 'Giao hàng tận nơi' : 'Nhận tại chi nhánh',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (isDelivery) ...[
+              Text(data?.recipientName ?? 'Chưa có tên người nhận'),
+              if (data?.phone?.isNotEmpty == true) Text(data!.phone!),
+              const SizedBox(height: 4),
+              Text(
+                data?.fullAddress.isNotEmpty == true
+                    ? data!.fullAddress
+                    : 'Chưa có địa chỉ giao hàng',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              if (data?.note?.isNotEmpty == true) ...[
+                const SizedBox(height: 4),
+                Text('Ghi chú: ${data!.note}'),
+              ],
+            ] else
+              Text(
+                branchName ?? 'Chi nhánh nhận hàng',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

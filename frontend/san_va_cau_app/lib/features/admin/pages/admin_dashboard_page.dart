@@ -9,14 +9,18 @@ import 'admin_booking_list_page.dart';
 import 'admin_inventory_list_page.dart';
 import 'admin_order_list_page.dart';
 import 'admin_product_list_page.dart';
-import 'admin_user_list_page.dart';
 import 'admin_content_hub_page.dart';
 import 'admin_report_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
-  const AdminDashboardPage({super.key, this.dashboardApi});
+  const AdminDashboardPage({
+    super.key,
+    this.dashboardApi,
+    this.embedded = false,
+  });
 
   final AdminDashboardApi? dashboardApi;
+  final bool embedded;
 
   @override
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
@@ -41,6 +45,41 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = FutureBuilder<AdminDashboard>(
+      future: _dashboardFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError || !snapshot.hasData) {
+          return _ErrorState(onRetry: _reload);
+        }
+        return RefreshIndicator(
+          onRefresh: () async {
+            _reload();
+            await _dashboardFuture;
+          },
+          child: _DashboardContent(
+            data: snapshot.data!,
+            onRefresh: () {
+              _reload();
+            },
+          ),
+        );
+      },
+    );
+
+    if (widget.embedded) {
+      return SafeArea(
+        child: Column(
+          children: [
+            _EmbeddedHeader(onRefresh: _reload),
+            Expanded(child: body),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tổng quan quản trị'),
@@ -48,32 +87,39 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           IconButton(
             tooltip: 'Tải lại',
             onPressed: _reload,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
-      body: FutureBuilder<AdminDashboard>(
-        future: _dashboardFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return _ErrorState(onRetry: _reload);
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              _reload();
-              await _dashboardFuture;
-            },
-            child: _DashboardContent(
-              data: snapshot.data!,
-              onRefresh: () {
-                _reload();
-              },
+      body: body,
+    );
+  }
+}
+
+class _EmbeddedHeader extends StatelessWidget {
+  const _EmbeddedHeader({required this.onRefresh});
+
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Tổng quan quản trị',
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-          );
-        },
+          ),
+          IconButton(
+            tooltip: 'Tải lại',
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
     );
   }
@@ -251,41 +297,6 @@ class _DashboardContent extends StatelessWidget {
           ),
         ],
         if (data.role == 'ADMIN') ...[
-          const SizedBox(height: 12),
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              leading: const Icon(
-                Icons.people_alt_outlined,
-                color: AppColors.primary,
-              ),
-              title: const Text(
-                'Quản lý nhân viên',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: const Text(
-                'Tạo tài khoản, khóa tài khoản và đặt lại mật khẩu',
-              ),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminUserListPage(role: data.role),
-                  ),
-                );
-                onRefresh();
-              },
-            ),
-          ),
           const SizedBox(height: 12),
           Card(
             elevation: 0,

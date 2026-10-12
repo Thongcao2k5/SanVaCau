@@ -36,6 +36,7 @@ class AccountPage extends StatefulWidget {
     this.adminDashboardPage,
     this.changePasswordPage,
     this.returnAfterAuthentication = false,
+    this.onSessionChanged,
   });
 
   final AuthApi? authApi;
@@ -45,6 +46,7 @@ class AccountPage extends StatefulWidget {
   final Widget? adminDashboardPage;
   final Widget? changePasswordPage;
   final bool returnAfterAuthentication;
+  final VoidCallback? onSessionChanged;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -126,6 +128,8 @@ class _AccountPageState extends State<AccountPage> {
     if (!mounted) return;
     if (widget.returnAfterAuthentication) {
       Navigator.of(context).pop(true);
+    } else if (widget.onSessionChanged != null) {
+      widget.onSessionChanged!();
     } else {
       _reloadProfile();
     }
@@ -134,6 +138,10 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _logout() async {
     await _authApi.logout();
     if (!mounted) return;
+    if (widget.onSessionChanged != null) {
+      widget.onSessionChanged!();
+      return;
+    }
     setState(() {
       _profileFuture = Future<AuthUser?>.value();
       _unreadNotificationCount = null;
@@ -143,11 +151,16 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _openRequiredPasswordChange() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => widget.changePasswordPage ?? const ChangePasswordPage(),
+        builder: (_) =>
+            widget.changePasswordPage ?? ChangePasswordPage(authApi: _authApi),
       ),
     );
     if (changed == true && mounted) {
-      _reloadProfile();
+      if (widget.onSessionChanged != null) {
+        widget.onSessionChanged!();
+      } else {
+        _reloadProfile();
+      }
     }
   }
 

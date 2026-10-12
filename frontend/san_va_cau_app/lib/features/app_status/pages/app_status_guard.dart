@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/url_util.dart';
-import '../../main/main_shell.dart';
+import '../../auth/pages/session_role_gate.dart';
 import '../data/app_status_api.dart';
 import '../models/app_status.dart';
 
@@ -73,7 +73,7 @@ class _AppStatusGuardState extends State<AppStatusGuard> {
     }
 
     if (_status == null || _error != null) {
-      return const MainShell();
+      return const SessionRoleGate();
     }
 
     if (_status!.maintenanceMode) {
@@ -90,7 +90,7 @@ class _AppStatusGuardState extends State<AppStatusGuard> {
       );
     }
 
-    return const MainShell();
+    return const SessionRoleGate();
   }
 }
 
