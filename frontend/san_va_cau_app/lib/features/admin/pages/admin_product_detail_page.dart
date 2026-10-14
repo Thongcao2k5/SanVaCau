@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_image.dart';
+
 import '../theme/admin_theme.dart';
 import '../widgets/admin_ui.dart';
 
@@ -206,12 +208,10 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Chi tiết sản phẩm'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
           actions: [
             if (widget.isAdmin && _product != null)
               IconButton(
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.edit_rounded),
                 tooltip: 'Sửa',
                 onPressed: () async {
                   final result = await Navigator.push(
@@ -230,7 +230,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
               ),
             if (widget.isAdmin && _product != null && _product!.isActive)
               IconButton(
-                icon: const Icon(Icons.visibility_off),
+                icon: const Icon(Icons.visibility_off_rounded),
                 tooltip: 'Ẩn',
                 onPressed: _inactivateProduct,
               ),
@@ -243,164 +243,180 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+      return const AdminStateView(
+        icon: Icons.inventory_2_rounded,
+        title: 'Đang tải chi tiết sản phẩm',
+        isLoading: true,
       );
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              'Lỗi: $_error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AdminTheme.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadData, child: const Text('Thử lại')),
-          ],
-        ),
+      return AdminStateView(
+        icon: Icons.cloud_off_rounded,
+        title: 'Không thể tải sản phẩm',
+        message: _error,
+        actionLabel: 'Thử lại',
+        onAction: _loadData,
       );
     }
 
     if (_product == null) {
-      return const Center(child: Text('Không tìm thấy sản phẩm.'));
+      return const AdminStateView(
+        icon: Icons.search_off_rounded,
+        title: 'Không tìm thấy sản phẩm',
+      );
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AdminTheme.pagePadding,
+          16,
+          AdminTheme.pagePadding,
+          32,
+        ),
         children: [
-          // Product Info Card
-          Card(
-            elevation: 0,
-            color: AdminTheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
-              side: const BorderSide(color: AdminTheme.border),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AdminTheme.canvas,
-                          borderRadius: BorderRadius.circular(
-                            AdminTheme.compactRadius,
+          AdminSurface(
+            padding: const EdgeInsets.all(16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact =
+                    constraints.maxWidth < 360 ||
+                    MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+                final image = ClipRRect(
+                  borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+                  child: Container(
+                    width: compact ? double.infinity : 104,
+                    height: compact ? 170 : 112,
+                    color: AdminTheme.canvas,
+                    child:
+                        _product!.imageUrl != null &&
+                            _product!.imageUrl!.isNotEmpty
+                        ? AppImage(
+                            source: _product!.imageUrl!,
+                            fit: BoxFit.cover,
+                            fallback: const Icon(
+                              Icons.hide_image_rounded,
+                              color: AdminTheme.textSecondary,
+                              size: 36,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.inventory_2_rounded,
+                            color: AdminTheme.textSecondary,
+                            size: 36,
                           ),
-                        ),
-                        child:
-                            _product!.imageUrl != null &&
-                                _product!.imageUrl!.isNotEmpty
-                            ? Image.network(
-                                _product!.imageUrl!,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) => const Icon(
-                                  Icons.image_not_supported_rounded,
-                                  color: AdminTheme.textSecondary,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.image_rounded,
-                                color: AdminTheme.textSecondary,
-                              ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _product!.name,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AdminTheme.textPrimary,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              Icons.category_rounded,
-                              'Danh mục:',
-                              _product!.category.name,
-                            ),
-                            const SizedBox(height: 4),
-                            if (_product!.brand != null)
-                              _buildInfoRow(
-                                Icons.branding_watermark_outlined,
-                                'Thương hiệu:',
-                                _product!.brand!.name,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (_product!.isFeatured)
-                        const AdminStatusBadge(
-                          label: 'Nổi bật',
-                          tone: AdminStatusTone.warning,
-                        ),
-                      AdminStatusBadge(
-                        label: _product!.isActive ? 'Đang hoạt động' : 'Đã ẩn',
-                        tone: _product!.isActive
-                            ? AdminStatusTone.success
-                            : AdminStatusTone.danger,
-                      ),
-                    ],
-                  ),
-                  if (_product!.description != null &&
-                      _product!.description!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
+                );
+                final summary = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Mô tả:',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      _product!.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AdminTheme.textPrimary,
+                        height: 1.2,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _product!.description!,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: AdminTheme.textSecondary),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        AdminStatusBadge(
+                          label: _product!.isActive
+                              ? 'Đang hoạt động'
+                              : 'Đã ẩn',
+                          tone: _product!.isActive
+                              ? AdminStatusTone.success
+                              : AdminStatusTone.danger,
+                        ),
+                        if (_product!.isFeatured)
+                          const AdminStatusBadge(
+                            label: 'Nổi bật',
+                            tone: AdminStatusTone.warning,
+                            icon: Icons.star_rounded,
+                          ),
+                      ],
                     ),
                   ],
-                ],
-              ),
+                );
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (compact) ...[
+                      image,
+                      const SizedBox(height: 16),
+                      summary,
+                    ] else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          image,
+                          const SizedBox(width: 16),
+                          Expanded(child: summary),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 28,
+                      runSpacing: 14,
+                      children: [
+                        _buildInfoRow(
+                          Icons.category_rounded,
+                          'Danh mục',
+                          _product!.category.name,
+                        ),
+                        if (_product!.brand != null)
+                          _buildInfoRow(
+                            Icons.sell_rounded,
+                            'Thương hiệu',
+                            _product!.brand!.name,
+                          ),
+                      ],
+                    ),
+                    if (_product!.description != null &&
+                        _product!.description!.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      Text(
+                        'Mô tả',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AdminTheme.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _product!.description!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AdminTheme.textSecondaryStrong,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
 
           const SizedBox(height: 24),
 
           // Variants Section
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
+          Row(
             children: [
-              Text(
-                'Phân loại (${_variants.length})',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AdminTheme.textPrimary,
+              Expanded(
+                child: Text(
+                  'Phân loại (${_variants.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AdminTheme.textPrimary,
+                  ),
                 ),
               ),
               if (widget.isAdmin)
@@ -419,7 +435,7 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                       _loadVariantsOnly();
                     }
                   },
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_rounded),
                   label: const Text('Thêm mới'),
                 ),
             ],
@@ -427,58 +443,56 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
           const SizedBox(height: 12),
 
           if (_variants.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AdminTheme.surface,
-                borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
-                border: Border.all(color: AdminTheme.border),
-              ),
-              child: const Center(
-                child: Text(
-                  'Chưa có phân loại nào.',
-                  style: TextStyle(color: AdminTheme.textSecondary),
-                ),
+            const AdminSurface(
+              child: Row(
+                children: [
+                  AdminIconBox(
+                    icon: Icons.layers_clear_rounded,
+                    color: AdminTheme.textSecondaryStrong,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Chưa có phân loại nào.',
+                      style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                    ),
+                  ),
+                ],
               ),
             )
           else
             ..._variants.map((variant) {
-              return Card(
-                elevation: 0,
-                color: AdminTheme.surface,
-                margin: const EdgeInsets.only(bottom: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
-                  side: const BorderSide(color: AdminTheme.border),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: AdminSurface(
+                  padding: const EdgeInsets.all(14),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: AdminTheme.canvas,
-                          borderRadius: BorderRadius.circular(
-                            AdminTheme.compactRadius,
-                          ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          AdminTheme.compactRadius,
                         ),
-                        child:
-                            variant.imageUrl != null &&
-                                variant.imageUrl!.isNotEmpty
-                            ? Image.network(
-                                variant.imageUrl!,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) => const Icon(
-                                  Icons.image_not_supported_rounded,
+                        child: Container(
+                          width: 58,
+                          height: 68,
+                          color: AdminTheme.canvas,
+                          child:
+                              variant.imageUrl != null &&
+                                  variant.imageUrl!.isNotEmpty
+                              ? AppImage(
+                                  source: variant.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  fallback: const Icon(
+                                    Icons.hide_image_rounded,
+                                    color: AdminTheme.textSecondary,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.layers_rounded,
                                   color: AdminTheme.textSecondary,
                                 ),
-                              )
-                            : const Icon(
-                                Icons.image_rounded,
-                                color: AdminTheme.textSecondary,
-                              ),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -487,27 +501,45 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                           children: [
                             Text(
                               variant.variantName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AdminTheme.textPrimary,
+                                  ),
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               'SKU: ${variant.sku}',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: AdminTheme.textSecondary,
+                                color: AdminTheme.textSecondaryStrong,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatCurrency(variant.price),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  _formatCurrency(variant.price),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AdminTheme.primaryText,
+                                  ),
+                                ),
+                                AdminStatusBadge(
+                                  label: variant.isActive
+                                      ? 'Đang hoạt động'
+                                      : 'Đã ẩn',
+                                  tone: variant.isActive
+                                      ? AdminStatusTone.success
+                                      : AdminStatusTone.danger,
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -548,22 +580,12 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
                                 value: 'inactivate',
                                 child: Text(
                                   'Ẩn phân loại',
-                                  style: TextStyle(color: AppColors.primary),
+                                  style: TextStyle(
+                                    color: AdminTheme.primaryText,
+                                  ),
                                 ),
                               ),
                           ],
-                        )
-                      else if (!variant.isActive)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            'Đã ẩn',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ),
                     ],
                   ),
@@ -575,19 +597,33 @@ class _AdminProductDetailPageState extends State<AdminProductDetailPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) => Column(
+  Widget _buildInfoRow(IconData icon, String label, String value) => Row(
+    mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        style: const TextStyle(fontSize: 12, color: AdminTheme.textSecondary),
-      ),
-      Text(
-        value,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AdminTheme.textPrimary,
+      Icon(icon, size: 18, color: AdminTheme.primaryText),
+      const SizedBox(width: 8),
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AdminTheme.textSecondaryStrong,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AdminTheme.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     ],

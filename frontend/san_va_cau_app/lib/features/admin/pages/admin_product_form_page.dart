@@ -169,8 +169,6 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: Text(isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(child: _buildBody()),
       ),
@@ -179,8 +177,10 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+      return const AdminStateView(
+        icon: Icons.inventory_2_rounded,
+        title: 'Đang tải thông tin sản phẩm',
+        isLoading: true,
       );
     }
 
@@ -197,144 +197,278 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
       key: _formKey,
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_error != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(
-                      AdminTheme.compactRadius,
+                Semantics(
+                  liveRegion: true,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AdminTheme.softWine,
+                      borderRadius: BorderRadius.circular(
+                        AdminTheme.compactRadius,
+                      ),
+                      border: Border.all(
+                        color: AdminTheme.primary.withValues(alpha: 0.3),
+                      ),
                     ),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_rounded,
+                          color: AdminTheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              color: AdminTheme.primaryText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: AppColors.primary),
+                ),
+
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'Các trường có dấu * là bắt buộc.',
+                  style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                ),
+              ),
+              AdminSurface(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Row(
+                      children: [
+                        AdminIconBox(
+                          icon: Icons.inventory_2_rounded,
+                          color: AdminTheme.primary,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Thông tin chính',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      key: const Key('product-name'),
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tên sản phẩm *',
+                        errorMaxLines: 3,
+                      ),
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập tên sản phẩm';
+                        }
+                        return null;
+                      },
+                      enabled: !_isSubmitting,
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      key: const Key('product-category'),
+                      isExpanded: true,
+                      initialValue: _selectedCategoryId,
+                      decoration: const InputDecoration(
+                        labelText: 'Danh mục *',
+                        errorMaxLines: 3,
+                      ),
+                      items: _categories
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _isSubmitting
+                          ? null
+                          : (val) {
+                              setState(() => _selectedCategoryId = val);
+                            },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Vui lòng chọn danh mục';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              AdminSurface(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Row(
+                      children: [
+                        AdminIconBox(
+                          icon: Icons.article_rounded,
+                          color: AdminTheme.primary,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Nội dung & hình ảnh',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Thông tin bổ sung · không bắt buộc',
+                      style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String?>(
+                      key: const Key('product-brand'),
+                      isExpanded: true,
+                      initialValue: _selectedBrandId,
+                      decoration: const InputDecoration(
+                        labelText: 'Thương hiệu',
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Không có'),
+                        ),
+                        ..._brands.map(
+                          (b) => DropdownMenuItem(
+                            value: b.id,
+                            child: Text(b.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: _isSubmitting
+                          ? null
+                          : (val) {
+                              setState(() => _selectedBrandId = val);
+                            },
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      key: const Key('product-description'),
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(labelText: 'Mô tả'),
+                      maxLines: 3,
+                      enabled: !_isSubmitting,
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      key: const Key('product-image-url'),
+                      controller: _imageUrlController,
+                      decoration: const InputDecoration(
+                        labelText: 'URL Hình ảnh',
+                        prefixIcon: Icon(Icons.link_rounded),
+                        errorMaxLines: 3,
+                      ),
+                      keyboardType: TextInputType.url,
+                      enabled: !_isSubmitting,
+                      validator: (value) {
+                        final source = value?.trim() ?? '';
+                        if (source.isEmpty) return null;
+                        final uri = Uri.tryParse(source);
+                        if (uri == null || source.contains(RegExp(r'[\s\\]'))) {
+                          return 'URL không hợp lệ';
+                        }
+                        final remote =
+                            (uri.scheme == 'http' || uri.scheme == 'https') &&
+                            uri.host.isNotEmpty;
+                        // Bundled demo assets and backend upload paths are valid media sources.
+                        final local =
+                            !uri.hasScheme &&
+                            !uri.hasAuthority &&
+                            (source.startsWith('assets/') ||
+                                source.startsWith('/')) &&
+                            !uri.path.endsWith('/') &&
+                            uri.query.isEmpty &&
+                            uri.fragment.isEmpty &&
+                            !source
+                                .split('/')
+                                .any((part) => part == '.' || part == '..');
+                        return remote || local ? null : 'URL không hợp lệ';
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              AdminSurface(
+                padding: EdgeInsets.zero,
+                child: SwitchListTile(
+                  key: const Key('product-featured'),
+                  activeThumbColor: AdminTheme.primary,
+                  secondary: const Icon(
+                    Icons.star_rounded,
+                    color: AdminTheme.primary,
                   ),
-                ),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Tên sản phẩm *',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Vui lòng nhập tên sản phẩm';
-                  }
-                  return null;
-                },
-                enabled: !_isSubmitting,
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                initialValue: _selectedCategoryId,
-                decoration: const InputDecoration(
-                  labelText: 'Danh mục *',
-                  border: OutlineInputBorder(),
-                ),
-                items: _categories
-                    .map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    )
-                    .toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (val) {
-                        setState(() => _selectedCategoryId = val);
-                      },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng chọn danh mục';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<String?>(
-                isExpanded: true,
-                initialValue: _selectedBrandId,
-                decoration: const InputDecoration(
-                  labelText: 'Thương hiệu',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Không có')),
-                  ..._brands.map(
-                    (b) => DropdownMenuItem(value: b.id, child: Text(b.name)),
+                  title: const Text('Sản phẩm nổi bật'),
+                  subtitle: const Text(
+                    'Đưa sản phẩm vào nhóm nổi bật trên trang chủ.',
+                    style: TextStyle(color: AdminTheme.textSecondaryStrong),
                   ),
-                ],
-                onChanged: _isSubmitting
-                    ? null
-                    : (val) {
-                        setState(() => _selectedBrandId = val);
-                      },
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả',
-                  border: OutlineInputBorder(),
+                  value: _isFeatured,
+                  onChanged: _isSubmitting
+                      ? null
+                      : (val) {
+                          setState(() => _isFeatured = val);
+                        },
                 ),
-                maxLines: 3,
-                enabled: !_isSubmitting,
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _imageUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'URL Hình ảnh',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.url,
-                enabled: !_isSubmitting,
-                validator: (value) {
-                  if (value != null && value.trim().isNotEmpty) {
-                    if (!(Uri.tryParse(value.trim())?.isAbsolute ?? false)) {
-                      return 'URL không hợp lệ';
-                    }
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              SwitchListTile(
-                title: const Text('Sản phẩm nổi bật'),
-                value: _isFeatured,
-                onChanged: _isSubmitting
-                    ? null
-                    : (val) {
-                        setState(() => _isFeatured = val);
-                      },
               ),
 
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                height: 56,
                 child: ElevatedButton(
+                  key: const Key('product-submit'),
                   onPressed: _isSubmitting ? null : _submit,
                   child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AdminTheme.primary,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Flexible(child: Text('Đang lưu…')),
+                          ],
                         )
                       : Text(
                           widget.product != null

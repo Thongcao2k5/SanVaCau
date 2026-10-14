@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/admin_theme.dart';
+import '../widgets/admin_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../products/data/product_api.dart';
@@ -153,167 +154,328 @@ class _AdminVariantFormPageState extends State<AdminVariantFormPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: Text(isEditing ? 'Sửa phân loại' : 'Thêm phân loại'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: Form(
             key: _formKey,
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(
-                            AdminTheme.compactRadius,
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: AdminTheme.softWine,
+                            borderRadius: BorderRadius.circular(
+                              AdminTheme.compactRadius,
+                            ),
+                            border: Border.all(
+                              color: AdminTheme.primary.withValues(alpha: 0.3),
+                            ),
                           ),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.error_rounded,
+                                color: AdminTheme.primary,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: const TextStyle(
+                                    color: AdminTheme.primaryText,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Text(
-                          _error!,
-                          style: const TextStyle(color: AppColors.primary),
-                        ),
                       ),
 
-                    TextFormField(
-                      key: const Key('variant-sku'),
-                      controller: _skuController,
-                      decoration: const InputDecoration(
-                        labelText: 'Mã SKU *',
-                        border: OutlineInputBorder(),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        'Các trường có dấu * là bắt buộc.',
+                        style: TextStyle(color: AdminTheme.textSecondaryStrong),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập mã SKU';
-                        }
-                        return null;
-                      },
-                      enabled: !_isSubmitting,
+                    ),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Row(
+                            children: [
+                              AdminIconBox(
+                                icon: Icons.layers_rounded,
+                                color: AdminTheme.primary,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Phân loại & giá bán',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: AdminTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('variant-sku'),
+                            controller: _skuController,
+                            decoration: const InputDecoration(
+                              labelText: 'Mã SKU *',
+                              errorMaxLines: 3,
+                            ),
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Vui lòng nhập mã SKU';
+                              }
+                              return null;
+                            },
+                            enabled: !_isSubmitting,
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            key: const Key('variant-name'),
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tên phân loại *',
+                              errorMaxLines: 3,
+                            ),
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Vui lòng nhập tên phân loại';
+                              }
+                              return null;
+                            },
+                            enabled: !_isSubmitting,
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            key: const Key('variant-price'),
+                            controller: _priceController,
+                            decoration: const InputDecoration(
+                              labelText: 'Giá *',
+                              suffixText: 'đ',
+                              errorMaxLines: 3,
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Vui lòng nhập giá';
+                              }
+                              final parsed = double.tryParse(value.trim());
+                              if (parsed == null || parsed <= 0) {
+                                return 'Giá phải là số lớn hơn 0';
+                              }
+                              return null;
+                            },
+                            enabled: !_isSubmitting,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    TextFormField(
-                      key: const Key('variant-name'),
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tên phân loại *',
-                        border: OutlineInputBorder(),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Lựa chọn 1',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Không bắt buộc · ví dụ Màu / Trắng',
+                            style: TextStyle(
+                              color: AdminTheme.textSecondaryStrong,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('variant-option1-name'),
+                            controller: _option1NameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tên lựa chọn 1',
+                            ),
+                            enabled: !_isSubmitting,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            key: const Key('variant-option1-value'),
+                            controller: _option1ValueController,
+                            decoration: const InputDecoration(
+                              labelText: 'Giá trị lựa chọn 1',
+                            ),
+                            enabled: !_isSubmitting,
+                          ),
+                        ],
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập tên phân loại';
-                        }
-                        return null;
-                      },
-                      enabled: !_isSubmitting,
+                    ),
+                    const SizedBox(height: 16),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Lựa chọn 2',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Không bắt buộc · ví dụ Size / 40',
+                            style: TextStyle(
+                              color: AdminTheme.textSecondaryStrong,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('variant-option2-name'),
+                            controller: _option2NameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tên lựa chọn 2',
+                            ),
+                            enabled: !_isSubmitting,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            key: const Key('variant-option2-value'),
+                            controller: _option2ValueController,
+                            decoration: const InputDecoration(
+                              labelText: 'Giá trị lựa chọn 2',
+                            ),
+                            enabled: !_isSubmitting,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    TextFormField(
-                      key: const Key('variant-price'),
-                      controller: _priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Giá *',
-                        border: OutlineInputBorder(),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Row(
+                            children: [
+                              AdminIconBox(
+                                icon: Icons.image_rounded,
+                                color: AdminTheme.primary,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Hình ảnh',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: AdminTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Ảnh riêng cho phân loại · không bắt buộc',
+                            style: TextStyle(
+                              color: AdminTheme.textSecondaryStrong,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('variant-image-url'),
+                            controller: _imageUrlController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL Hình ảnh',
+                              prefixIcon: Icon(Icons.link_rounded),
+                              errorMaxLines: 3,
+                            ),
+                            keyboardType: TextInputType.url,
+                            enabled: !_isSubmitting,
+                            validator: (value) {
+                              final source = value?.trim() ?? '';
+                              if (source.isEmpty) return null;
+                              final uri = Uri.tryParse(source);
+                              if (uri == null ||
+                                  source.contains(RegExp(r'[\s\\]'))) {
+                                return 'URL không hợp lệ';
+                              }
+                              final remote =
+                                  (uri.scheme == 'http' ||
+                                      uri.scheme == 'https') &&
+                                  uri.host.isNotEmpty;
+                              // Bundled demo assets and backend upload paths are valid media sources.
+                              final local =
+                                  !uri.hasScheme &&
+                                  !uri.hasAuthority &&
+                                  (source.startsWith('assets/') ||
+                                      source.startsWith('/')) &&
+                                  !uri.path.endsWith('/') &&
+                                  uri.query.isEmpty &&
+                                  uri.fragment.isEmpty &&
+                                  !source
+                                      .split('/')
+                                      .any(
+                                        (part) => part == '.' || part == '..',
+                                      );
+                              return remote || local
+                                  ? null
+                                  : 'URL không hợp lệ';
+                            },
+                          ),
+                        ],
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập giá';
-                        }
-                        final parsed = double.tryParse(value.trim());
-                        if (parsed == null || parsed <= 0) {
-                          return 'Giá phải là số lớn hơn 0';
-                        }
-                        return null;
-                      },
-                      enabled: !_isSubmitting,
                     ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _option1NameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tên lựa chọn 1 (VD: Màu)',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isSubmitting,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _option1ValueController,
-                      decoration: const InputDecoration(
-                        labelText: 'Giá trị lựa chọn 1 (VD: Trắng/Đỏ)',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isSubmitting,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _option2NameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tên lựa chọn 2 (VD: Size)',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isSubmitting,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _option2ValueController,
-                      decoration: const InputDecoration(
-                        labelText: 'Giá trị lựa chọn 2 (VD: 40)',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isSubmitting,
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _imageUrlController,
-                      decoration: const InputDecoration(
-                        labelText: 'URL Hình ảnh',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.url,
-                      enabled: !_isSubmitting,
-                      validator: (value) {
-                        if (value != null && value.trim().isNotEmpty) {
-                          if (!(Uri.tryParse(value.trim())?.isAbsolute ??
-                              false)) {
-                            return 'URL không hợp lệ';
-                          }
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
 
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
                       child: ElevatedButton(
                         key: const Key('variant-submit'),
                         onPressed: _isSubmitting ? null : _submit,
                         child: _isSubmitting
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AdminTheme.primary,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Flexible(child: Text('Đang lưu…')),
+                                ],
                               )
                             : Text(
                                 isEditing ? 'Lưu thay đổi' : 'Tạo phân loại',
