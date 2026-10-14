@@ -147,8 +147,6 @@ class _AdminInventoryListPageState extends State<AdminInventoryListPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Quản lý tồn kho'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
           bottom: PreferredSize(
             preferredSize: Size.fromHeight(
               48 * MediaQuery.textScalerOf(context).scale(1) + 12,

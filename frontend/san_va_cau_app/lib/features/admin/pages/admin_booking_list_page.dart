@@ -104,8 +104,6 @@ class _AdminBookingListPageState extends State<AdminBookingListPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Quản lý lịch đặt'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: Column(
@@ -237,7 +235,7 @@ class _AdminBookingListPageState extends State<AdminBookingListPage> {
                                   : '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}',
                               style: TextStyle(
                                 color: _selectedDate == null
-                                    ? AdminTheme.textSecondary
+                                    ? AdminTheme.textSecondaryStrong
                                     : AdminTheme.textPrimary,
                                 fontWeight: _selectedDate == null
                                     ? FontWeight.normal

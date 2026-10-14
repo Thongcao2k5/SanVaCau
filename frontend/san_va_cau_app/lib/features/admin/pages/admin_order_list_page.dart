@@ -58,8 +58,6 @@ class _AdminOrderListPageState extends State<AdminOrderListPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Quản lý đơn hàng'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: Column(

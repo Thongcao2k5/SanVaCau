@@ -227,9 +227,9 @@ Không tạo state manager, router service hoặc dependency mới chỉ để r
 
 **Chia thành ba lát cắt độc lập:**
 
-- [ ] 4A — Lịch đặt sân: filter chips, booking card, detail và action tray.
-- [ ] 4B — Đơn hàng: status filters, order card, fulfillment info và action tray.
-- [ ] 4C — Tồn kho: branch scope, low-stock warning, quantity editor và state views.
+- [x] 4A — Lịch đặt sân: filter chips, booking card, detail và action tray.
+- [x] 4B — Đơn hàng: status filters, order card, fulfillment info và action tray.
+- [x] 4C — Tồn kho: phạm vi kho chung, low-stock warning, quantity editor và state views.
 
 **Acceptance criteria:**
 
@@ -397,8 +397,8 @@ Cập nhật mục này sau mỗi lát cắt để phiên sau biết chính xác
 - [x] Task 1 — Nền tảng giao diện admin: thêm token, surface, header, icon box, status badge và state view dùng chung.
 - [x] Task 2 — AdminShell và hub: graphite navigation/header ngắn, content nền sáng, module cards và account tab đồng bộ.
 - [x] Task 3 — Dashboard: metric responsive, badge có text/icon, bỏ shortcut quản lý/báo cáo trùng lặp.
+- [x] Task 4 — Nhóm Vận hành: hoàn thiện lịch đặt sân, đơn hàng và tồn kho; bổ sung kiểm tra responsive và khóa double-submit tồn kho.
 - [ ] Checkpoint A — Chờ người dùng duyệt hình ảnh.
-- [ ] Task 4 — Nhóm Vận hành.
 - [ ] Task 5 — Sản phẩm.
 - [ ] Task 6 — Chi nhánh/sân/bảng giá.
 - [ ] Checkpoint B.
@@ -409,7 +409,9 @@ Cập nhật mục này sau mỗi lát cắt để phiên sau biết chính xác
 ### Kết quả kiểm tra gần nhất — 2026-10-12
 
 - `flutter analyze`: No issues found.
-- `flutter test`: 287/287 tests passed.
-- Focused tests cho component, AdminShell và Dashboard: 13/13 passed.
+- `flutter test`: 291/291 tests passed.
+- Focused tests cho Booking, Order và Inventory: 32/32 passed.
 - Đã kiểm tra widget ở 320dp và text scale 1.5.
-- Thay đổi redesign hiện nằm trong working tree, chưa commit hoặc push.
+- Task 4A/4B do Antigravity triển khai đã được Codex review độc lập; không phát hiện lỗi chặn luồng.
+- Task 4C do Codex hoàn thiện và sửa lỗi double-submit tồn kho.
+- Toàn bộ thay đổi Task 4 hiện nằm trong working tree, chưa commit hoặc push.

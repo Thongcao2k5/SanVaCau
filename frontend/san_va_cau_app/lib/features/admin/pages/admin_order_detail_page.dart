@@ -167,8 +167,6 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Chi tiết đơn hàng'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: FutureBuilder<Order>(

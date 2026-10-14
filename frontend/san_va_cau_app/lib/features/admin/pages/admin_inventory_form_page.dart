@@ -231,8 +231,6 @@ class _AdminInventoryFormPageState extends State<AdminInventoryFormPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: Text(isEditing ? 'Cập nhật tồn kho' : 'Thêm tồn kho'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: _isLoadingData && !isEditing

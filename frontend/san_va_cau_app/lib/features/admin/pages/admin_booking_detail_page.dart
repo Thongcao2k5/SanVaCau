@@ -199,8 +199,6 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
         backgroundColor: AdminTheme.canvas,
         appBar: AppBar(
           title: const Text('Chi tiết lịch đặt'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
         ),
         body: SafeArea(
           child: Stack(
