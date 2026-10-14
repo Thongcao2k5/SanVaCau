@@ -3,17 +3,23 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 abstract final class AdminTheme {
+  static const ivory = Color(0xFFF7F5F3);
+  static const softWine = Color(0xFFF8E7EA);
+  static const wine = Color(0xFFB4232F);
+
+  // Kept as legacy tokens until the remaining admin pages are migrated.
   static const graphite = Color(0xFF17191D);
   static const graphiteSurface = Color(0xFF202329);
-  static const canvas = Color(0xFFF6F7F9);
+  static const canvas = ivory;
   static const surface = Colors.white;
-  static const textPrimary = Color(0xFF17191D);
-  static const textSecondary = Color(0xFF667085);
-  static const border = Color(0xFFE6E8EC);
-  static const navigationMuted = Color(0xFFB7BBC2);
+  static const textPrimary = Color(0xFF22242A);
+  static const textSecondary = Color(0xFF6E737C);
+  static const textSecondaryStrong = Color(0xFF62666E);
+  static const border = Color(0xFFE7E1E2);
+  static const navigationMuted = textSecondary;
 
-  static const primary = AppColors.primary;
-  static const primaryText = AppColors.primaryDark;
+  static const primary = wine;
+  static const primaryText = wine;
   static const success = AppColors.success;
   static const warning = AppColors.warning;
   static const info = AppColors.info;
@@ -21,7 +27,7 @@ abstract final class AdminTheme {
   static const warningText = Color(0xFF9A3412);
 
   static const pagePadding = 20.0;
-  static const cardRadius = 18.0;
+  static const cardRadius = 16.0;
   static const compactRadius = 14.0;
   static const touchTarget = 48.0;
 
@@ -29,10 +35,11 @@ abstract final class AdminTheme {
     materialTapTargetSize: MaterialTapTargetSize.padded,
     scaffoldBackgroundColor: canvas,
     appBarTheme: base.appBarTheme.copyWith(
-      backgroundColor: graphite,
-      foregroundColor: Colors.white,
+      backgroundColor: surface,
+      foregroundColor: textPrimary,
+      surfaceTintColor: Colors.transparent,
       titleTextStyle: base.textTheme.titleLarge?.copyWith(
-        color: Colors.white,
+        color: textPrimary,
         fontWeight: FontWeight.w800,
       ),
       centerTitle: false,
@@ -110,7 +117,7 @@ abstract final class AdminTheme {
         fontWeight: FontWeight.w800,
       ),
       backgroundColor: surface,
-      selectedColor: AppColors.primarySoft,
+      selectedColor: softWine,
       side: const BorderSide(color: border),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     ),

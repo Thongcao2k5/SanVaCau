@@ -8,7 +8,7 @@ class AdminPageHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.action,
-    this.dark = true,
+    this.dark = false,
   });
 
   final String title;
@@ -21,12 +21,15 @@ class AdminPageHeader extends StatelessWidget {
     final foreground = dark ? Colors.white : AdminTheme.textPrimary;
     final secondary = dark
         ? AdminTheme.navigationMuted
-        : AdminTheme.textSecondary;
+        : AdminTheme.textSecondaryStrong;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
       decoration: BoxDecoration(
         color: dark ? AdminTheme.graphite : AdminTheme.canvas,
+        border: dark
+            ? null
+            : const Border(bottom: BorderSide(color: AdminTheme.border)),
         borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(AdminTheme.cardRadius),
         ),
@@ -161,7 +164,7 @@ class AdminStatusBadge extends StatelessWidget {
         Icons.cancel_outlined,
       ),
       AdminStatusTone.neutral => (
-        AdminTheme.textSecondary,
+        AdminTheme.textSecondaryStrong,
         AdminTheme.canvas,
         Icons.circle_outlined,
       ),
@@ -245,8 +248,10 @@ class AdminStateView extends StatelessWidget {
                 Text(
                   message!,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: AdminTheme.textSecondary, height: 1.4),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AdminTheme.textSecondaryStrong,
+                    height: 1.4,
+                  ),
                 ),
               ],
               if (actionLabel != null && onAction != null) ...[

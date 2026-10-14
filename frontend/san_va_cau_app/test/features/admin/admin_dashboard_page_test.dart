@@ -80,9 +80,10 @@ void main() {
       expect(tester.takeException(), isNull);
       await expectAdminAccessibility(tester);
       for (final label in [
+        'Doanh thu hôm nay',
         'Lịch đặt hôm nay',
-        'Doanh thu hoàn tất',
-        'Sắp hết hàng',
+        'Đơn chờ xử lý',
+        '2 sản phẩm sắp hết',
         'Chưa có hoạt động gần đây',
       ]) {
         await tester.scrollUntilVisible(
@@ -147,13 +148,16 @@ void main() {
 
     expect(find.text('Toàn hệ thống'), findsOneWidget);
     expect(find.text('2026-10-06'), findsOneWidget);
+    expect(find.text('Doanh thu hôm nay'), findsOneWidget);
+    expect(find.text('0đ'), findsOneWidget);
+    expect(find.text('Tồn kho đang ổn định'), findsOneWidget);
     expect(find.text('Chưa có hoạt động gần đây'), findsOneWidget);
     expect(find.text('Quản lý nhân viên'), findsNothing);
     expect(find.text('Quản lý nội dung'), findsNothing);
     expect(find.text('Báo cáo tổng hợp'), findsNothing);
 
     final inventoryCard = find
-        .ancestor(of: find.text('Sắp hết hàng'), matching: find.byType(InkWell))
+        .ancestor(of: find.text('Xem kho'), matching: find.byType(InkWell))
         .first;
     tester.widget<InkWell>(inventoryCard).onTap!.call();
     await tester.pump();
@@ -232,6 +236,10 @@ void main() {
 
     expect(find.text('Chi nhánh #1'), findsOneWidget);
     expect(find.text('2026-10-06'), findsOneWidget);
+    expect(find.text('150.000đ'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('1 sản phẩm sắp hết'), findsOneWidget);
     expect(find.textContaining('Lịch #99'), findsOneWidget);
     expect(find.textContaining('Đơn #88'), findsOneWidget);
     expect(find.textContaining('Racket'), findsOneWidget);
@@ -383,7 +391,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Trung tâm vận hành'), findsOneWidget);
+    expect(find.text('Tổng quan'), findsOneWidget);
+    expect(find.text('1.250.000đ'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Lịch đặt hôm nay'),
       200,

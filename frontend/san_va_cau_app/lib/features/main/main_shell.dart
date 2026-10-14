@@ -100,6 +100,7 @@ class _MainShellState extends State<MainShell> {
   int _bookingRevision = 0;
   bool _bookingTimelineVisible = false;
   bool _cartCheckoutVisible = false;
+  bool _cartInitialized = false;
   int _accountRevision = 0;
   bool _exitArmed = false;
   Timer? _exitTimer;
@@ -133,6 +134,7 @@ class _MainShellState extends State<MainShell> {
       // Login can happen on a pushed page while this tab stays in IndexedStack.
       // Fetch the current session whenever the user returns to their account.
       if (index == 4 && _currentIndex != 4) _accountRevision++;
+      if (index == 3) _cartInitialized = true;
       _currentIndex = index;
     });
   }
@@ -213,10 +215,12 @@ class _MainShellState extends State<MainShell> {
           }
         },
       ),
-      CartPage(
-        cartApi: widget.cartApi,
-        onSelectionChanged: _onCartSelectionChanged,
-      ),
+      _cartInitialized
+          ? CartPage(
+              cartApi: widget.cartApi,
+              onSelectionChanged: _onCartSelectionChanged,
+            )
+          : const SizedBox.shrink(),
       AccountPage(
         key: ValueKey('account-$_accountRevision'),
         authApi: widget.authApi,

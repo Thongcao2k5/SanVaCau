@@ -170,39 +170,53 @@ class _AdminShellState extends State<AdminShell> {
       ),
     ];
 
-    return Scaffold(
-      backgroundColor: AdminTheme.canvas,
-      body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          backgroundColor: AdminTheme.graphite,
-          indicatorColor: AppColors.primary,
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            return IconThemeData(
-              color: states.contains(WidgetState.selected)
-                  ? Colors.white
-                  : AdminTheme.navigationMuted,
-            );
-          }),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            return TextStyle(
-              color: states.contains(WidgetState.selected)
-                  ? Colors.white
-                  : AdminTheme.navigationMuted,
-              fontSize: 11,
-              fontWeight: states.contains(WidgetState.selected)
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-            );
-          }),
-        ),
-        child: NavigationBar(
-          height: 72,
-          selectedIndex: _currentIndex,
-          destinations: _items,
-          onDestinationSelected: (index) {
-            setState(() => _currentIndex = index);
-          },
+    return Theme(
+      data: AdminTheme.data(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: AdminTheme.canvas,
+        body: IndexedStack(index: _currentIndex, children: pages),
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: AdminTheme.surface,
+            border: Border(top: BorderSide(color: AdminTheme.border)),
+          ),
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              backgroundColor: AdminTheme.surface,
+              indicatorColor: AdminTheme.softWine,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              iconTheme: WidgetStateProperty.resolveWith((states) {
+                return IconThemeData(
+                  color: states.contains(WidgetState.selected)
+                      ? AdminTheme.primary
+                      : AdminTheme.navigationMuted,
+                );
+              }),
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                return TextStyle(
+                  color: states.contains(WidgetState.selected)
+                      ? AdminTheme.primary
+                      : AdminTheme.navigationMuted,
+                  fontSize: 11,
+                  fontWeight: states.contains(WidgetState.selected)
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                );
+              }),
+            ),
+            child: NavigationBar(
+              height: 72,
+              backgroundColor: AdminTheme.surface,
+              indicatorColor: AdminTheme.softWine,
+              selectedIndex: _currentIndex,
+              destinations: _items,
+              onDestinationSelected: (index) {
+                setState(() => _currentIndex = index);
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -350,20 +364,17 @@ class _AdminAccountTab extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  Container(
+                  AdminSurface(
+                    color: AdminTheme.softWine,
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AdminTheme.graphiteSurface,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
                     child: Row(
                       children: [
                         const CircleAvatar(
                           radius: 28,
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AdminTheme.surface,
                           child: Icon(
                             Icons.admin_panel_settings_rounded,
-                            color: Colors.white,
+                            color: AdminTheme.primary,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -374,7 +385,7 @@ class _AdminAccountTab extends StatelessWidget {
                               Text(
                                 user.fullName,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AdminTheme.textPrimary,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -383,7 +394,7 @@ class _AdminAccountTab extends StatelessWidget {
                               Text(
                                 _roleLabel(user.role),
                                 style: const TextStyle(
-                                  color: AdminTheme.navigationMuted,
+                                  color: AdminTheme.textSecondaryStrong,
                                 ),
                               ),
                             ],

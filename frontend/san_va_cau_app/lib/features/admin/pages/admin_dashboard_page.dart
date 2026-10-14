@@ -75,12 +75,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         child: Column(
           children: [
             AdminPageHeader(
-              title: 'Trung tâm vận hành',
-              subtitle: 'Theo dõi nhanh hoạt động hôm nay',
+              title: 'Tổng quan',
+              subtitle: 'Theo dõi hoạt động kinh doanh và vận hành',
               action: IconButton(
                 tooltip: 'Tải lại',
                 onPressed: _reload,
-                color: Colors.white,
+                color: AdminTheme.primary,
+                style: IconButton.styleFrom(
+                  backgroundColor: AdminTheme.softWine,
+                ),
                 icon: const Icon(Icons.refresh_rounded),
               ),
             ),
@@ -122,6 +125,8 @@ class _DashboardContent extends StatelessWidget {
       children: [
         _ScopeBanner(data: data),
         const SizedBox(height: 18),
+        _RevenueHero(data: data),
+        const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
             final singleColumn = constraints.maxWidth < 340 || textScale >= 1.3;
@@ -139,7 +144,7 @@ class _DashboardContent extends StatelessWidget {
                     value: '${data.bookings.total}',
                     detail: '${data.bookings.booked} đang chờ',
                     icon: Icons.calendar_month_rounded,
-                    color: AdminTheme.info,
+                    color: AdminTheme.primary,
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -154,11 +159,11 @@ class _DashboardContent extends StatelessWidget {
                 SizedBox(
                   width: cardWidth,
                   child: _MetricCard(
-                    label: 'Đơn hàng hôm nay',
-                    value: '${data.orders.total}',
-                    detail: '${data.orders.pending} chờ xử lý',
+                    label: 'Đơn chờ xử lý',
+                    value: '${data.orders.pending}',
+                    detail: '${data.orders.total} đơn hôm nay',
                     icon: Icons.receipt_long_rounded,
-                    color: AdminTheme.primary,
+                    color: AdminTheme.warning,
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -170,42 +175,12 @@ class _DashboardContent extends StatelessWidget {
                     },
                   ),
                 ),
-                SizedBox(
-                  width: cardWidth,
-                  child: _MetricCard(
-                    label: 'Doanh thu hoàn tất',
-                    value: _money(data.orders.revenueCompleted),
-                    detail: '${data.orders.completed} đơn hoàn tất',
-                    icon: Icons.payments_rounded,
-                    color: AdminTheme.success,
-                  ),
-                ),
-                SizedBox(
-                  width: cardWidth,
-                  child: _MetricCard(
-                    label: 'Sắp hết hàng',
-                    value: '${data.inventory.lowStockCount}',
-                    detail: '${data.courts.active} sân hoạt động',
-                    icon: Icons.inventory_2_rounded,
-                    color: AdminTheme.warning,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AdminInventoryListPage(
-                            role: data.role,
-                            assignedBranchId: data.branchId,
-                          ),
-                        ),
-                      );
-                      onRefresh();
-                    },
-                  ),
-                ),
               ],
             );
           },
         ),
+        const SizedBox(height: 12),
+        _LowStockAlert(data: data, onRefresh: onRefresh),
         if (data.inventory.lowStockItems.isNotEmpty) ...[
           const SizedBox(height: 26),
           const _SectionTitle(
@@ -286,45 +261,207 @@ class _ScopeBanner extends StatelessWidget {
     final scope = data.branchId == null
         ? 'Toàn hệ thống'
         : 'Chi nhánh #${data.branchId}';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Row(
-          children: [
-            const AdminIconBox(
-              icon: Icons.today_rounded,
-              color: AdminTheme.info,
-              size: 42,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    scope,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AdminTheme.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.date,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AdminTheme.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
         AdminStatusBadge(
           label: _roleLabel(data.role),
-          tone: AdminStatusTone.neutral,
+          tone: AdminStatusTone.danger,
+          icon: Icons.admin_panel_settings_rounded,
+        ),
+        _ContextLabel(icon: Icons.today_rounded, label: data.date),
+        _ContextLabel(icon: Icons.location_on_rounded, label: scope),
+      ],
+    );
+  }
+}
+
+class _ContextLabel extends StatelessWidget {
+  const _ContextLabel({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: AdminTheme.textSecondaryStrong),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AdminTheme.textSecondaryStrong,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _RevenueHero extends StatelessWidget {
+  const _RevenueHero({required this.data});
+
+  final AdminDashboard data;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminSurface(
+      color: AdminTheme.softWine,
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AdminIconBox(
+            icon: Icons.bar_chart_rounded,
+            color: AdminTheme.primary,
+            size: 48,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Doanh thu hôm nay',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AdminTheme.textSecondaryStrong,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _money(data.orders.revenueCompleted),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AdminTheme.textPrimary,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  '${data.orders.completed} đơn đã hoàn tất',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AdminTheme.textSecondaryStrong),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LowStockAlert extends StatelessWidget {
+  const _LowStockAlert({required this.data, required this.onRefresh});
+
+  final AdminDashboard data;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasWarning = data.inventory.lowStockCount > 0;
+    final accent = hasWarning ? AdminTheme.warningText : AdminTheme.successText;
+    final background = (hasWarning ? AdminTheme.warning : AdminTheme.success)
+        .withValues(alpha: 0.09);
+    final title = hasWarning
+        ? '${data.inventory.lowStockCount} sản phẩm sắp hết'
+        : 'Tồn kho đang ổn định';
+
+    return Semantics(
+      button: true,
+      label: '$title. Xem kho',
+      child: Material(
+        color: background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AdminTheme.cardRadius),
+          side: BorderSide(color: accent.withValues(alpha: 0.28)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminInventoryListPage(
+                  role: data.role,
+                  assignedBranchId: data.branchId,
+                ),
+              ),
+            );
+            onRefresh();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact =
+                    constraints.maxWidth < 300 ||
+                    MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+                return Row(
+                  children: [
+                    AdminIconBox(
+                      icon: hasWarning
+                          ? Icons.warning_amber_rounded
+                          : Icons.inventory_2_rounded,
+                      color: accent,
+                      size: 42,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: AdminTheme.textPrimary,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${data.courts.active} sân đang hoạt động',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AdminTheme.textSecondaryStrong,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (!compact)
+                      Text(
+                        'Xem kho',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: accent,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    if (!compact) const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, color: accent, size: 20),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -371,6 +508,14 @@ class _MetricCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onTap != null) ...[
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 20,
+                  color: AdminTheme.textSecondaryStrong,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 18),

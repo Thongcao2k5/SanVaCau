@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/url_util.dart';
+import '../../../core/widgets/app_image.dart';
 import '../models/home_data.dart';
 
 class HomeBannerSection extends StatelessWidget {
@@ -35,23 +36,21 @@ class HomeBannerSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (banner.imageUrl.isNotEmpty)
-                Image.network(
-                  banner.imageUrl,
+                AppImage(
+                  source: banner.imageUrl,
                   height: 160,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 160,
-                      color: AppColors.background,
-                      child: const Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          color: AppColors.textSecondary,
-                          size: 48,
-                        ),
+                  fallback: Container(
+                    height: 160,
+                    color: AppColors.background,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: AppColors.textSecondary,
+                        size: 48,
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               if (banner.title.isNotEmpty)
                 Padding(

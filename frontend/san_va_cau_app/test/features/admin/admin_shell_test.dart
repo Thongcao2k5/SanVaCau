@@ -5,6 +5,7 @@ import 'package:san_va_cau_app/core/theme/app_theme.dart';
 import 'admin_test_accessibility.dart';
 
 import 'package:san_va_cau_app/features/admin/admin_shell.dart';
+import 'package:san_va_cau_app/features/admin/theme/admin_theme.dart';
 import 'package:san_va_cau_app/features/auth/data/auth_api.dart';
 import 'package:san_va_cau_app/features/auth/models/auth_user.dart';
 
@@ -108,7 +109,7 @@ void main() {
       });
     }
   }
-  testWidgets('shows four-tab graphite admin navigation', (tester) async {
+  testWidgets('shows four-tab light-wine admin navigation', (tester) async {
     await tester.pumpWidget(_app(authApi: _FakeAuthApi()));
     await tester.pumpAndSettle();
 
@@ -121,7 +122,14 @@ void main() {
     final navigationBar = tester.widget<NavigationBar>(
       find.byType(NavigationBar),
     );
-    expect(navigationBar.backgroundColor, isNot(Colors.white));
+    expect(navigationBar.backgroundColor, AdminTheme.surface);
+    expect(navigationBar.indicatorColor, AdminTheme.softWine);
+
+    final navigationTheme = tester.widget<NavigationBarTheme>(
+      find.byType(NavigationBarTheme),
+    );
+    expect(navigationTheme.data.backgroundColor, AdminTheme.surface);
+    expect(navigationTheme.data.indicatorColor, AdminTheme.softWine);
   });
 
   testWidgets('view user app pushes a child route and Back returns to admin', (

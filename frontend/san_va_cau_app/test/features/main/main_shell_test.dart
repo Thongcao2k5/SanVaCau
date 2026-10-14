@@ -46,8 +46,13 @@ class _NavigationBookingApi extends BookingApi {
 }
 
 class _NavigationCartApi extends CartApi {
+  int getCartCalls = 0;
+
   @override
-  Future<Cart> getCart() async => _cartWithItem;
+  Future<Cart> getCart() async {
+    getCartCalls++;
+    return _cartWithItem;
+  }
 }
 
 const _cartWithItem = Cart(
@@ -157,6 +162,25 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Đăng nhập'), findsNothing);
   });
   group('MainShell bottom navigation', () {
+    testWidgets('loads cart only after selecting the cart tab', (tester) async {
+      final cartApi = _NavigationCartApi();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MainShell(authApi: _SessionAuth(), cartApi: cartApi),
+        ),
+      );
+      await tester.pump();
+
+      expect(cartApi.getCartCalls, 0);
+
+      await tester.tap(find.text('Giỏ hàng').last);
+      await tester.pumpAndSettle();
+
+      expect(cartApi.getCartCalls, 1);
+      expect(find.text('Vợt cầu lông'), findsOneWidget);
+    });
+
     testWidgets('contains five destinations in correct order', (tester) async {
       await tester.pumpWidget(
         MaterialApp(home: MainShell(authApi: _SessionAuth())),

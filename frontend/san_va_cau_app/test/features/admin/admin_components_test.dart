@@ -8,6 +8,16 @@ import 'package:san_va_cau_app/features/admin/theme/admin_theme.dart';
 import 'package:san_va_cau_app/features/admin/widgets/admin_ui.dart';
 
 void main() {
+  test('light admin palette uses the approved wine design tokens', () {
+    expect(AdminTheme.canvas, const Color(0xFFF7F5F3));
+    expect(AdminTheme.surface, const Color(0xFFFFFFFF));
+    expect(AdminTheme.primary, const Color(0xFFB4232F));
+    expect(AdminTheme.softWine, const Color(0xFFF8E7EA));
+    expect(AdminTheme.textPrimary, const Color(0xFF22242A));
+    expect(AdminTheme.textSecondary, const Color(0xFF6E737C));
+    expect(AdminTheme.border, const Color(0xFFE7E1E2));
+  });
+
   testWidgets(
     'status badges have readable contrast and complete semantic labels',
     (tester) async {
@@ -140,5 +150,25 @@ void main() {
     expect(find.text('Vận hành'), findsOneWidget);
     expect(find.text('Đang xử lý'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('page header defaults to the light admin surface', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AdminTheme.data(AppTheme.light()),
+        home: const Scaffold(
+          body: AdminPageHeader(
+            title: 'Vận hành',
+            subtitle: 'Theo dõi hoạt động hằng ngày',
+          ),
+        ),
+      ),
+    );
+
+    final title = tester.widget<Text>(find.text('Vận hành'));
+    expect(title.style?.color, AdminTheme.textPrimary);
+    expect(find.text('Theo dõi hoạt động hằng ngày'), findsOneWidget);
   });
 }
