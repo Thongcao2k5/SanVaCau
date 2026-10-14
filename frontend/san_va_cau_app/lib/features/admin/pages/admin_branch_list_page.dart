@@ -43,6 +43,8 @@ class _AdminBranchListPageState extends State<AdminBranchListPage> {
     child: Scaffold(
       appBar: AppBar(title: const Text('Quản lý chi nhánh')),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AdminTheme.primary,
+        foregroundColor: Colors.white,
         onPressed: () async {
           final saved = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
@@ -59,7 +61,11 @@ class _AdminBranchListPageState extends State<AdminBranchListPage> {
           future: _branches,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const AdminStateView(
+                icon: Icons.storefront_rounded,
+                title: 'Đang tải chi nhánh',
+                isLoading: true,
+              );
             }
             if (snapshot.hasError) {
               return AdminStateView(
@@ -82,54 +88,149 @@ class _AdminBranchListPageState extends State<AdminBranchListPage> {
                 await _branches;
               },
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
                 itemCount: branches.length,
                 itemBuilder: (context, index) {
                   final branch = branches[index];
-                  return Card(
-                    child: ListTile(
-                      leading: SizedBox(
-                        width: 64,
-                        height: 64,
-                        child: AppImage(
-                          source: branch.imageUrl ?? '',
-                          fallback: const Icon(Icons.store_outlined),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Semantics(
+                      button: true,
+                      label: 'Thiết lập ${branch.name}',
+                      child: AdminSurface(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 16 / 7,
+                              child: ColoredBox(
+                                color: AdminTheme.softWine,
+                                child: AppImage(
+                                  source: branch.imageUrl ?? '',
+                                  fit: BoxFit.cover,
+                                  fallback: const Center(
+                                    child: Icon(
+                                      Icons.storefront_rounded,
+                                      color: AdminTheme.primary,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    branch.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: AdminTheme.textPrimary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    branch.address,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AdminTheme.textSecondaryStrong,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.schedule_rounded,
+                                        size: 18,
+                                        color: AdminTheme.textSecondaryStrong,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          '${branch.openingTime} – ${branch.closingTime}',
+                                          style: const TextStyle(
+                                            color:
+                                                AdminTheme.textSecondaryStrong,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      AdminStatusBadge(
+                                        label: branch.status == 'ACTIVE'
+                                            ? 'Đang hoạt động'
+                                            : 'Ngừng hoạt động',
+                                        tone: branch.status == 'ACTIVE'
+                                            ? AdminStatusTone.success
+                                            : AdminStatusTone.neutral,
+                                      ),
+                                      if (branch.isFeatured)
+                                        const AdminStatusBadge(
+                                          label: 'Nổi bật trên Home',
+                                          tone: AdminStatusTone.warning,
+                                          icon: Icons.star_rounded,
+                                        ),
+                                    ],
+                                  ),
+                                  if (branch.isFeatured) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Thứ tự trên Home: ${branch.sortOrder}',
+                                      style: const TextStyle(
+                                        color: AdminTheme.textSecondaryStrong,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 14),
+                                  const Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Thiết lập chi nhánh',
+                                          style: TextStyle(
+                                            color: AdminTheme.primaryText,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: AdminTheme.primary,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      title: Text(branch.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(branch.address),
-                          if (branch.isFeatured)
-                            AdminStatusBadge(
-                              label: 'Nổi bật • Thứ tự ${branch.sortOrder}',
-                              tone: AdminStatusTone.warning,
+                        onTap: () async {
+                          final saved = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => _BranchSettingsPage(
+                                branch: branch,
+                                branchApi: _branchApi,
+                                courtApi: widget.courtApi,
+                              ),
                             ),
-                          const SizedBox(height: 4),
-                          AdminStatusBadge(
-                            label: branch.status == 'ACTIVE'
-                                ? 'Đang hoạt động'
-                                : 'Ngừng hoạt động',
-                            tone: branch.status == 'ACTIVE'
-                                ? AdminStatusTone.success
-                                : AdminStatusTone.neutral,
-                          ),
-                        ],
+                          );
+                          if (saved == true && mounted) _reload();
+                        },
                       ),
-                      trailing: const Icon(Icons.edit_rounded),
-                      onTap: () async {
-                        final saved = await Navigator.of(context).push<bool>(
-                          MaterialPageRoute(
-                            builder: (_) => _BranchSettingsPage(
-                              branch: branch,
-                              branchApi: _branchApi,
-                              courtApi: widget.courtApi,
-                            ),
-                          ),
-                        );
-                        if (saved == true && mounted) _reload();
-                      },
                     ),
                   );
                 },
@@ -184,10 +285,10 @@ class _BranchSettingsPageState extends State<_BranchSettingsPage> {
       text: widget.branch.description ?? '',
     );
     _openingTimeController = TextEditingController(
-      text: widget.branch.openingTime,
+      text: _normalizeBranchTimeForInput(widget.branch.openingTime),
     );
     _closingTimeController = TextEditingController(
-      text: widget.branch.closingTime,
+      text: _normalizeBranchTimeForInput(widget.branch.closingTime),
     );
   }
 
@@ -367,137 +468,190 @@ class _BranchSettingsPageState extends State<_BranchSettingsPage> {
       appBar: AppBar(title: const Text('Thiết lập chi nhánh')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
-            TextField(
-              controller: _nameController,
-              enabled: !_saving,
-              decoration: const InputDecoration(labelText: 'Tên chi nhánh *'),
+            const Text(
+              'Các trường có dấu * là bắt buộc.',
+              style: TextStyle(color: AdminTheme.textSecondaryStrong),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _addressController,
-              enabled: !_saving,
-              maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Địa chỉ *'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phoneController,
-              enabled: !_saving,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Số điện thoại'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descriptionController,
-              enabled: !_saving,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Mô tả'),
-            ),
-            const SizedBox(height: 12),
-            Row(
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Thông tin chi nhánh',
+              icon: Icons.storefront_rounded,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _openingTimeController,
-                    enabled: !_saving,
-                    decoration: const InputDecoration(
-                      labelText: 'Mở cửa (HH:mm) *',
+                TextField(
+                  controller: _nameController,
+                  enabled: !_saving,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên chi nhánh *',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _addressController,
+                  enabled: !_saving,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Địa chỉ *'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _phoneController,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descriptionController,
+                  enabled: !_saving,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Mô tả'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Giờ hoạt động',
+              icon: Icons.schedule_rounded,
+              children: [
+                _BranchHours(
+                  opening: _openingTimeController,
+                  closing: _closingTimeController,
+                  enabled: !_saving,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Hình ảnh chi nhánh',
+              icon: Icons.image_rounded,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AdminTheme.compactRadius),
+                  child: ColoredBox(
+                    color: AdminTheme.softWine,
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: _image == null
+                          ? AppImage(
+                              source: widget.branch.imageUrl ?? '',
+                              fit: BoxFit.cover,
+                              fallback: const Center(
+                                child: Icon(
+                                  Icons.storefront_rounded,
+                                  color: AdminTheme.primary,
+                                  size: 48,
+                                ),
+                              ),
+                            )
+                          : Image.file(File(_image!.path), fit: BoxFit.contain),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _closingTimeController,
-                    enabled: !_saving,
-                    decoration: const InputDecoration(
-                      labelText: 'Đóng cửa (HH:mm) *',
-                    ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _pick,
+                  icon: const Icon(Icons.photo_library_rounded),
+                  label: const Text('Chọn ảnh'),
+                ),
+                if (_image != null)
+                  OutlinedButton.icon(
+                    onPressed: _saving ? null : _crop,
+                    icon: const Icon(Icons.crop_rounded),
+                    label: const Text('Cắt ảnh theo khung 16:9'),
+                  ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Ảnh JPEG, PNG hoặc WebP, tối đa 5 MB.',
+                  style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Hiển thị trên trang chủ',
+              icon: Icons.star_rounded,
+              children: [
+                SwitchListTile.adaptive(
+                  activeThumbColor: AdminTheme.primary,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Chi nhánh nổi bật'),
+                  subtitle: const Text(
+                    'Hiển thị trong khu vực nổi bật ở trang chủ',
+                  ),
+                  value: _isFeatured,
+                  onChanged: _saving
+                      ? null
+                      : (value) => setState(() => _isFeatured = value),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _sortOrderController,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Thứ tự hiển thị',
+                    prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                    helperText: 'Trên Home, số nhỏ hơn sẽ xuất hiện trước',
+                    helperMaxLines: 3,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _image == null
-                  ? AppImage(
-                      source: widget.branch.imageUrl ?? '',
-                      fallback: const Icon(Icons.store_outlined, size: 64),
-                    )
-                  : Image.file(File(_image!.path), fit: BoxFit.contain),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _pick,
-              icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Chọn ảnh'),
-            ),
-            if (_image != null)
-              OutlinedButton.icon(
-                onPressed: _saving ? null : _crop,
-                icon: const Icon(Icons.crop),
-                label: const Text('Cắt ảnh theo khung 16:9'),
-              ),
-            const Text('Ảnh JPEG, PNG hoặc WebP, tối đa 5 MB.'),
-            const SizedBox(height: 20),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Chi nhánh nổi bật'),
-              subtitle: const Text(
-                'Hiển thị trong khu vực nổi bật ở trang chủ',
-              ),
-              value: _isFeatured,
-              onChanged: _saving
-                  ? null
-                  : (value) => setState(() => _isFeatured = value),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _sortOrderController,
-              enabled: !_saving,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Thứ tự hiển thị',
-                prefixIcon: Icon(Icons.format_list_numbered_rounded),
-                helperText: 'Số nhỏ hơn sẽ xuất hiện trước',
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
+            if (_error != null) _BranchError(message: _error!),
             const SizedBox(height: 16),
             FilledButton(
+              key: const Key('branch-settings-save'),
               onPressed: _saving ? null : _save,
               child: Text(_saving ? 'Đang lưu...' : 'Lưu thay đổi'),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _saving
-                  ? null
-                  : () => Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => AdminCourtListPage(
-                          branch: widget.branch,
-                          courtApi: widget.courtApi,
+            const SizedBox(height: 24),
+            _BranchSection(
+              title: 'Vận hành chi nhánh',
+              icon: Icons.sports_tennis_rounded,
+              children: [
+                const Text(
+                  'Quản lý sân, khung giờ và giá đặt sân tại chi nhánh.',
+                  style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _saving
+                      ? null
+                      : () => Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (_) => AdminCourtListPage(
+                              branch: widget.branch,
+                              courtApi: widget.courtApi,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-              icon: const Icon(Icons.sports_tennis_rounded),
-              label: const Text('Quản lý sân và bảng giá'),
+                  icon: const Icon(Icons.sports_tennis_rounded),
+                  label: const Text('Quản lý sân và bảng giá'),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _inactivate,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              icon: const Icon(Icons.block_rounded),
-              label: const Text('Ngừng hoạt động chi nhánh'),
+            _BranchSection(
+              title: 'Ngừng hoạt động',
+              icon: Icons.block_rounded,
+              children: [
+                const Text(
+                  'Chi nhánh sẽ được ẩn khỏi giao diện người dùng. Dữ liệu sân và lịch sử vẫn được giữ lại.',
+                  style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _inactivate,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AdminTheme.primary,
+                    side: const BorderSide(color: AdminTheme.primary),
+                  ),
+                  icon: const Icon(Icons.block_rounded),
+                  label: const Text('Ngừng hoạt động chi nhánh'),
+                ),
+              ],
             ),
           ],
         ),
@@ -588,61 +742,75 @@ class _BranchCreatePageState extends State<_BranchCreatePage> {
       appBar: AppBar(title: const Text('Thêm chi nhánh')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
-            TextField(
-              controller: _nameController,
-              enabled: !_saving,
-              decoration: const InputDecoration(labelText: 'Tên chi nhánh *'),
+            const Text(
+              'Các trường có dấu * là bắt buộc.',
+              style: TextStyle(color: AdminTheme.textSecondaryStrong),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _addressController,
-              enabled: !_saving,
-              maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Địa chỉ *'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phoneController,
-              enabled: !_saving,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Số điện thoại'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descriptionController,
-              enabled: !_saving,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Mô tả'),
-            ),
-            const SizedBox(height: 12),
-            Row(
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Thông tin chính',
+              icon: Icons.storefront_rounded,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _openingTimeController,
-                    enabled: !_saving,
-                    decoration: const InputDecoration(labelText: 'Mở cửa *'),
+                TextField(
+                  controller: _nameController,
+                  enabled: !_saving,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên chi nhánh *',
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _closingTimeController,
-                    enabled: !_saving,
-                    decoration: const InputDecoration(labelText: 'Đóng cửa *'),
-                  ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _addressController,
+                  enabled: !_saving,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Địa chỉ *'),
                 ),
               ],
             ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Liên hệ & mô tả',
+              icon: Icons.contact_phone_rounded,
+              children: [
+                const Text(
+                  'Thông tin bổ sung · không bắt buộc',
+                  style: TextStyle(color: AdminTheme.textSecondaryStrong),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _phoneController,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descriptionController,
+                  enabled: !_saving,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Mô tả'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _BranchSection(
+              title: 'Giờ hoạt động',
+              icon: Icons.schedule_rounded,
+              children: [
+                _BranchHours(
+                  opening: _openingTimeController,
+                  closing: _closingTimeController,
+                  enabled: !_saving,
+                ),
+              ],
+            ),
+            if (_error != null) _BranchError(message: _error!),
             const SizedBox(height: 20),
             FilledButton.icon(
+              key: const Key('branch-create-save'),
               onPressed: _saving ? null : _save,
               icon: const Icon(Icons.add_business_rounded),
               label: Text(_saving ? 'Đang tạo...' : 'Tạo chi nhánh'),
@@ -653,6 +821,123 @@ class _BranchCreatePageState extends State<_BranchCreatePage> {
     ),
   );
 }
+
+class _BranchSection extends StatelessWidget {
+  const _BranchSection({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => AdminSurface(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            AdminIconBox(icon: icon, color: AdminTheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AdminTheme.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ...children,
+      ],
+    ),
+  );
+}
+
+class _BranchHours extends StatelessWidget {
+  const _BranchHours({
+    required this.opening,
+    required this.closing,
+    required this.enabled,
+  });
+
+  final TextEditingController opening;
+  final TextEditingController closing;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final fields = [
+        TextField(
+          key: const Key('branch-opening-time'),
+          controller: opening,
+          enabled: enabled,
+          decoration: const InputDecoration(labelText: 'Mở cửa (HH:mm) *'),
+        ),
+        TextField(
+          key: const Key('branch-closing-time'),
+          controller: closing,
+          enabled: enabled,
+          decoration: const InputDecoration(labelText: 'Đóng cửa (HH:mm) *'),
+        ),
+      ];
+      if (constraints.maxWidth < 400 ||
+          MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+        return Column(
+          children: [fields[0], const SizedBox(height: 16), fields[1]],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: fields[0]),
+          const SizedBox(width: 12),
+          Expanded(child: fields[1]),
+        ],
+      );
+    },
+  );
+}
+
+class _BranchError extends StatelessWidget {
+  const _BranchError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: AdminSurface(
+        color: AdminTheme.softWine,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.error_rounded, color: AdminTheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: AdminTheme.primaryText),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+String _normalizeBranchTimeForInput(String value) =>
+    RegExp(r'^((?:[01]\d|2[0-3]):[0-5]\d):00$').firstMatch(value)?.group(1) ??
+    value;
 
 bool _isValidTime(String value) {
   final match = RegExp(r'^(\d{2}):(\d{2})$').firstMatch(value);
