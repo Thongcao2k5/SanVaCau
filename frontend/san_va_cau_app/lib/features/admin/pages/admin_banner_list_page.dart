@@ -4,7 +4,7 @@ import '../theme/admin_theme.dart';
 import '../widgets/admin_ui.dart';
 
 import '../../../core/network/api_client.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../data/admin_content_api.dart';
 import '../models/admin_content.dart';
 
@@ -125,27 +125,37 @@ class _AdminBannerListPageState extends State<AdminBannerListPage> {
   void _showActionSheet(AdminBanner banner) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: AdminTheme.surface,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit_rounded, color: AppColors.primary),
-              title: const Text('Chỉnh sửa'),
-              onTap: () {
-                Navigator.pop(context);
-                _showForm(banner);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.block, color: AdminTheme.primary),
-              title: const Text('Hủy kích hoạt'),
-              onTap: () {
-                Navigator.pop(context);
-                _inactivate(banner);
-              },
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.edit_rounded,
+                  color: AdminTheme.primary,
+                ),
+                title: const Text('Chỉnh sửa'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showForm(banner);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.visibility_off_rounded,
+                  color: AdminTheme.warningText,
+                ),
+                title: const Text('Hủy kích hoạt'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _inactivate(banner);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -171,11 +181,7 @@ class _AdminBannerListPageState extends State<AdminBannerListPage> {
     return Theme(
       data: AdminTheme.data(Theme.of(context)),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Quản lý banner'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
-        ),
+        appBar: AppBar(title: const Text('Quản lý banner')),
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -186,7 +192,7 @@ class _AdminBannerListPageState extends State<AdminBannerListPage> {
                   'Chỉ hiển thị banner đang hoạt động và trong thời gian hiệu lực.',
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: AdminTheme.textSecondary,
+                    color: AdminTheme.textSecondaryStrong,
                   ),
                 ),
               ),
@@ -219,74 +225,101 @@ class _AdminBannerListPageState extends State<AdminBannerListPage> {
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.only(
-                                  bottom: 80,
-                                  left: 16,
-                                  right: 16,
+                                  bottom: 96,
+                                  left: 20,
+                                  right: 20,
                                 ),
                                 itemCount: _banners.length,
                                 itemBuilder: (context, index) {
                                   final banner = _banners[index];
-                                  return Card(
-                                    clipBehavior: Clip.antiAlias,
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        _BannerPreview(
-                                          imageUrl: banner.imageUrl,
-                                        ),
-                                        ListTile(
-                                          title: Text(
-                                            banner.title.isNotEmpty
-                                                ? banner.title
-                                                : 'Banner không tiêu đề',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: AdminSurface(
+                                      padding: EdgeInsets.zero,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          _BannerPreview(
+                                            imageUrl: banner.imageUrl,
+                                          ),
+                                          ListTile(
+                                            title: Text(
+                                              banner.title.isNotEmpty
+                                                  ? banner.title
+                                                  : 'Banner không tiêu đề',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                'Thứ tự: ${banner.sortOrder ?? 0}',
-                                              ),
-                                              const SizedBox(height: 8),
-                                              AdminStatusBadge(
-                                                label: banner.isActive
-                                                    ? 'Đang hoạt động'
-                                                    : 'Ngừng hiển thị',
-                                                tone: banner.isActive
-                                                    ? AdminStatusTone.success
-                                                    : AdminStatusTone.neutral,
-                                                icon: banner.isActive
-                                                    ? Icons.visibility_rounded
-                                                    : Icons
-                                                          .visibility_off_rounded,
-                                              ),
-                                            ],
-                                          ),
-                                          trailing:
-                                              _mutatingIds.contains(banner.id)
-                                              ? const SizedBox.square(
-                                                  dimension: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                      ),
-                                                )
-                                              : IconButton(
-                                                  tooltip: 'Thao tác banner',
-                                                  icon: const Icon(
-                                                    Icons.more_vert,
-                                                  ),
-                                                  onPressed: () =>
-                                                      _showActionSheet(banner),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  'Thứ tự: ${banner.sortOrder ?? 0}',
                                                 ),
-                                        ),
-                                      ],
+                                                if (banner
+                                                        .linkUrl
+                                                        ?.isNotEmpty ==
+                                                    true)
+                                                  Text(
+                                                    'Liên kết: ${banner.linkUrl}',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      color: AdminTheme
+                                                          .textSecondaryStrong,
+                                                    ),
+                                                  ),
+                                                if (banner.startAt != null ||
+                                                    banner.endAt != null)
+                                                  Text(
+                                                    'Hiệu lực: ${banner.startAt?.toString().split(' ')[0] ?? 'Không giới hạn'} → ${banner.endAt?.toString().split(' ')[0] ?? 'Không giới hạn'}',
+                                                    style: const TextStyle(
+                                                      color: AdminTheme
+                                                          .textSecondaryStrong,
+                                                    ),
+                                                  ),
+                                                const SizedBox(height: 8),
+                                                AdminStatusBadge(
+                                                  label: banner.isActive
+                                                      ? 'Đang hoạt động'
+                                                      : 'Ngừng hiển thị',
+                                                  tone: banner.isActive
+                                                      ? AdminStatusTone.success
+                                                      : AdminStatusTone.neutral,
+                                                  icon: banner.isActive
+                                                      ? Icons.visibility_rounded
+                                                      : Icons
+                                                            .visibility_off_rounded,
+                                                ),
+                                              ],
+                                            ),
+                                            trailing:
+                                                _mutatingIds.contains(banner.id)
+                                                ? const SizedBox.square(
+                                                    dimension: 24,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : IconButton(
+                                                    tooltip: 'Thao tác banner',
+                                                    icon: const Icon(
+                                                      Icons.more_vert,
+                                                    ),
+                                                    onPressed: () =>
+                                                        _showActionSheet(
+                                                          banner,
+                                                        ),
+                                                  ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
@@ -316,26 +349,20 @@ class _BannerPreview extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label: 'Xem trước banner',
     image: true,
-    child: AspectRatio(
-      aspectRatio: 16 / 9,
-      child: ColoredBox(
-        color: AdminTheme.canvas,
-        child: imageUrl.isEmpty
-            ? _placeholder('Chưa có ảnh banner')
-            : Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                excludeFromSemantics: true,
-                errorBuilder: (_, _, _) =>
-                    _placeholder('Không thể tải ảnh banner'),
-                loadingBuilder: (context, child, progress) => progress == null
-                    ? child
-                    : const Center(
-                        child: CircularProgressIndicator(
-                          semanticsLabel: 'Đang tải ảnh banner',
-                        ),
-                      ),
-              ),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 240),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ColoredBox(
+          color: AdminTheme.canvas,
+          child: imageUrl.isEmpty
+              ? _placeholder('Chưa có ảnh banner')
+              : AppImage(
+                  source: imageUrl,
+                  fit: BoxFit.cover,
+                  fallback: _placeholder('Không thể tải ảnh banner'),
+                ),
+        ),
       ),
     ),
   );
@@ -354,7 +381,7 @@ class _BannerPreview extends StatelessWidget {
           child: Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AdminTheme.textSecondary),
+            style: const TextStyle(color: AdminTheme.textSecondaryStrong),
           ),
         ),
       ],
@@ -383,6 +410,7 @@ class _AdminBannerFormPageState extends State<_AdminBannerFormPage> {
   DateTime? _endAt;
 
   bool _isSubmitting = false;
+  String? _saveError;
 
   @override
   void initState() {
@@ -424,6 +452,7 @@ class _AdminBannerFormPageState extends State<_AdminBannerFormPage> {
 
     setState(() {
       _isSubmitting = true;
+      _saveError = null;
     });
 
     try {
@@ -467,6 +496,7 @@ class _AdminBannerFormPageState extends State<_AdminBannerFormPage> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
+          _saveError = e is ApiException ? e.message : 'Không thể lưu banner';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -517,7 +547,7 @@ class _AdminBannerFormPageState extends State<_AdminBannerFormPage> {
             key: _formKey,
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -530,132 +560,196 @@ class _AdminBannerFormPageState extends State<_AdminBannerFormPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _imageUrlController,
-                      decoration: const InputDecoration(labelText: 'URL Ảnh *'),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Không được để trống'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _imageUrlController,
-                      builder: (context, value, _) => ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          AdminTheme.compactRadius,
-                        ),
-                        child: _BannerPreview(imageUrl: value.text.trim()),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tiêu đề (Tùy chọn)',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _linkUrlController,
-                      decoration: const InputDecoration(
-                        labelText: 'URL Liên kết (Tùy chọn)',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _sortOrderController,
-                      decoration: const InputDecoration(
-                        labelText: 'Thứ tự sắp xếp',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return null;
-                        if (int.tryParse(v.trim()) == null) {
-                          return 'Phải là số nguyên';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Thời gian bắt đầu:'),
-                              TextButton.icon(
-                                icon: const Icon(Icons.calendar_today_rounded),
-                                label: Text(
-                                  _startAt != null
-                                      ? _startAt!.toString().split(' ')[0]
-                                      : 'Chọn ngày',
-                                ),
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () => _pickDate(true),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Ảnh hiển thị trên Home',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _imageUrlController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL Ảnh *',
+                            ),
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Không được để trống'
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _imageUrlController,
+                            builder: (context, value, _) => ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                AdminTheme.compactRadius,
                               ),
-                              if (_startAt != null)
-                                TextButton(
-                                  onPressed: _isSubmitting
-                                      ? null
-                                      : () => setState(() => _startAt = null),
-                                  child: const Text(
-                                    'Xóa',
-                                    style: TextStyle(color: AdminTheme.primary),
-                                  ),
+                              child: _BannerPreview(
+                                imageUrl: value.text.trim(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Thông tin & thứ tự',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tiêu đề (Tùy chọn)',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _linkUrlController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL Liên kết (Tùy chọn)',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _sortOrderController,
+                            decoration: const InputDecoration(
+                              labelText: 'Thứ tự sắp xếp',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return null;
+                              if (int.tryParse(v.trim()) == null) {
+                                return 'Phải là số nguyên';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Lịch hiển thị',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: 180,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Thời gian bắt đầu:'),
+                                    TextButton.icon(
+                                      icon: const Icon(
+                                        Icons.calendar_today_rounded,
+                                      ),
+                                      label: Text(
+                                        _startAt != null
+                                            ? _startAt!.toString().split(' ')[0]
+                                            : 'Chọn ngày',
+                                      ),
+                                      onPressed: _isSubmitting
+                                          ? null
+                                          : () => _pickDate(true),
+                                    ),
+                                    if (_startAt != null)
+                                      TextButton(
+                                        onPressed: _isSubmitting
+                                            ? null
+                                            : () => setState(
+                                                () => _startAt = null,
+                                              ),
+                                        child: const Text(
+                                          'Xóa',
+                                          style: TextStyle(
+                                            color: AdminTheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
+                              ),
+                              SizedBox(
+                                width: 180,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Thời gian kết thúc:'),
+                                    TextButton.icon(
+                                      icon: const Icon(
+                                        Icons.calendar_today_rounded,
+                                      ),
+                                      label: Text(
+                                        _endAt != null
+                                            ? _endAt!.toString().split(' ')[0]
+                                            : 'Chọn ngày',
+                                      ),
+                                      onPressed: _isSubmitting
+                                          ? null
+                                          : () => _pickDate(false),
+                                    ),
+                                    if (_endAt != null)
+                                      TextButton(
+                                        onPressed: _isSubmitting
+                                            ? null
+                                            : () =>
+                                                  setState(() => _endAt = null),
+                                        child: const Text(
+                                          'Xóa',
+                                          style: TextStyle(
+                                            color: AdminTheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Thời gian kết thúc:'),
-                              TextButton.icon(
-                                icon: const Icon(Icons.calendar_today_rounded),
-                                label: Text(
-                                  _endAt != null
-                                      ? _endAt!.toString().split(' ')[0]
-                                      : 'Chọn ngày',
-                                ),
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () => _pickDate(false),
-                              ),
-                              if (_endAt != null)
-                                TextButton(
-                                  onPressed: _isSubmitting
-                                      ? null
-                                      : () => setState(() => _endAt = null),
-                                  child: const Text(
-                                    'Xóa',
-                                    style: TextStyle(color: AdminTheme.primary),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
+                    if (_saveError != null) ...[
+                      Semantics(
+                        key: const Key('banner-save-error'),
+                        liveRegion: true,
+                        child: AdminSurface(
+                          child: Text(
+                            _saveError!,
+                            style: const TextStyle(color: AdminTheme.primary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     FilledButton(
                       onPressed: _isSubmitting ? null : _submit,
                       child: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const Text('Đang lưu...')
                           : const Text('Lưu'),
                     ),
                   ],

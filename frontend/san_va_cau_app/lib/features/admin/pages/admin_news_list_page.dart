@@ -5,6 +5,7 @@ import '../widgets/admin_ui.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../branches/data/branch_api.dart';
 import '../../branches/models/branch.dart';
 import '../data/admin_content_api.dart';
@@ -127,51 +128,58 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
   void _showActionSheet(AdminNewsArticle article) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: AdminTheme.surface,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit_rounded, color: AppColors.primary),
-              title: const Text('Chỉnh sửa'),
-              onTap: () {
-                Navigator.pop(context);
-                _showForm(article);
-              },
-            ),
-            if (article.status != 'PUBLISHED')
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ListTile(
                 leading: const Icon(
-                  Icons.public_rounded,
-                  color: AppColors.success,
+                  Icons.edit_rounded,
+                  color: AdminTheme.primary,
                 ),
-                title: const Text('Xuất bản'),
+                title: const Text('Chỉnh sửa'),
                 onTap: () {
                   Navigator.pop(context);
-                  _mutateStatus(
-                    article,
-                    () => _api.publishNews(article.id),
-                    'Xuất bản thành công',
-                  );
+                  _showForm(article);
                 },
               ),
-            if (article.status != 'ARCHIVED')
-              ListTile(
-                leading: const Icon(
-                  Icons.archive_rounded,
-                  color: AppColors.warning,
+              if (article.status != 'PUBLISHED')
+                ListTile(
+                  leading: const Icon(
+                    Icons.public_rounded,
+                    color: AppColors.success,
+                  ),
+                  title: const Text('Xuất bản'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _mutateStatus(
+                      article,
+                      () => _api.publishNews(article.id),
+                      'Xuất bản thành công',
+                    );
+                  },
                 ),
-                title: const Text('Lưu trữ'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _mutateStatus(
-                    article,
-                    () => _api.archiveNews(article.id),
-                    'Đã lưu trữ thành công',
-                  );
-                },
-              ),
-          ],
+              if (article.status != 'ARCHIVED')
+                ListTile(
+                  leading: const Icon(
+                    Icons.archive_rounded,
+                    color: AdminTheme.warningText,
+                  ),
+                  title: const Text('Lưu trữ'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _mutateStatus(
+                      article,
+                      () => _api.archiveNews(article.id),
+                      'Đã lưu trữ thành công',
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -197,11 +205,7 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
     return Theme(
       data: AdminTheme.data(Theme.of(context)),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Quản lý tin tức'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
-        ),
+        appBar: AppBar(title: const Text('Quản lý tin tức')),
         body: SafeArea(
           child: Column(
             children: [
@@ -247,81 +251,122 @@ class _AdminNewsListPageState extends State<AdminNewsListPage> {
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.only(
-                                  bottom: 80,
-                                  left: 16,
-                                  right: 16,
+                                  bottom: 96,
+                                  left: 20,
+                                  right: 20,
                                 ),
                                 itemCount: _news.length,
                                 itemBuilder: (context, index) {
                                   final article = _news[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    child: ListTile(
-                                      title: Text(
-                                        article.title,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: AdminSurface(
+                                      padding: EdgeInsets.zero,
+                                      child: Column(
                                         children: [
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            article.summary,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          AdminStatusBadge(
-                                            label: switch (article.status) {
-                                              'DRAFT' => 'Bản nháp',
-                                              'PUBLISHED' => 'Đã xuất bản',
-                                              'ARCHIVED' => 'Lưu trữ',
-                                              _ => article.status,
-                                            },
-                                            tone: switch (article.status) {
-                                              'PUBLISHED' =>
-                                                AdminStatusTone.success,
-                                              'DRAFT' =>
-                                                AdminStatusTone.warning,
-                                              _ => AdminStatusTone.neutral,
-                                            },
-                                            icon: switch (article.status) {
-                                              'DRAFT' =>
-                                                Icons.edit_note_rounded,
-                                              'PUBLISHED' =>
-                                                Icons.public_rounded,
-                                              _ => Icons.archive_rounded,
-                                            },
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Tác giả: ${article.authorName}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: AdminTheme.textSecondary,
+                                          SizedBox(
+                                            height: 160,
+                                            width: double.infinity,
+                                            child: ColoredBox(
+                                              color: AdminTheme.softWine,
+                                              child: AppImage(
+                                                source: article.thumbnailUrl,
+                                                fit: BoxFit.cover,
+                                                fallback: const Center(
+                                                  child: Icon(
+                                                    Icons.newspaper_rounded,
+                                                    size: 40,
+                                                    color: AdminTheme.primary,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
+                                          ),
+                                          ListTile(
+                                            contentPadding:
+                                                const EdgeInsets.all(16),
+                                            title: Text(
+                                              article.title,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  article.summary,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                AdminStatusBadge(
+                                                  label:
+                                                      switch (article.status) {
+                                                        'DRAFT' => 'Bản nháp',
+                                                        'PUBLISHED' =>
+                                                          'Đã xuất bản',
+                                                        'ARCHIVED' => 'Lưu trữ',
+                                                        _ => article.status,
+                                                      },
+                                                  tone: switch (article
+                                                      .status) {
+                                                    'PUBLISHED' =>
+                                                      AdminStatusTone.success,
+                                                    'DRAFT' =>
+                                                      AdminStatusTone.warning,
+                                                    _ =>
+                                                      AdminStatusTone.neutral,
+                                                  },
+                                                  icon: switch (article
+                                                      .status) {
+                                                    'DRAFT' =>
+                                                      Icons.edit_note_rounded,
+                                                    'PUBLISHED' =>
+                                                      Icons.public_rounded,
+                                                    _ => Icons.archive_rounded,
+                                                  },
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Tác giả: ${article.authorName}',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: AdminTheme
+                                                        .textSecondaryStrong,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            trailing:
+                                                _mutatingIds.contains(
+                                                  article.id,
+                                                )
+                                                ? const SizedBox.square(
+                                                    dimension: 24,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : IconButton(
+                                                    tooltip: 'Thao tác tin tức',
+                                                    icon: const Icon(
+                                                      Icons.more_vert,
+                                                    ),
+                                                    onPressed: () =>
+                                                        _showActionSheet(
+                                                          article,
+                                                        ),
+                                                  ),
                                           ),
                                         ],
                                       ),
-                                      trailing:
-                                          _mutatingIds.contains(article.id)
-                                          ? const SizedBox.square(
-                                              dimension: 24,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : IconButton(
-                                              tooltip: 'Thao tác tin tức',
-                                              icon: const Icon(Icons.more_vert),
-                                              onPressed: () =>
-                                                  _showActionSheet(article),
-                                            ),
                                     ),
                                   );
                                 },
@@ -376,6 +421,7 @@ class _AdminNewsFormPageState extends State<_AdminNewsFormPage> {
   final _thumbnailController = TextEditingController();
 
   bool _isSubmitting = false;
+  String? _saveError;
   String? _branchId;
 
   List<Branch> _branches = [];
@@ -427,6 +473,7 @@ class _AdminNewsFormPageState extends State<_AdminNewsFormPage> {
 
     setState(() {
       _isSubmitting = true;
+      _saveError = null;
     });
 
     try {
@@ -466,6 +513,7 @@ class _AdminNewsFormPageState extends State<_AdminNewsFormPage> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
+          _saveError = e is ApiException ? e.message : 'Không thể lưu tin tức';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -493,86 +541,155 @@ class _AdminNewsFormPageState extends State<_AdminNewsFormPage> {
             key: _formKey,
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Tiêu đề *'),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Không được để trống'
-                          : null,
+                    const Text(
+                      'Các trường có dấu * là bắt buộc.',
+                      style: TextStyle(color: AdminTheme.textSecondaryStrong),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _summaryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tóm tắt (Tùy chọn)',
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _contentController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nội dung *',
-                      ),
-                      maxLines: 10,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Không được để trống'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      enabled: !_isSubmitting,
-                      scrollPadding: const EdgeInsets.all(32),
-                      controller: _thumbnailController,
-                      decoration: const InputDecoration(
-                        labelText: 'URL Ảnh bìa (Tùy chọn)',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (!_isLoadingBranches)
-                      DropdownButtonFormField<String?>(
-                        isExpanded: true,
-                        initialValue: _branchId,
-                        decoration: const InputDecoration(
-                          labelText: 'Chi nhánh (Tùy chọn)',
-                          helperText: 'Để trống để áp dụng toàn hệ thống.',
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Toàn hệ thống'),
-                          ),
-                          ..._branches.map(
-                            (b) => DropdownMenuItem(
-                              value: b.id,
-                              child: Text(b.name),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Nội dung bài viết',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
                             ),
                           ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('news-title'),
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tiêu đề *',
+                            ),
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Không được để trống'
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            key: const Key('news-summary'),
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _summaryController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tóm tắt (Tùy chọn)',
+                            ),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            key: const Key('news-content'),
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _contentController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nội dung *',
+                            ),
+                            minLines: 4,
+                            maxLines: 10,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Không được để trống'
+                                : null,
+                          ),
                         ],
-                        onChanged: _isSubmitting
-                            ? null
-                            : (v) => setState(() => _branchId = v),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    AdminSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Ảnh bìa & chi nhánh',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const Key('news-thumbnail'),
+                            enabled: !_isSubmitting,
+                            scrollPadding: const EdgeInsets.all(32),
+                            controller: _thumbnailController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL Ảnh bìa (Tùy chọn)',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (!_isLoadingBranches)
+                            DropdownButtonFormField<String?>(
+                              key: const Key('news-branch'),
+                              isExpanded: true,
+                              initialValue: _branchId,
+                              decoration: const InputDecoration(
+                                labelText: 'Chi nhánh (Tùy chọn)',
+                                helperText:
+                                    'Để trống để áp dụng toàn hệ thống.',
+                                helperMaxLines: 3,
+                              ),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Toàn hệ thống'),
+                                ),
+                                ..._branches.map(
+                                  (b) => DropdownMenuItem(
+                                    value: b.id,
+                                    child: Text(b.name),
+                                  ),
+                                ),
+                                if (_branchId != null &&
+                                    !_branches.any((b) => b.id == _branchId))
+                                  DropdownMenuItem(
+                                    value: _branchId,
+                                    child: Text(
+                                      '${widget.article?.branch?.name ?? _branchId} (không có trong danh sách)',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                              ],
+                              onChanged: _isSubmitting
+                                  ? null
+                                  : (v) => setState(() => _branchId = v),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (_saveError != null) ...[
+                      const SizedBox(height: 16),
+                      Semantics(
+                        liveRegion: true,
+                        child: AdminSurface(
+                          color: AdminTheme.softWine,
+                          child: Text(
+                            _saveError!,
+                            style: const TextStyle(
+                              color: AdminTheme.primaryText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     FilledButton(
+                      key: const Key('news-save'),
                       onPressed: _isSubmitting ? null : _submit,
                       child: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const Text('Đang lưu...')
                           : const Text('Lưu'),
                     ),
                   ],

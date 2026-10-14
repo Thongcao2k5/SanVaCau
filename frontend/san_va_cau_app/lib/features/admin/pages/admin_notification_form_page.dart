@@ -39,6 +39,8 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
   bool _isLoadingUsers = true;
   String? _error;
   bool _isSubmitting = false;
+  String? _feedback;
+  bool _sendSucceeded = false;
 
   @override
   void initState() {
@@ -82,7 +84,7 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
   }
 
   Future<void> _submit() async {
-    if (_isSubmitting) return;
+    if (_isSubmitting || _isLoadingUsers || _users.isEmpty) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_userId == null) {
@@ -92,10 +94,10 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
       return;
     }
 
-    if (_isSubmitting) return;
-
     setState(() {
       _isSubmitting = true;
+      _feedback = null;
+      _sendSucceeded = false;
     });
 
     try {
@@ -115,12 +117,16 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
           _messageController.clear();
           _userId = null;
           _isSubmitting = false;
+          _sendSucceeded = true;
+          _feedback = 'Đã gửi thông báo thành công';
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
+          _sendSucceeded = false;
+          _feedback = e is ApiException ? e.message : 'Không thể gửi thông báo';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -135,6 +141,8 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final recipients = _users.where((user) => user.id == _userId);
+    final recipientName = recipients.isEmpty ? null : recipients.first.fullName;
     if (widget.role != 'ADMIN') {
       return Theme(
         data: AdminTheme.data(Theme.of(context)),
@@ -153,11 +161,7 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
     return Theme(
       data: AdminTheme.data(Theme.of(context)),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gửi thông báo'),
-          backgroundColor: AdminTheme.graphite,
-          foregroundColor: Colors.white,
-        ),
+        appBar: AppBar(title: const Text('Gửi thông báo')),
         body: SafeArea(
           child: _error != null
               ? AdminStateView(
@@ -177,116 +181,180 @@ class _AdminNotificationFormPageState extends State<AdminNotificationFormPage> {
                   child: ListView(
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           AdminSurface(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const Icon(
-                                  Icons.person_rounded,
-                                  color: AdminTheme.warningText,
+                                const Text(
+                                  'Người nhận',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _userId == null
-                                        ? 'Chọn một người nhận. Thông báo sẽ được gửi ngay vào hộp thư của người đó.'
-                                        : 'Người nhận: ${_users.firstWhere((u) => u.id == _userId).fullName}. Kiểm tra nội dung trước khi gửi.',
-                                    style: const TextStyle(
-                                      color: AdminTheme.textSecondary,
-                                      height: 1.4,
+                                const SizedBox(height: 12),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.person_rounded,
+                                      color: AdminTheme.warningText,
                                     ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        recipientName == null
+                                            ? 'Gửi cho một tài khoản, không gửi hàng loạt. Chọn người nhận và kiểm tra nội dung trước khi gửi.'
+                                            : 'Người nhận: $recipientName. Thông báo sẽ được gửi ngay vào hộp thư của tài khoản này.',
+                                        style: const TextStyle(
+                                          color: AdminTheme.textSecondaryStrong,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                if (_isLoadingUsers)
+                                  const AdminStateView(
+                                    icon: Icons.hourglass_top_rounded,
+                                    title: 'Đang tải người nhận',
+                                    isLoading: true,
+                                  )
+                                else if (_users.isEmpty)
+                                  const AdminStateView(
+                                    icon: Icons.person_off_rounded,
+                                    title: 'Chưa có người nhận',
+                                  )
+                                else
+                                  DropdownButtonFormField<String?>(
+                                    key: ValueKey(_userId),
+                                    initialValue: _userId,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Người nhận *',
+                                    ),
+                                    items: _users
+                                        .map(
+                                          (u) => DropdownMenuItem(
+                                            value: u.id,
+                                            child: Text(
+                                              '${u.fullName} (${u.role})',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: _isSubmitting
+                                        ? null
+                                        : (v) => setState(() => _userId = v),
+                                    validator: (v) => v == null
+                                        ? 'Vui lòng chọn người nhận'
+                                        : null,
+                                    isExpanded: true,
                                   ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AdminSurface(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Text(
+                                  'Nội dung thông báo',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  enabled: !_isSubmitting,
+                                  scrollPadding: const EdgeInsets.all(32),
+                                  controller: _typeController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Loại thông báo *',
+                                  ),
+                                  validator: (v) =>
+                                      v == null || v.trim().isEmpty
+                                      ? 'Không được để trống'
+                                      : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  enabled: !_isSubmitting,
+                                  scrollPadding: const EdgeInsets.all(32),
+                                  controller: _titleController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tiêu đề thông báo *',
+                                  ),
+                                  validator: (v) =>
+                                      v == null || v.trim().isEmpty
+                                      ? 'Không được để trống'
+                                      : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  enabled: !_isSubmitting,
+                                  scrollPadding: const EdgeInsets.all(32),
+                                  controller: _messageController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nội dung thông báo *',
+                                  ),
+                                  maxLines: 4,
+                                  validator: (v) =>
+                                      v == null || v.trim().isEmpty
+                                      ? 'Không được để trống'
+                                      : null,
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
-                          if (_isLoadingUsers)
-                            const AdminStateView(
-                              icon: Icons.hourglass_top_rounded,
-                              title: 'Đang tải người nhận',
-                              isLoading: true,
-                            )
-                          else
-                            DropdownButtonFormField<String?>(
-                              key: ValueKey(_userId),
-                              initialValue: _userId,
-                              decoration: const InputDecoration(
-                                labelText: 'Người nhận *',
-                              ),
-                              items: _users
-                                  .map(
-                                    (u) => DropdownMenuItem(
-                                      value: u.id,
+                          if (_feedback != null) ...[
+                            Semantics(
+                              key: const Key('notification-feedback'),
+                              liveRegion: true,
+                              child: AdminSurface(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      _sendSucceeded
+                                          ? Icons.check_circle_rounded
+                                          : Icons.error_rounded,
+                                      color: _sendSucceeded
+                                          ? AdminTheme.successText
+                                          : AdminTheme.primary,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
                                       child: Text(
-                                        '${u.fullName} (${u.role})',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        _feedback!,
+                                        style: TextStyle(
+                                          color: _sendSucceeded
+                                              ? AdminTheme.successText
+                                              : AdminTheme.primary,
+                                        ),
                                       ),
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: _isSubmitting
-                                  ? null
-                                  : (v) => setState(() => _userId = v),
-                              validator: (v) =>
-                                  v == null ? 'Vui lòng chọn người nhận' : null,
-                              isExpanded: true,
+                                  ],
+                                ),
+                              ),
                             ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            enabled: !_isSubmitting,
-                            scrollPadding: const EdgeInsets.all(32),
-                            controller: _typeController,
-                            decoration: const InputDecoration(
-                              labelText: 'Loại thông báo *',
+                            const SizedBox(height: 16),
+                          ],
+                          FilledButton.icon(
+                            icon: const Icon(Icons.send_rounded),
+                            onPressed:
+                                _isSubmitting ||
+                                    _isLoadingUsers ||
+                                    _users.isEmpty
+                                ? null
+                                : _submit,
+                            label: Text(
+                              _isSubmitting ? 'Đang gửi...' : 'Gửi thông báo',
                             ),
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Không được để trống'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            enabled: !_isSubmitting,
-                            scrollPadding: const EdgeInsets.all(32),
-                            controller: _titleController,
-                            decoration: const InputDecoration(
-                              labelText: 'Tiêu đề thông báo *',
-                            ),
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Không được để trống'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            enabled: !_isSubmitting,
-                            scrollPadding: const EdgeInsets.all(32),
-                            controller: _messageController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nội dung thông báo *',
-                            ),
-                            maxLines: 4,
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Không được để trống'
-                                : null,
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: _isSubmitting ? null : _submit,
-                            child: _isSubmitting
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('Gửi thông báo'),
                           ),
                         ],
                       ),

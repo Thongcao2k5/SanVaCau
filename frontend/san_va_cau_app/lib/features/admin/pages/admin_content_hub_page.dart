@@ -37,7 +37,7 @@ class AdminContentHubPage extends StatelessWidget {
                   const Text(
                     'Cập nhật thông tin khách hàng nhìn thấy trên trang chủ và trong hộp thư.',
                     style: TextStyle(
-                      color: AdminTheme.textSecondary,
+                      color: AdminTheme.textSecondaryStrong,
                       height: 1.4,
                     ),
                   ),
@@ -67,12 +67,25 @@ class AdminContentHubPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   const AdminSurface(
-                    child: Text(
-                      'Sản phẩm và chi nhánh nổi bật được chọn trong các mục Sản phẩm và Chi nhánh và sân ở tab Quản lý.',
-                      style: TextStyle(
-                        color: AdminTheme.textSecondary,
-                        height: 1.4,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Nội dung nổi bật trên Home',
+                          style: TextStyle(
+                            color: AdminTheme.primaryText,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Sản phẩm và chi nhánh nổi bật được chọn trong các mục Sản phẩm và Chi nhánh và sân ở tab Quản lý.',
+                          style: TextStyle(
+                            color: AdminTheme.textSecondaryStrong,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -87,42 +100,44 @@ class AdminContentHubPage extends StatelessWidget {
     required String title,
     required String subtitle,
     required Widget page,
-  }) => AdminSurface(
-    onTap: () =>
-        Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AdminIconBox(icon: icon, color: AdminTheme.primary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
+  }) => Semantics(
+    button: true,
+    label: 'Quản lý $title',
+    child: AdminSurface(
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AdminIconBox(icon: icon, color: AdminTheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: AdminTheme.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AdminTheme.textSecondary,
-                  height: 1.4,
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AdminTheme.textSecondaryStrong,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        const Icon(
-          Icons.chevron_right_rounded,
-          color: AdminTheme.textSecondary,
-        ),
-      ],
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_forward_rounded, color: AdminTheme.primary),
+        ],
+      ),
     ),
   );
 }

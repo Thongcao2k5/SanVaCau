@@ -16,25 +16,29 @@ import 'package:san_va_cau_app/features/admin/pages/admin_notification_form_page
 import 'package:san_va_cau_app/features/branches/data/branch_api.dart';
 import 'package:san_va_cau_app/features/branches/models/branch.dart';
 import 'package:san_va_cau_app/features/notifications/models/notification_item.dart';
+import 'package:san_va_cau_app/features/news/models/news_article.dart';
 
-AdminNewsArticle _news({String status = 'PUBLISHED'}) => AdminNewsArticle(
-  id: '1',
-  title: 'Tin kiểm thử',
-  summary: 'Tóm tắt',
-  content: 'Nội dung',
-  thumbnailUrl: '',
-  publishedAt: null,
-  status: status,
-  authorName: 'Admin',
-);
+AdminNewsArticle _news({String status = 'PUBLISHED', NewsBranch? branch}) =>
+    AdminNewsArticle(
+      id: '1',
+      title: 'Tin kiểm thử',
+      summary: 'Tóm tắt',
+      content: 'Nội dung',
+      thumbnailUrl: '',
+      publishedAt: null,
+      status: status,
+      authorName: 'Admin',
+      branch: branch,
+    );
 
-AdminBanner _banner({bool isActive = true}) => AdminBanner(
-  id: '1',
-  title: 'Banner kiểm thử',
-  imageUrl: '',
-  sortOrder: 1,
-  isActive: isActive,
-);
+AdminBanner _banner({bool isActive = true, String imageUrl = ''}) =>
+    AdminBanner(
+      id: '1',
+      title: 'Banner kiểm thử',
+      imageUrl: imageUrl,
+      sortOrder: 1,
+      isActive: isActive,
+    );
 
 NotificationItem _notification() => NotificationItem(
   id: '1',
@@ -57,9 +61,17 @@ class _FakeAdminContentApi extends Fake implements AdminContentApi {
   int getNewsCalls = 0;
   int getBannerCalls = 0;
   int createNewsCalls = 0;
+  Map<String, Object?>? savedNews;
+  String? updatedNewsId;
+  int publishCalls = 0;
+  int archiveCalls = 0;
+  Completer<AdminNewsArticle>? statusPending;
   int inactivateBannerCalls = 0;
   int sendNotificationCalls = 0;
   int createBannerCalls = 0;
+  Map<String, String>? sentNotification;
+  Map<String, Object?>? savedBanner;
+  String? updatedBannerId;
 
   @override
   Future<AdminBanner> createBanner({
@@ -71,6 +83,37 @@ class _FakeAdminContentApi extends Fake implements AdminContentApi {
     DateTime? endAt,
   }) {
     createBannerCalls++;
+    savedBanner = {
+      'title': title,
+      'imageUrl': imageUrl,
+      'linkUrl': linkUrl,
+      'sortOrder': sortOrder,
+      'startAt': startAt,
+      'endAt': endAt,
+    };
+    return createBannerCompleter?.future ?? Future.value(_banner());
+  }
+
+  @override
+  Future<AdminBanner> updateBanner({
+    required String id,
+    String? title,
+    required String imageUrl,
+    String? linkUrl,
+    required int sortOrder,
+    DateTime? startAt,
+    DateTime? endAt,
+    bool? isActive,
+  }) {
+    updatedBannerId = id;
+    savedBanner = {
+      'title': title,
+      'imageUrl': imageUrl,
+      'linkUrl': linkUrl,
+      'sortOrder': sortOrder,
+      'startAt': startAt,
+      'endAt': endAt,
+    };
     return createBannerCompleter?.future ?? Future.value(_banner());
   }
 
@@ -103,7 +146,46 @@ class _FakeAdminContentApi extends Fake implements AdminContentApi {
     String? branchId,
   }) {
     createNewsCalls++;
+    savedNews = {
+      'title': title,
+      'content': content,
+      'summary': summary,
+      'thumbnailUrl': thumbnailUrl,
+      'branchId': branchId,
+    };
     return createNewsCompleter?.future ?? Future.value(_news(status: 'DRAFT'));
+  }
+
+  @override
+  Future<AdminNewsArticle> updateNews({
+    required String id,
+    required String title,
+    required String content,
+    String? summary,
+    String? thumbnailUrl,
+    String? branchId,
+  }) async {
+    updatedNewsId = id;
+    savedNews = {
+      'title': title,
+      'content': content,
+      'summary': summary,
+      'thumbnailUrl': thumbnailUrl,
+      'branchId': branchId,
+    };
+    return _news();
+  }
+
+  @override
+  Future<AdminNewsArticle> publishNews(String id) {
+    publishCalls++;
+    return statusPending?.future ?? Future.value(_news());
+  }
+
+  @override
+  Future<AdminNewsArticle> archiveNews(String id) {
+    archiveCalls++;
+    return statusPending?.future ?? Future.value(_news(status: 'ARCHIVED'));
   }
 
   @override
@@ -121,6 +203,12 @@ class _FakeAdminContentApi extends Fake implements AdminContentApi {
     required String message,
   }) {
     sendNotificationCalls++;
+    sentNotification = {
+      'userId': userId,
+      'type': type,
+      'title': title,
+      'message': message,
+    };
     return sendNotificationCompleter?.future ?? Future.value(_notification());
   }
 }
@@ -129,10 +217,14 @@ class _FakeAdminUserApi extends Fake implements AdminUserApi {
   _FakeAdminUserApi({this.fullName = 'Khách hàng'});
   final String fullName;
   int getUsersCalls = 0;
+  ApiException? error;
+  bool empty = false;
 
   @override
   Future<List<AdminUser>> getUsers({int page = 1, int limit = 100}) async {
     getUsersCalls++;
+    if (error != null) throw error!;
+    if (empty) return [];
     return [
       AdminUser(
         id: '1',
@@ -181,6 +273,11 @@ Future<void> _reveal(
 }
 
 Future<void> _selectRecipient(WidgetTester tester) async {
+  await _reveal(
+    tester,
+    find.byType(DropdownButtonFormField<String?>),
+    delta: -180,
+  );
   await tester.tap(find.byType(DropdownButtonFormField<String?>));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Khách hàng (CUSTOMER)').last);
@@ -368,6 +465,14 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     await tester.pump();
     expect(api.createBannerCalls, 1);
+    expect(api.savedBanner, {
+      'title': null,
+      'imageUrl': 'https://example.com/banner.jpg',
+      'linkUrl': null,
+      'sortOrder': 0,
+      'startAt': null,
+      'endAt': null,
+    });
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNull,
@@ -377,15 +482,32 @@ void main() {
     )) {
       expect(field.enabled, isFalse);
     }
+    for (final button in tester.widgetList<TextButton>(
+      find.byType(TextButton),
+    )) {
+      expect(button.onPressed, isNull);
+    }
     completer.completeError(
       const ApiException(statusCode: 500, message: 'Lưu banner thất bại'),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Lưu banner thất bại'), findsOneWidget);
+    expect(find.text('Lưu banner thất bại'), findsNWidgets(2));
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,
     );
+  });
+
+  testWidgets('banner preview renders bundled asset paths', (tester) async {
+    final api = _FakeAdminContentApi()
+      ..banners = [_banner(imageUrl: 'assets/demo/banner-court.jpg')];
+
+    await tester.pumpWidget(_app(AdminBannerListPage(role: 'ADMIN', api: api)));
+    await tester.pumpAndSettle();
+
+    final image = tester.widget<Image>(find.byType(Image).first);
+    expect(image.image, isA<AssetImage>());
+    expect(find.text('Không thể tải ảnh banner'), findsNothing);
   });
 
   testWidgets('banner deactivation can be cancelled without an API call', (
@@ -460,6 +582,80 @@ void main() {
   });
 
   group('Admin news', () {
+    testWidgets('edit retains unavailable branch and exact payload', (
+      tester,
+    ) async {
+      final api = _FakeAdminContentApi()
+        ..news = [
+          _news(
+            branch: const NewsBranch(id: 'missing', name: 'Chi nhánh cũ'),
+          ),
+        ];
+      await tester.pumpWidget(
+        _app(
+          AdminNewsListPage(
+            role: 'ADMIN',
+            api: api,
+            branchApi: _FakeBranchApi(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Thao tác tin tức'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chỉnh sửa'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.enterText(
+        find.byKey(const Key('news-title')),
+        ' Tiêu đề sửa ',
+      );
+      await _reveal(tester, find.byKey(const Key('news-branch')));
+      expect(find.textContaining('Chi nhánh cũ'), findsOneWidget);
+      await _reveal(tester, find.byKey(const Key('news-save')));
+      await tester.tap(find.byKey(const Key('news-save')));
+      await tester.pumpAndSettle();
+      expect(api.updatedNewsId, '1');
+      expect(api.savedNews, {
+        'title': 'Tiêu đề sửa',
+        'content': 'Nội dung',
+        'summary': 'Tóm tắt',
+        'thumbnailUrl': null,
+        'branchId': 'missing',
+      });
+      expect(api.getNewsCalls, 2);
+    });
+
+    for (final publish in [true, false]) {
+      testWidgets(
+        '${publish ? 'publish' : 'archive'} locks mutation and reloads',
+        (tester) async {
+          final pending = Completer<AdminNewsArticle>();
+          final api = _FakeAdminContentApi()
+            ..statusPending = pending
+            ..news = [_news(status: publish ? 'DRAFT' : 'PUBLISHED')];
+          await tester.pumpWidget(
+            _app(AdminNewsListPage(role: 'ADMIN', api: api)),
+          );
+          await tester.pumpAndSettle();
+          if (publish) {
+            await tester.tap(find.widgetWithText(ChoiceChip, 'Bản nháp'));
+            await tester.pumpAndSettle();
+          }
+          final before = api.getNewsCalls;
+          await tester.tap(find.byTooltip('Thao tác tin tức'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(publish ? 'Xuất bản' : 'Lưu trữ').last);
+          await tester.pump();
+          expect(publish ? api.publishCalls : api.archiveCalls, 1);
+          expect(find.byTooltip('Thao tác tin tức'), findsNothing);
+          pending.complete(_news());
+          await tester.pumpAndSettle();
+          expect(api.getNewsCalls, before + 1);
+        },
+      );
+    }
+
     testWidgets('status filter reloads and empty state supports refresh', (
       tester,
     ) async {
@@ -532,6 +728,13 @@ void main() {
       await tester.pump();
 
       expect(api.createNewsCalls, 1);
+      expect(api.savedNews, {
+        'title': 'Tin mới',
+        'content': 'Nội dung mới',
+        'summary': null,
+        'thumbnailUrl': null,
+        'branchId': null,
+      });
       expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
 
       completer.complete(_news(status: 'DRAFT'));
@@ -573,6 +776,96 @@ void main() {
   });
 
   group('Admin banners', () {
+    testWidgets('edit preserves schedule, trims payload and reloads', (
+      tester,
+    ) async {
+      final start = DateTime(2026, 10, 1);
+      final end = DateTime(2026, 10, 30);
+      final api = _FakeAdminContentApi()
+        ..banners = [
+          AdminBanner(
+            id: '1',
+            title: 'Banner kiểm thử',
+            imageUrl: 'assets/demo/banner-court.jpg',
+            linkUrl: 'https://example.com/news',
+            sortOrder: 2,
+            isActive: true,
+            startAt: start,
+            endAt: end,
+          ),
+        ];
+      await tester.pumpWidget(
+        _app(AdminBannerListPage(role: 'ADMIN', api: api)),
+      );
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.byTooltip('Thao tác banner'));
+      await tester.tap(find.byTooltip('Thao tác banner'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chỉnh sửa'));
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.bySemanticsLabel('Tiêu đề (Tùy chọn)'));
+      await tester.enterText(
+        find.bySemanticsLabel('Tiêu đề (Tùy chọn)'),
+        ' Sân mới ',
+      );
+      await _reveal(tester, find.bySemanticsLabel('URL Liên kết (Tùy chọn)'));
+      await tester.enterText(
+        find.bySemanticsLabel('URL Liên kết (Tùy chọn)'),
+        ' ',
+      );
+      await _reveal(tester, find.byType(FilledButton));
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+      expect(api.updatedBannerId, '1');
+      expect(api.savedBanner, {
+        'title': 'Sân mới',
+        'imageUrl': 'assets/demo/banner-court.jpg',
+        'linkUrl': null,
+        'sortOrder': 2,
+        'startAt': start,
+        'endAt': end,
+      });
+      expect(api.getBannerCalls, 2);
+    });
+
+    testWidgets('banner form exposes inline save error and retains input', (
+      tester,
+    ) async {
+      final pending = Completer<AdminBanner>();
+      final api = _FakeAdminContentApi()..createBannerCompleter = pending;
+      await tester.pumpWidget(
+        _app(AdminBannerListPage(role: 'ADMIN', api: api)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Thêm banner'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.bySemanticsLabel('URL Ảnh *'),
+        'assets/demo/banner-court.jpg',
+      );
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.byType(FilledButton));
+      await tester.tap(find.byType(FilledButton));
+      await tester.pump();
+      pending.completeError(
+        const ApiException(statusCode: 500, message: 'Không lưu được'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('banner-save-error')), findsOneWidget);
+      final field = tester.widget<TextFormField>(
+        find.byType(TextFormField).first,
+      );
+      expect(field.controller!.text, 'assets/demo/banner-court.jpg');
+      api.createBannerCompleter = null;
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.byType(FilledButton));
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+      expect(api.createBannerCalls, 2);
+      expect(api.getBannerCalls, 2);
+    });
+
     testWidgets('empty state supports refresh', (tester) async {
       final api = _FakeAdminContentApi();
 
@@ -658,6 +951,99 @@ void main() {
   });
 
   group('Admin notifications', () {
+    testWidgets('empty recipient state cannot send', (tester) async {
+      final api = _FakeAdminContentApi();
+      await tester.pumpWidget(
+        _app(
+          AdminNotificationFormPage(
+            role: 'ADMIN',
+            api: api,
+            userApi: _FakeAdminUserApi()..empty = true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Chưa có người nhận'), findsOneWidget);
+      await _reveal(tester, find.byType(FilledButton));
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+      expect(api.sendNotificationCalls, 0);
+    });
+
+    testWidgets('load retry and failed send retain input then success clears', (
+      tester,
+    ) async {
+      final users = _FakeAdminUserApi()
+        ..error = const ApiException(
+          statusCode: 500,
+          message: 'Không tải được người nhận',
+        );
+      final pending = Completer<NotificationItem>();
+      final api = _FakeAdminContentApi()..sendNotificationCompleter = pending;
+      await tester.pumpWidget(
+        _app(
+          AdminNotificationFormPage(role: 'ADMIN', api: api, userApi: users),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Không tải được người nhận'), findsOneWidget);
+      users.error = null;
+      await tester.tap(find.text('Thử lại'));
+      await tester.pumpAndSettle();
+      expect(users.getUsersCalls, 2);
+      await _selectRecipient(tester);
+      await tester.enterText(
+        find.bySemanticsLabel('Tiêu đề thông báo *'),
+        ' Tin mới ',
+      );
+      await tester.enterText(
+        find.bySemanticsLabel('Nội dung thông báo *'),
+        ' Nội dung ',
+      );
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.byType(FilledButton));
+      await tester.tap(find.byType(FilledButton));
+      await tester.pump();
+      expect(api.sentNotification, {
+        'userId': '1',
+        'type': 'SYSTEM',
+        'title': 'Tin mới',
+        'message': 'Nội dung',
+      });
+      pending.completeError(
+        const ApiException(statusCode: 500, message: 'Gửi thất bại'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('notification-feedback')), findsOneWidget);
+      expect(
+        tester
+            .widgetList<TextFormField>(find.byType(TextFormField))
+            .any((f) => f.controller!.text == ' Tin mới '),
+        isTrue,
+      );
+      api.sendNotificationCompleter = null;
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await _reveal(tester, find.byType(FilledButton));
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+      expect(api.sendNotificationCalls, 2);
+      expect(
+        tester
+            .widget<DropdownButtonFormField<String?>>(
+              find.byType(DropdownButtonFormField<String?>),
+            )
+            .initialValue,
+        isNull,
+      );
+      final values = tester
+          .widgetList<TextFormField>(find.byType(TextFormField))
+          .map((f) => f.controller!.text);
+      expect(values, ['SYSTEM', '', '']);
+    });
+
     testWidgets('validates and locks submission while sending', (tester) async {
       final completer = Completer<NotificationItem>();
       final api = _FakeAdminContentApi()..sendNotificationCompleter = completer;
@@ -699,10 +1085,23 @@ void main() {
 
       expect(api.sendNotificationCalls, 1);
       expect(tester.widget<FilledButton>(sendButton).onPressed, isNull);
+      for (final field in tester.widgetList<TextFormField>(
+        find.byType(TextFormField),
+      )) {
+        expect(field.enabled, isFalse);
+      }
+      expect(
+        tester
+            .widget<DropdownButtonFormField<String?>>(
+              find.byType(DropdownButtonFormField<String?>),
+            )
+            .onChanged,
+        isNull,
+      );
 
       completer.complete(_notification());
       await tester.pumpAndSettle();
-      expect(find.text('Đã gửi thông báo thành công'), findsOneWidget);
+      expect(find.text('Đã gửi thông báo thành công'), findsNWidgets(2));
     });
   });
 
