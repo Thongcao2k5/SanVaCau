@@ -161,6 +161,15 @@ class BookingApi {
     return Booking.fromJson(data);
   }
 
+  Future<Booking> collectCash(String id) async {
+    final response = await _apiClient.post(
+      '/bookings/${id.trim()}/collect-cash',
+      token: await _readToken(),
+      body: {},
+    );
+    return Booking.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
   Future<String> _readToken() async {
     final token = await _tokenStorage.readToken();
 

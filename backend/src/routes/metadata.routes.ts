@@ -61,7 +61,6 @@ const metadata: MetadataGroups = {
     { value: "CASH", label: "Tiền mặt" },
     { value: "MOMO", label: "MoMo" },
     { value: "VNPAY", label: "VNPay" },
-    { value: "BANK_TRANSFER", label: "Chuyển khoản ngân hàng" },
     { value: "MOCK", label: "Thanh toán thử nghiệm" },
   ],
 

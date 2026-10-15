@@ -493,6 +493,48 @@ bookingRouter.get("/", requireAuth, requireRole(["ADMIN", "BRANCH_MANAGER", "STA
   }
 });
 
+bookingRouter.post("/:id/collect-cash", requireAuth, requireRole(["ADMIN", "BRANCH_MANAGER", "STAFF"]), async (req, res, next) => {
+  try {
+    const id = parseBigIntId(req.params.id);
+    if (!id) throw new BatchBookingError(400, "Mã lịch đặt không hợp lệ.");
+    const booking = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM booking WHERE id = ${id} FOR UPDATE`;
+      const current = await tx.booking.findUnique({ where: { id }, include: bookingInclude });
+      if (!current) throw new BatchBookingError(404, "Không tìm thấy lịch đặt.");
+      if (req.user!.role !== "ADMIN" && (!req.user!.branchId || current.court.branch_id.toString() !== req.user!.branchId)) {
+        throw new BatchBookingError(403, "Bạn không có quyền thu tiền tại chi nhánh này.");
+      }
+      if (current.status === "CANCELLED") throw new BatchBookingError(409, "Lịch đã hủy không thể thu tiền.");
+      if (current.payment_status === "PAID") return current;
+      if (current.payment_status !== "UNPAID" || (current.payment_method && current.payment_method !== "CASH")) {
+        throw new BatchBookingError(409, "Lịch này không chờ thanh toán tiền mặt.");
+      }
+      const payments = await tx.payment.findMany({ where: { target_type: "BOOKING", target_id: id, status: { in: ["PENDING", "PAID"] } } });
+      if (payments.some(payment => payment.provider !== "CASH" || payment.status === "PAID") || payments.length > 1) {
+        throw new BatchBookingError(409, "Giao dịch đang cần đối soát. Không thu tiền thêm.");
+      }
+      const now = new Date();
+      const data = { amount: current.total_amount, status: "PAID", paid_at: now, updated_at: now };
+      if (payments[0]) {
+        await tx.payment.update({ where: { id: payments[0].id }, data });
+      } else {
+        await tx.payment.create({ data: { ...data, user_id: current.customer_id, target_type: "BOOKING", target_id: id, provider: "CASH", transaction_ref: `CASH_BOOKING_${id}` } });
+      }
+      await tx.audit_log.create({ data: {
+        actor_id: BigInt(req.user!.id), actor_role: req.user!.role, action: "BOOKING_CASH_COLLECTED",
+        entity_type: "booking", entity_id: id,
+        before_data: { paymentStatus: current.payment_status },
+        after_data: { paymentStatus: "PAID", amount: current.total_amount.toString(), paidAt: now.toISOString() },
+      } });
+      return tx.booking.update({ where: { id }, data: { payment_method: "CASH", payment_status: "PAID" }, include: bookingInclude });
+    });
+    res.json({ success: true, data: toBookingResponse(booking) });
+  } catch (error) {
+    if (error instanceof BatchBookingError) { res.status(error.status).json({ success: false, message: error.message }); return; }
+    next(error);
+  }
+});
+
 // PATCH /api/bookings/:id/status
 bookingRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MANAGER", "STAFF"]), async (req, res, next) => {
   try {
@@ -551,6 +593,14 @@ bookingRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MA
     }
 
     const updatedBooking = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM booking WHERE id = ${id} FOR UPDATE`;
+      const current = await tx.booking.findUniqueOrThrow({ where: { id } });
+      if (status === "COMPLETED" && (current.payment_status !== "PAID" || !["CHECKED_IN", "COMPLETED"].includes(current.status))) {
+        throw new BatchBookingError(409, "Cần nhận sân và xác nhận đã thu đủ tiền trước khi hoàn tất.");
+      }
+      if (["COMPLETED", "CANCELLED"].includes(current.status) && current.status !== status) {
+        throw new BatchBookingError(409, "Lịch đã kết thúc không thể đổi trạng thái.");
+      }
       if (status === "CANCELLED" && existingBooking.status !== "CANCELLED") {
         await tx.booking_slot.deleteMany({
           where: {
@@ -596,6 +646,7 @@ bookingRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MA
       },
     });
   } catch (error) {
+    if (error instanceof BatchBookingError) { res.status(error.status).json({ success: false, message: error.message }); return; }
     next(error);
   }
 });

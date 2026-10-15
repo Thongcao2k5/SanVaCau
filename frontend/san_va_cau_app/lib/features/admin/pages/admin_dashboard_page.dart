@@ -25,6 +25,7 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   late final AdminDashboardApi _api;
   late Future<AdminDashboard> _dashboardFuture;
+  String? _selectedDate;
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   void _reload() {
-    final future = _api.getSummary();
+    final future = _api.getSummary(date: _selectedDate);
     setState(() {
       _dashboardFuture = future;
     });
@@ -77,11 +78,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             AdminPageHeader(
               title: 'Trung tâm vận hành',
               subtitle: 'Theo dõi nhanh hoạt động hôm nay',
-              action: IconButton(
-                tooltip: 'Tải lại',
-                onPressed: _reload,
-                color: Colors.white,
-                icon: const Icon(Icons.refresh_rounded),
+              action: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _dateButton(),
+                  IconButton(
+                    tooltip: 'Tải lại',
+                    onPressed: _reload,
+                    color: Colors.white,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                ],
               ),
             ),
             Expanded(child: body),
@@ -95,6 +102,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       appBar: AppBar(
         title: const Text('Tổng quan quản trị'),
         actions: [
+          _dateButton(),
           IconButton(
             tooltip: 'Tải lại',
             onPressed: _reload,
@@ -105,6 +113,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: body,
     );
   }
+
+  Widget _dateButton() => IconButton(
+    tooltip: 'Chọn ngày báo cáo',
+    icon: const Icon(Icons.calendar_month_outlined),
+    onPressed: () async {
+      final date = await showDatePicker(
+        context: context,
+        initialDate: DateTime.tryParse(_selectedDate ?? '') ?? DateTime.now(),
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2100),
+      );
+      if (date == null || !mounted) return;
+      _selectedDate =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      _reload();
+    },
+  );
 }
 
 class _DashboardContent extends StatelessWidget {
@@ -122,6 +147,45 @@ class _DashboardContent extends StatelessWidget {
       children: [
         _ScopeBanner(data: data),
         const SizedBox(height: 18),
+        _MetricCard(
+          label: 'Tổng đã thu',
+          value: _money(data.cashflow.totalCollected),
+          detail: 'Theo ngày nhận tiền • ${data.date}',
+          icon: Icons.payments_outlined,
+          color: AdminTheme.success,
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Thu từ sân: ${_money(data.cashflow.bookingCollected)}'),
+                const SizedBox(height: 8),
+                Text('Thu bán hàng: ${_money(data.cashflow.orderCollected)}'),
+                const Divider(),
+                Text(
+                  'Còn phải thu: ${_money(data.cashflow.totalOutstanding)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tiền sân chưa thu: ${_money(data.cashflow.bookingOutstanding)}',
+                ),
+                Text(
+                  'Tiền hàng chưa thu: ${_money(data.cashflow.orderOutstanding)}',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Chưa thu: lịch sân diễn ra và đơn hàng tạo trong ngày đang xem.',
+                  style: TextStyle(color: AdminTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
             final singleColumn = constraints.maxWidth < 340 || textScale >= 1.3;
@@ -173,9 +237,9 @@ class _DashboardContent extends StatelessWidget {
                 SizedBox(
                   width: cardWidth,
                   child: _MetricCard(
-                    label: 'Doanh thu hoàn tất',
-                    value: _money(data.orders.revenueCompleted),
-                    detail: '${data.orders.completed} đơn hoàn tất',
+                    label: 'Thu bán hàng',
+                    value: _money(data.cashflow.orderCollected),
+                    detail: 'Đã nhận tiền trong ngày',
                     icon: Icons.payments_rounded,
                     color: AdminTheme.success,
                   ),

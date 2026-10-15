@@ -367,6 +367,14 @@ fulfillmentRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANC
     if (status === "CANCELLED" && fulfillment.status !== "CANCELLED") updateData.cancelled_at = new Date();
 
     const updated = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM customer_order WHERE id = ${fulfillment.order_id} FOR UPDATE`;
+      if (status === "PICKED_UP" || status === "DELIVERED") {
+        const order = await tx.customer_order.findUniqueOrThrow({ where: { id: fulfillment.order_id } });
+        const paid = await tx.payment.aggregate({ where: { target_type: "ORDER", target_id: order.id, status: "PAID", provider: { not: "MOCK" } }, _sum: { amount: true } });
+        if (order.status === "CANCELLED" || (paid._sum.amount ?? new Prisma.Decimal(0)).lt(order.total_amount.add(fulfillment.shipping_fee))) {
+          throw new Error("ORDER_PAYMENT_REQUIRED");
+        }
+      }
       const f = await tx.order_fulfillment.update({
         where: { id },
         data: updateData,
@@ -439,6 +447,10 @@ fulfillmentRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANC
     }
 
   } catch (error) {
+    if (error instanceof Error && error.message === "ORDER_PAYMENT_REQUIRED") {
+      res.status(409).json({ success: false, message: "Cần thu đủ tiền trước khi xác nhận khách đã nhận hàng." });
+      return;
+    }
     next(error);
   }
 });

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
+import { Prisma } from "@prisma/client";
 
 export const dashboardRouter = Router();
 
@@ -14,18 +15,12 @@ const parseDateOnly = (value: unknown) => {
 };
 
 const getTodayDateString = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
 };
 
 const getLocalDateRange = (dateString: string) => {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const start = new Date(year, month - 1, day);
-  const end = new Date(year, month - 1, day + 1);
+  const start = new Date(`${dateString}T00:00:00+07:00`);
+  const end = new Date(start.getTime() + 86400000);
 
   return { start, end };
 };
@@ -52,6 +47,41 @@ dashboardRouter.get("/summary", requireAuth, requireRole(["ADMIN", "BRANCH_MANAG
     }
     const { start: startOfDay, end: endOfDay } = getLocalDateRange(targetDateString);
     const bookingDate = new Date(`${targetDateString}T00:00:00.000Z`);
+    const collected = await prisma.$queryRaw<Array<{ source: string; amount: Prisma.Decimal }>>`
+      SELECT p.target_type AS source, SUM(p.amount) AS amount
+      FROM payment p
+      LEFT JOIN booking b ON p.target_type = 'BOOKING' AND b.id = p.target_id
+      LEFT JOIN court c ON c.id = b.court_id
+      LEFT JOIN customer_order o ON p.target_type = 'ORDER' AND o.id = p.target_id
+      WHERE p.status = 'PAID' AND p.provider <> 'MOCK'
+        AND p.paid_at >= ${startOfDay} AND p.paid_at < ${endOfDay}
+        AND (b.id IS NOT NULL OR o.id IS NOT NULL)
+        AND (${branchId}::bigint IS NULL OR COALESCE(c.branch_id, o.branch_id) = ${branchId})
+      GROUP BY p.target_type
+    `;
+    const outstanding = await prisma.$queryRaw<Array<{ source: string; amount: Prisma.Decimal }>>`
+      WITH paid AS (
+        SELECT target_type, target_id, SUM(amount) AS amount FROM payment
+        WHERE status = 'PAID' AND provider <> 'MOCK' GROUP BY target_type, target_id
+      ), balances AS (
+        SELECT 'BOOKING' AS source, GREATEST(b.total_amount - COALESCE(p.amount, 0), 0) AS amount
+        FROM booking b JOIN court c ON c.id = b.court_id
+        LEFT JOIN paid p ON p.target_type = 'BOOKING' AND p.target_id = b.id
+        WHERE b.status <> 'CANCELLED' AND b.payment_status <> 'PAID'
+          AND b.booking_date = ${bookingDate} AND (${branchId}::bigint IS NULL OR c.branch_id = ${branchId})
+        UNION ALL
+        SELECT 'ORDER', GREATEST(o.total_amount + COALESCE(f.shipping_fee, 0) - COALESCE(p.amount, 0), 0)
+        FROM customer_order o LEFT JOIN order_fulfillment f ON f.order_id = o.id
+        LEFT JOIN paid p ON p.target_type = 'ORDER' AND p.target_id = o.id
+        WHERE o.status <> 'CANCELLED' AND o.created_at >= ${startOfDay} AND o.created_at < ${endOfDay}
+          AND (${branchId}::bigint IS NULL OR o.branch_id = ${branchId})
+      ) SELECT source, SUM(amount) AS amount FROM balances GROUP BY source
+    `;
+    const amountFor = (rows: typeof collected, source: string) => rows.find(row => row.source === source)?.amount ?? new Prisma.Decimal(0);
+    const bookingCollected = amountFor(collected, "BOOKING");
+    const orderCollected = amountFor(collected, "ORDER");
+    const bookingOutstanding = amountFor(outstanding, "BOOKING");
+    const orderOutstanding = amountFor(outstanding, "ORDER");
 
     // 1. Booking summary
     const bookingWhere = {
@@ -237,6 +267,12 @@ dashboardRouter.get("/summary", requireAuth, requireRole(["ADMIN", "BRANCH_MANAG
           branchId: branchId ? branchId.toString() : null,
         },
         date: targetDateString,
+        cashflow: {
+          totalCollected: bookingCollected.add(orderCollected).toString(),
+          bookingCollected: bookingCollected.toString(), orderCollected: orderCollected.toString(),
+          totalOutstanding: bookingOutstanding.add(orderOutstanding).toString(),
+          bookingOutstanding: bookingOutstanding.toString(), orderOutstanding: orderOutstanding.toString(),
+        },
         bookings: bookingsCount,
         orders: ordersCount,
         inventory: {

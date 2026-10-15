@@ -331,8 +331,16 @@ void main() {
       expect(find.text('0987654321'), findsOneWidget);
       expect(find.text('Chi nhánh VIP'), findsOneWidget);
       expect(find.text('Sân số 1'), findsOneWidget);
+      expect(find.text('Chưa thanh toán · Cần thu 200.000 đ'), findsOneWidget);
+      expect(find.text('Thu tiền mặt'), findsOneWidget);
+      await tester.tap(find.text('Thu tiền mặt'));
+      await tester.pumpAndSettle();
+      expect(find.text('Xác nhận thu tiền mặt'), findsOneWidget);
+      expect(find.text('Đã nhận đủ tiền'), findsOneWidget);
+      await tester.tap(find.text('Bỏ qua'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('10:00 - 11:00'), 150, scrollable: find.byType(Scrollable).first);
       expect(find.text('10:00 - 11:00'), findsOneWidget);
-      expect(find.text('Chưa thanh toán'), findsWidgets);
 
       // Actions should be present for BOOKED
       expect(find.widgetWithText(ElevatedButton, 'Nhận sân'), findsOneWidget);
@@ -351,6 +359,7 @@ void main() {
     Booking booking = Booking(
       id: '99',
       status: 'BOOKED',
+      paymentStatus: 'PAID',
       totalAmount: '200000',
       branch: const BookingBranch(id: '2', name: 'Chi nhánh VIP'),
       court: const BookingCourt(id: '3', name: 'Sân số 1'),
@@ -365,6 +374,7 @@ void main() {
       booking = Booking(
         id: '99',
         status: status,
+        paymentStatus: 'PAID',
         totalAmount: '200000',
         branch: const BookingBranch(id: '2', name: 'Chi nhánh VIP'),
         court: const BookingCourt(id: '3', name: 'Sân số 1'),

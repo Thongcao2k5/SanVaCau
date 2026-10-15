@@ -81,7 +81,7 @@ void main() {
       await expectAdminAccessibility(tester);
       for (final label in [
         'Lịch đặt hôm nay',
-        'Doanh thu hoàn tất',
+        'Thu bán hàng',
         'Sắp hết hàng',
         'Chưa có hoạt động gần đây',
       ]) {

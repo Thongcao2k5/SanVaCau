@@ -5,7 +5,6 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/booking_api.dart';
 import '../models/booking.dart';
-import 'booking_payment_page.dart';
 
 class BookingDetailPage extends StatefulWidget {
   const BookingDetailPage({required this.booking, this.bookingApi, super.key});
@@ -637,26 +636,10 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
                 if (booking.paymentStatus != 'PAID' &&
                     booking.status == 'BOOKED') ...[
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.payment),
-                    label: const Text('Thanh toán VNPAY / MoMo'),
-                    onPressed: _isCancelling
-                        ? null
-                        : () async {
-                            final provider = await chooseBookingPayment(
-                              context,
-                            );
-                            if (provider == null || !context.mounted) return;
-                            await Navigator.of(context).push<void>(
-                              MaterialPageRoute(
-                                builder: (_) => BookingPaymentPage(
-                                  bookings: [booking],
-                                  provider: provider,
-                                ),
-                              ),
-                            );
-                            if (context.mounted) Navigator.of(context).pop(true);
-                          },
+                  const ListTile(
+                    leading: Icon(Icons.payments_outlined),
+                    title: Text('Thanh toán tiền mặt tại sân'),
+                    subtitle: Text('Nhân viên sẽ xác nhận sau khi nhận tiền.'),
                   ),
                 ],
                 // Cancel Button

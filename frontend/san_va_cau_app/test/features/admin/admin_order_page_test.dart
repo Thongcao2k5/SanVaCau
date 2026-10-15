@@ -260,6 +260,13 @@ void main() {
     expect(find.text('Chi nhánh VIP'), findsOneWidget);
     expect(find.text('Vợt cầu lông'), findsOneWidget);
     expect(find.text('200.001 đ x 1'), findsOneWidget);
+    expect(find.text('Thu tiền mặt'), findsOneWidget);
+    await tester.tap(find.text('Thu tiền mặt'));
+    await tester.pumpAndSettle();
+    expect(find.text('Xác nhận thu tiền mặt'), findsOneWidget);
+    expect(find.text('Đã nhận đủ tiền'), findsOneWidget);
+    await tester.tap(find.text('Bỏ qua'));
+    await tester.pumpAndSettle();
 
     // Actions should be present because it's PENDING
     expect(find.text('Sẵn sàng nhận hàng'), findsOneWidget);
