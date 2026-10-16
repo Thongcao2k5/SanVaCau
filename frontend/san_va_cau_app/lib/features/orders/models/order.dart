@@ -12,6 +12,8 @@ class Order {
     this.branch,
     this.customer,
     this.items = const [],
+    this.paymentStatus = 'UNPAID',
+    this.amountDue,
   });
 
   final String id;
@@ -19,6 +21,8 @@ class Order {
   final String branchId;
   final String status;
   final String totalAmount;
+  final String paymentStatus;
+  final String? amountDue;
   final DateTime? createdAt;
   final DateTime? readyAt;
   final DateTime? completedAt;
@@ -30,6 +34,8 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
       id: json['id']?.toString() ?? '',
+      paymentStatus: json['paymentStatus']?.toString() ?? 'UNPAID',
+      amountDue: json['amountDue']?.toString(),
       customerId: json['customerId']?.toString() ?? '',
       branchId: json['branchId']?.toString() ?? '',
       status: json['status']?.toString() ?? '',

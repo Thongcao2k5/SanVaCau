@@ -8,6 +8,19 @@ import { createNotification } from "../lib/notification.js";
 
 export const orderRouter = Router();
 
+class OrderPaymentError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+
+const orderPaymentSummary = async (id: bigint, total: Prisma.Decimal) => {
+  const [paid, fulfillment] = await Promise.all([
+    prisma.payment.aggregate({ where: { target_type: "ORDER", target_id: id, status: "PAID", provider: { not: "MOCK" } }, _sum: { amount: true } }),
+    prisma.order_fulfillment.findUnique({ where: { order_id: id } }),
+  ]);
+  const amountDue = Prisma.Decimal.max(total.add(fulfillment?.shipping_fee ?? 0).sub(paid._sum.amount ?? 0), 0);
+  return { paymentStatus: amountDue.isZero() ? "PAID" : "UNPAID", amountDue: amountDue.toString() };
+};
+
 const parseBigIntId = (value: string | string[] | undefined | null) => {
   return typeof value === "string" && /^\d+$/.test(value) ? BigInt(value) : null;
 };
@@ -192,8 +205,9 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
     // Check inventory
     const inventoryChecks = await Promise.all(
       orderSourceItems.map(async (item) => {
-        const inventory = await prisma.inventory.findUnique({
+        const inventory = await prisma.inventory.findFirst({
           where: { product_variant_id: item.product_variant_id },
+          orderBy: { id: "asc" },
         });
         return { item, inventory };
       })
@@ -246,10 +260,10 @@ orderRouter.post("/", requireAuth, requireRole("CUSTOMER"), async (req, res, nex
       });
 
       // Decrease inventory only if enough stock is still available inside the transaction.
-      for (const item of orderSourceItems) {
+      for (const { item, inventory } of inventoryChecks) {
         const inventoryUpdate = await tx.inventory.updateMany({
           where: {
-            product_variant_id: item.product_variant_id,
+            id: inventory!.id,
             quantity: {
               gte: item.quantity,
             },
@@ -457,10 +471,43 @@ orderRouter.get("/:id", requireAuth, requireRole(["ADMIN", "BRANCH_MANAGER", "ST
     res.json({
       success: true,
       data: {
-        order: toOrderResponse(order),
+        order: { ...toOrderResponse(order), ...await orderPaymentSummary(order.id, order.total_amount) },
       },
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+orderRouter.post("/:id/collect-cash", requireAuth, requireRole(["ADMIN", "BRANCH_MANAGER", "STAFF"]), async (req, res, next) => {
+  try {
+    const id = parseBigIntId(req.params.id);
+    if (!id) throw new OrderPaymentError(400, "Mã đơn hàng không hợp lệ.");
+    await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM customer_order WHERE id = ${id} FOR UPDATE`;
+      const order = await tx.customer_order.findUnique({ where: { id }, include: { order_fulfillment: true } });
+      if (!order) throw new OrderPaymentError(404, "Không tìm thấy đơn hàng.");
+      if (req.user!.role !== "ADMIN" && (!req.user!.branchId || String(order.branch_id) !== req.user!.branchId)) {
+        throw new OrderPaymentError(403, "Bạn không có quyền thu tiền tại chi nhánh này.");
+      }
+      if (order.status === "CANCELLED") throw new OrderPaymentError(409, "Không thể thu tiền đơn đã hủy.");
+      const amount = order.total_amount.add(order.order_fulfillment?.shipping_fee ?? 0);
+      const payments = await tx.payment.findMany({ where: { target_type: "ORDER", target_id: id, status: { in: ["PENDING", "PAID"] } } });
+      const paid = payments.filter(payment => payment.status === "PAID" && payment.provider !== "MOCK");
+      if (paid.reduce((total, payment) => total.add(payment.amount), new Prisma.Decimal(0)).gte(amount)) return;
+      if (payments.length > 1 || payments.some(payment => payment.provider !== "CASH" || payment.status === "PAID")) {
+        throw new OrderPaymentError(409, "Giao dịch cần đối soát. Không thu tiền thêm.");
+      }
+      const now = new Date();
+      const data = { amount, status: "PAID", paid_at: now, updated_at: now };
+      if (payments[0]) await tx.payment.update({ where: { id: payments[0].id }, data });
+      else await tx.payment.create({ data: { ...data, user_id: order.customer_id, target_type: "ORDER", target_id: id, provider: "CASH", transaction_ref: `CASH_ORDER_${id}` } });
+      await tx.audit_log.create({ data: { actor_id: BigInt(req.user!.id), actor_role: req.user!.role, action: "ORDER_CASH_COLLECTED", entity_type: "order", entity_id: id,
+        after_data: { amount: amount.toString(), paidAt: now.toISOString(), paymentStatus: "PAID" } } });
+    });
+    res.json({ success: true });
+  } catch (error) {
+    if (error instanceof OrderPaymentError) { res.status(error.status).json({ success: false, message: error.message }); return; }
     next(error);
   }
 });
@@ -533,6 +580,15 @@ orderRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MANA
     }
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM customer_order WHERE id = ${id} FOR UPDATE`;
+      const current = await tx.customer_order.findUniqueOrThrow({ where: { id }, include: { order_fulfillment: true } });
+      if (["COMPLETED", "CANCELLED"].includes(current.status)) throw new OrderPaymentError(409, "Đơn hàng đã kết thúc.");
+      if (status === "COMPLETED") {
+        const paid = await tx.payment.aggregate({ where: { target_type: "ORDER", target_id: id, status: "PAID", provider: { not: "MOCK" } }, _sum: { amount: true } });
+        if ((paid._sum.amount ?? new Prisma.Decimal(0)).lt(current.total_amount.add(current.order_fulfillment?.shipping_fee ?? 0))) {
+          throw new OrderPaymentError(409, "Vui lòng xác nhận đã thu đủ tiền trước khi hoàn tất đơn hàng.");
+        }
+      }
       // Re-increment inventory if cancelled
       if (status === "CANCELLED" && existingOrder.status !== "CANCELLED") {
         for (const item of existingOrder.order_item) {
@@ -584,6 +640,7 @@ orderRouter.patch("/:id/status", requireAuth, requireRole(["ADMIN", "BRANCH_MANA
       },
     });
   } catch (error) {
+    if (error instanceof OrderPaymentError) { res.status(error.status).json({ success: false, message: error.message }); return; }
     next(error);
   }
 });

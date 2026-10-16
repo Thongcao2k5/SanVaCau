@@ -268,20 +268,19 @@ void main() {
     expect(find.text('Sân 2: 06:00 – 06:30'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Xác nhận đặt sân'));
     await tester.pumpAndSettle();
-    expect(api.bookedCourts, isNull);
-    await tester.tap(find.text('VNPAY'));
-    await tester.pumpAndSettle();
     expect(api.bookedCourts, {
       '1': ['1', '3'],
       '2': ['1'],
     });
 
-    expect(api.method, 'VNPAY');
-    expect(find.text('Cổng thanh toán tạm gián đoạn'), findsOneWidget);
+    expect(api.method, 'CASH');
+    expect(
+      find.text('Đặt sân thành công. Vui lòng thanh toán tiền mặt tại sân.'),
+      findsOneWidget,
+    );
+    expect(find.text('VNPAY'), findsNothing);
     expect(find.text('Đã thanh toán'), findsNothing);
-    expect(find.text('Thanh toán'), findsNWidgets(2));
-    await tester.tap(find.byTooltip('Back'));
-    await tester.pumpAndSettle();
+    expect(find.text('Thanh toán'), findsNothing);
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, 'TIẾP THEO'))

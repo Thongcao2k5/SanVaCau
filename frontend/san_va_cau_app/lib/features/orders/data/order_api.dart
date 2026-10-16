@@ -110,6 +110,14 @@ class OrderApi {
     return Order.fromJson(data['order'] as Map<String, dynamic>);
   }
 
+  Future<void> collectCash(String id) async {
+    await _apiClient.post(
+      '/orders/$id/collect-cash',
+      token: await _readToken(),
+      body: {},
+    );
+  }
+
   Future<String> _readToken() async {
     final token = await _tokenStorage.readToken();
 

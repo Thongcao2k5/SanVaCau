@@ -88,8 +88,66 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
     }
   }
 
+  Future<void> _collectCash() async {
+    if (_isUpdating) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận thu tiền mặt'),
+        content: Text(
+          'Bạn đã nhận đủ ${_formatCurrency(_currentBooking.totalAmount)} từ khách?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Bỏ qua'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Đã nhận đủ tiền'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _isUpdating = true);
+    try {
+      final updated = await _api.collectCash(_currentBooking.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã ghi nhận thanh toán tiền mặt')),
+      );
+      Navigator.pop(context, updated);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'Không thể ghi nhận thu tiền. Vui lòng thử lại.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
   Future<void> _updateStatus(String newStatus) async {
     if (_isUpdating) return;
+
+    if (newStatus == 'COMPLETED' && _currentBooking.paymentStatus != 'PAID') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Vui lòng thu đủ tiền mặt trước khi hoàn tất lịch đặt.',
+          ),
+        ),
+      );
+      return;
+    }
 
     String dialogTitle = '';
     String dialogContent = '';
@@ -206,6 +264,33 @@ class _AdminBookingDetailPageState extends State<AdminBookingDetailPage> {
               ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (_currentBooking.status != 'CANCELLED' &&
+                      _currentBooking.paymentStatus != 'PAID' &&
+                      (_currentBooking.paymentMethod == null ||
+                          _currentBooking.paymentMethod == 'CASH'))
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Chưa thanh toán · Cần thu ${_formatCurrency(_currentBooking.totalAmount)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            FilledButton.icon(
+                              onPressed: _isUpdating ? null : _collectCash,
+                              icon: const Icon(Icons.payments_outlined),
+                              label: const Text('Thu tiền mặt'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Header
                   Card(
                     elevation: 0,

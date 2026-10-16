@@ -8,9 +8,6 @@ import '../../branches/data/branch_api.dart';
 import '../../branches/models/branch.dart';
 import '../../cart/models/cart.dart';
 import '../../payments/data/payment_api.dart';
-import '../../payments/models/payment.dart';
-import '../../payments/pages/momo_payment_page.dart';
-import '../../payments/pages/vnpay_payment_page.dart';
 import '../../vouchers/data/voucher_api.dart';
 import '../../vouchers/models/voucher_quote.dart';
 import '../data/fulfillment_api.dart';
@@ -57,7 +54,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Branch? _selectedBranch;
   String _fulfillmentType = 'PICKUP';
   CustomerAddress? _selectedAddress;
-  String _paymentProvider = 'CASH';
   VoucherQuote? _voucherQuote;
   bool _isValidatingVoucher = false;
   bool _isSubmitting = false;
@@ -104,14 +100,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     Order? createdOrder;
-    Payment? payment;
     try {
-      if (_paymentProvider == 'MOMO_SANDBOX') {
-        await _paymentApi.ensureMomoConfigured();
-      }
-      if (_paymentProvider == 'VNPAY_SANDBOX') {
-        await _paymentApi.ensureVnpayConfigured();
-      }
       createdOrder = await _orderApi.createOrder(
         branchId: _selectedBranch!.id,
         productVariantId: widget.buyNowProductVariantId,
@@ -138,44 +127,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
       }
 
-      payment = await _paymentApi.createPayment(
+      await _paymentApi.createPayment(
         targetType: 'ORDER',
         targetId: createdOrder.id,
-        provider: _paymentProvider,
+        provider: 'CASH',
       );
-      if (!mounted) return;
-
-      if (_paymentProvider == 'MOMO_SANDBOX' ||
-          _paymentProvider == 'VNPAY_SANDBOX') {
-        final paid = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(
-            builder: (_) => payment!.provider == 'VNPAY_SANDBOX'
-                ? VnpayPaymentPage(payment: payment)
-                : MomoPaymentPage(payment: payment),
-          ),
-        );
-        if (!mounted) return;
-        if (paid != true) {
-          await showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Đơn hàng đã được lưu'),
-              content: const Text(
-                'Thanh toán chưa hoàn tất. Bạn có thể xem trạng thái trong Lịch sử thanh toán.',
-              ),
-              actions: [
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Hoàn tất'),
-                ),
-              ],
-            ),
-          );
-          if (mounted) Navigator.of(context).pop(true);
-          return;
-        }
-      }
-
       if (!mounted) return;
 
       await showDialog(
@@ -185,10 +141,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           title: const Text('Đặt hàng thành công'),
           content: Text(
             _fulfillmentType == 'DELIVERY'
-                ? 'Đơn hàng đã được ghi nhận và sẽ giao đến địa chỉ bạn chọn.'
-                : _paymentProvider == 'CASH'
-                ? 'Đơn hàng đã được ghi nhận. Bạn sẽ thanh toán khi nhận tại cơ sở.'
-                : 'Đơn hàng đã được ghi nhận. Thanh toán ${_paymentProvider == 'VNPAY_SANDBOX' ? 'VNPay' : 'MoMo'} Sandbox thành công.',
+                ? 'Đơn hàng đã được ghi nhận. Bạn sẽ thanh toán tiền mặt khi nhận hàng.'
+                : 'Đơn hàng đã được ghi nhận. Bạn sẽ thanh toán tiền mặt khi nhận tại cơ sở.',
           ),
           actions: [
             FilledButton(
@@ -552,41 +506,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   ),
                             ),
                             const SizedBox(height: 12),
-                            SegmentedButton<String>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: 'CASH',
-                                  icon: Icon(Icons.payments_outlined),
-                                  label: Text('Tiền mặt'),
-                                ),
-                                ButtonSegment(
-                                  value: 'MOMO_SANDBOX',
-                                  icon: Icon(
-                                    Icons.account_balance_wallet_outlined,
-                                  ),
-                                  label: Text('MoMo'),
-                                ),
-                                ButtonSegment(
-                                  value: 'VNPAY_SANDBOX',
-                                  icon: Icon(Icons.account_balance_outlined),
-                                  label: Text('VNPay'),
-                                ),
-                              ],
-                              selected: {_paymentProvider},
-                              onSelectionChanged: (selection) {
-                                setState(() {
-                                  _paymentProvider = selection.first;
-                                });
-                              },
+                            const ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(Icons.payments_outlined),
+                              title: Text('Tiền mặt'),
                             ),
                             const SizedBox(height: 10),
-                            Text(
-                              _paymentProvider == 'CASH'
-                                  ? 'Thanh toán khi nhận hàng.'
-                                  : 'Thanh toán thử nghiệm qua cổng ${_paymentProvider == 'VNPAY_SANDBOX' ? 'VNPay' : 'MoMo'} Sandbox.',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                              ),
+                            const Text(
+                              'Thanh toán tiền mặt khi nhận hàng.',
+                              style: TextStyle(color: AppColors.textSecondary),
                             ),
                           ],
                         ),

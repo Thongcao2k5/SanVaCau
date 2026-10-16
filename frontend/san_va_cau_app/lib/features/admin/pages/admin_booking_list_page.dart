@@ -490,7 +490,9 @@ class _BookingCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 Text(
-                  'Tổng cộng',
+                  booking.paymentStatus == 'PAID'
+                      ? 'Đã thanh toán'
+                      : 'Chưa thanh toán · Cần thu',
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: AdminTheme.textSecondary),
                 ),

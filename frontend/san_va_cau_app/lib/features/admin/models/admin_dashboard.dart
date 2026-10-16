@@ -9,9 +9,11 @@ class AdminDashboard {
     required this.courts,
     required this.latestBookings,
     required this.latestOrders,
+    this.cashflow = const AdminCashflow(),
   });
 
   final String role;
+  final AdminCashflow cashflow;
   final String? branchId;
   final String date;
   final AdminBookingSummary bookings;
@@ -27,6 +29,7 @@ class AdminDashboard {
       role: scope['role']?.toString() ?? '',
       branchId: scope['branchId']?.toString(),
       date: json['date']?.toString() ?? '',
+      cashflow: AdminCashflow.fromJson(_map(json['cashflow'])),
       bookings: AdminBookingSummary.fromJson(_map(json['bookings'])),
       orders: AdminOrderSummary.fromJson(_map(json['orders'])),
       inventory: AdminInventorySummary.fromJson(_map(json['inventory'])),
@@ -39,6 +42,32 @@ class AdminDashboard {
           .toList(),
     );
   }
+}
+
+class AdminCashflow {
+  const AdminCashflow({
+    this.totalCollected = 0,
+    this.bookingCollected = 0,
+    this.orderCollected = 0,
+    this.totalOutstanding = 0,
+    this.bookingOutstanding = 0,
+    this.orderOutstanding = 0,
+  });
+  final double totalCollected;
+  final double bookingCollected;
+  final double orderCollected;
+  final double totalOutstanding;
+  final double bookingOutstanding;
+  final double orderOutstanding;
+
+  factory AdminCashflow.fromJson(Map<String, dynamic> json) => AdminCashflow(
+    totalCollected: _decimal(json['totalCollected']),
+    bookingCollected: _decimal(json['bookingCollected']),
+    orderCollected: _decimal(json['orderCollected']),
+    totalOutstanding: _decimal(json['totalOutstanding']),
+    bookingOutstanding: _decimal(json['bookingOutstanding']),
+    orderOutstanding: _decimal(json['orderOutstanding']),
+  );
 }
 
 class AdminBookingSummary {

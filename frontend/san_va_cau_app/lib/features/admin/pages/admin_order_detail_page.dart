@@ -88,6 +88,53 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
     _ => AdminStatusTone.neutral,
   };
 
+  Future<void> _collectCash(Order order) async {
+    if (_isUpdating) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận thu tiền mặt'),
+        content: Text(
+          'Bạn đã nhận đủ ${_formatCurrency(order.amountDue ?? order.totalAmount)} cho đơn #${order.id}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Bỏ qua'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Đã nhận đủ tiền'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _isUpdating = true);
+    try {
+      await _api.collectCash(order.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã ghi nhận thu tiền mặt')));
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'Không thể ghi nhận thu tiền. Vui lòng thử lại.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
   Future<void> _updateStatus(String newStatus) async {
     if (_isUpdating) return;
 
@@ -207,6 +254,33 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
                           child: ListView(
                             padding: const EdgeInsets.all(16),
                             children: [
+                              if (order.status != 'CANCELLED')
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Text(
+                                          order.paymentStatus == 'PAID'
+                                              ? 'Đã thanh toán'
+                                              : 'Chưa thanh toán · Cần thu ${_formatCurrency(order.amountDue ?? order.totalAmount)}',
+                                        ),
+                                        if (order.paymentStatus != 'PAID')
+                                          FilledButton.icon(
+                                            onPressed: _isUpdating
+                                                ? null
+                                                : () => _collectCash(order),
+                                            icon: const Icon(
+                                              Icons.payments_outlined,
+                                            ),
+                                            label: const Text('Thu tiền mặt'),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               // Header Info
                               Card(
                                 elevation: 0,

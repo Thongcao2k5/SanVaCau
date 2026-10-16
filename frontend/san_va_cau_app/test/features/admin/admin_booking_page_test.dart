@@ -17,6 +17,10 @@ class _FakeBookingApi extends BookingApi {
   final Future<List<Booking>> Function(String? date, String? status)
   fetchBookingsResult;
   final Future<Booking> Function(String id, String status)? updateResult;
+  Future<Booking> Function(String id)? collectResult;
+
+  @override
+  Future<Booking> collectCash(String id) => collectResult!(id);
 
   @override
   Future<List<Booking>> getAdminBookings({
@@ -43,6 +47,58 @@ Widget _app(BookingApi api) {
 }
 
 void main() {
+  for (final fails in [false, true]) {
+    testWidgets('cash collection confirmation and response, fails=$fails', (
+      tester,
+    ) async {
+      var calls = 0;
+      final booking = Booking(
+        id: '99',
+        court: const BookingCourt(id: '3', name: 'Sân số 1'),
+        branch: const BookingBranch(id: '2', name: 'Chi nhánh'),
+        bookingDate: DateTime(2026, 10, 16),
+        slots: const [],
+        status: 'BOOKED',
+        totalAmount: '200000',
+      );
+      final api = _FakeBookingApi((date, status) async => [booking]);
+      api.collectResult = (id) async {
+        expect(id, '99');
+        calls++;
+        if (fails) {
+          throw ApiException(message: 'Không thể thu tiền', statusCode: 409);
+        }
+        return Booking(
+          id: id,
+          court: booking.court,
+          branch: booking.branch,
+          bookingDate: booking.bookingDate,
+          slots: booking.slots,
+          status: 'BOOKED',
+          totalAmount: '200000',
+          paymentStatus: 'PAID',
+        );
+      };
+      await tester.pumpWidget(_app(api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lịch #99'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Thu tiền mặt'));
+      await tester.pumpAndSettle();
+      expect(calls, 0);
+      await tester.tap(find.text('Đã nhận đủ tiền'));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      if (fails) {
+        expect(find.text('Không thể thu tiền'), findsOneWidget);
+        expect(find.text('Thu tiền mặt'), findsOneWidget);
+      } else {
+        expect(find.text('Đã ghi nhận thanh toán tiền mặt'), findsOneWidget);
+        expect(find.text('Thu tiền mặt'), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
   for (final size in [
     const Size(320, 800),
     const Size(375, 800),
@@ -331,8 +387,20 @@ void main() {
       expect(find.text('0987654321'), findsOneWidget);
       expect(find.text('Chi nhánh VIP'), findsOneWidget);
       expect(find.text('Sân số 1'), findsOneWidget);
+      expect(find.text('Chưa thanh toán · Cần thu 200.000 đ'), findsOneWidget);
+      expect(find.text('Thu tiền mặt'), findsOneWidget);
+      await tester.tap(find.text('Thu tiền mặt'));
+      await tester.pumpAndSettle();
+      expect(find.text('Xác nhận thu tiền mặt'), findsOneWidget);
+      expect(find.text('Đã nhận đủ tiền'), findsOneWidget);
+      await tester.tap(find.text('Bỏ qua'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('10:00 - 11:00'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('10:00 - 11:00'), findsOneWidget);
-      expect(find.text('Chưa thanh toán'), findsWidgets);
 
       // Actions should be present for BOOKED
       expect(find.widgetWithText(ElevatedButton, 'Nhận sân'), findsOneWidget);
@@ -351,6 +419,7 @@ void main() {
     Booking booking = Booking(
       id: '99',
       status: 'BOOKED',
+      paymentStatus: 'PAID',
       totalAmount: '200000',
       branch: const BookingBranch(id: '2', name: 'Chi nhánh VIP'),
       court: const BookingCourt(id: '3', name: 'Sân số 1'),
@@ -365,6 +434,7 @@ void main() {
       booking = Booking(
         id: '99',
         status: status,
+        paymentStatus: 'PAID',
         totalAmount: '200000',
         branch: const BookingBranch(id: '2', name: 'Chi nhánh VIP'),
         court: const BookingCourt(id: '3', name: 'Sân số 1'),

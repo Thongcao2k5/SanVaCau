@@ -13,7 +13,6 @@ import '../data/booking_api.dart';
 import '../models/court.dart';
 import '../widgets/booking_timeline.dart';
 import 'court_detail_page.dart';
-import 'booking_payment_page.dart';
 import '../../payments/data/payment_api.dart';
 
 class BookingPage extends StatefulWidget {
@@ -235,7 +234,7 @@ class _BookingPageState extends State<BookingPage> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Thanh toán bằng VNPAY hoặc MoMo. Lịch đặt chỉ được ghi nhận đã thanh toán sau khi cổng thanh toán xác nhận.',
+                'Thanh toán tiền mặt tại sân. Nhân viên sẽ xác nhận sau khi nhận tiền.',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -255,29 +254,19 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Future<void> _submit() async {
-    final provider = await chooseBookingPayment(context);
-    if (provider == null || !mounted) return;
     setState(() => _submitting = true);
     try {
-      final paymentApi = widget.paymentApi ?? PaymentApi();
-      if (provider == 'VNPAY_SANDBOX') {
-        await paymentApi.ensureVnpayConfigured();
-      } else {
-        await paymentApi.ensureMomoConfigured();
-      }
-      final bookings = await _bookingApi.createBookings(
+      await _bookingApi.createBookings(
         bookingDate: _dateKey,
         courtSlots: _courtSlots,
-        paymentMethod: provider == 'VNPAY_SANDBOX' ? 'VNPAY' : 'MOMO',
+        paymentMethod: 'CASH',
       );
       if (!mounted) return;
       _refresh();
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => BookingPaymentPage(
-            bookings: bookings,
-            provider: provider,
-            paymentApi: paymentApi,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đặt sân thành công. Vui lòng thanh toán tiền mặt tại sân.',
           ),
         ),
       );

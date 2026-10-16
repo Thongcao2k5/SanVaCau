@@ -210,7 +210,7 @@ paymentRouter.patch("/:id/mock-success", requireAuth, async (req, res, next) => 
       return;
     }
 
-    if (!["CASH", "MOCK"].includes(payment.provider)) {
+    if (payment.provider !== "MOCK") {
       res.status(403).json({ success: false, message: "This payment cannot be completed through a demo endpoint" });
       return;
     }

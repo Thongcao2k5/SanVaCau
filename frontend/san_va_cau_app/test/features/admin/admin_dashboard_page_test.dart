@@ -80,7 +80,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await expectAdminAccessibility(tester);
       for (final label in [
-        'Doanh thu hôm nay',
+        'Tổng đã thu',
         'Lịch đặt hôm nay',
         'Đơn chờ xử lý',
         '2 sản phẩm sắp hết',
@@ -148,7 +148,7 @@ void main() {
 
     expect(find.text('Toàn hệ thống'), findsOneWidget);
     expect(find.text('2026-10-06'), findsOneWidget);
-    expect(find.text('Doanh thu hôm nay'), findsOneWidget);
+    expect(find.text('Tổng đã thu'), findsOneWidget);
     expect(find.text('0đ'), findsOneWidget);
     expect(find.text('Tồn kho đang ổn định'), findsOneWidget);
     expect(find.text('Chưa có hoạt động gần đây'), findsOneWidget);
@@ -178,6 +178,11 @@ void main() {
         role: 'STAFF',
         branchId: '1',
         date: '2026-10-06',
+        cashflow: AdminCashflow(
+          totalCollected: 170000,
+          bookingCollected: 20000,
+          orderCollected: 150000,
+        ),
         bookings: AdminBookingSummary(
           total: 10,
           booked: 2,
@@ -236,7 +241,8 @@ void main() {
 
     expect(find.text('Chi nhánh #1'), findsOneWidget);
     expect(find.text('2026-10-06'), findsOneWidget);
-    expect(find.text('150.000đ'), findsOneWidget);
+    expect(find.text('170.000đ'), findsOneWidget);
+    expect(find.text('Thu bán hàng: 150.000đ'), findsOneWidget);
     expect(find.text('10'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('1 sản phẩm sắp hết'), findsOneWidget);
@@ -356,6 +362,11 @@ void main() {
         role: 'ADMIN',
         branchId: null,
         date: '2026-10-12',
+        cashflow: AdminCashflow(
+          totalCollected: 1300000,
+          bookingCollected: 50000,
+          orderCollected: 1250000,
+        ),
         bookings: AdminBookingSummary(
           total: 12,
           booked: 4,
@@ -392,7 +403,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tổng quan'), findsOneWidget);
-    expect(find.text('1.250.000đ'), findsOneWidget);
+    expect(find.text('1.300.000đ'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Lịch đặt hôm nay'),
       200,

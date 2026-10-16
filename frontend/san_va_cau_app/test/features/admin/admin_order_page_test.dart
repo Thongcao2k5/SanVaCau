@@ -17,6 +17,10 @@ class _FakeOrderApi extends OrderApi {
 
   final Future<List<Order>> Function(String? status) fetchOrdersResult;
   final Future<Order> Function(String id, String status)? updateResult;
+  Future<void> Function(String id)? collectResult;
+
+  @override
+  Future<void> collectCash(String id) => collectResult!(id);
 
   @override
   Future<List<Order>> getAdminOrders({
@@ -64,6 +68,48 @@ class _FakeFulfillmentApi extends FulfillmentApi {
 }
 
 void main() {
+  for (final fails in [false, true]) {
+    testWidgets('cash order confirmation and response, fails=$fails', (
+      tester,
+    ) async {
+      var calls = 0;
+      final order = Order(
+        id: '99',
+        customerId: '1',
+        branchId: '2',
+        status: 'PENDING',
+        totalAmount: '200000',
+        amountDue: '230000',
+      );
+      final api = _FakeOrderApi((status) async => [order]);
+      api.collectResult = (id) async {
+        expect(id, '99');
+        calls++;
+        if (fails) {
+          throw ApiException(message: 'Không thể thu tiền', statusCode: 409);
+        }
+      };
+      await tester.pumpWidget(_app(api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Đơn #99'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Thu tiền mặt'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('230.000 đ cho đơn #99'), findsOneWidget);
+      expect(calls, 0);
+      await tester.tap(find.text('Đã nhận đủ tiền'));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      if (fails) {
+        expect(find.text('Không thể thu tiền'), findsOneWidget);
+        expect(find.text('Thu tiền mặt'), findsOneWidget);
+      } else {
+        expect(find.text('Đã ghi nhận thu tiền mặt'), findsOneWidget);
+        expect(find.text('Thu tiền mặt'), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
   for (final size in [
     const Size(320, 800),
     const Size(375, 800),
@@ -260,6 +306,13 @@ void main() {
     expect(find.text('Chi nhánh VIP'), findsOneWidget);
     expect(find.text('Vợt cầu lông'), findsOneWidget);
     expect(find.text('200.001 đ x 1'), findsOneWidget);
+    expect(find.text('Thu tiền mặt'), findsOneWidget);
+    await tester.tap(find.text('Thu tiền mặt'));
+    await tester.pumpAndSettle();
+    expect(find.text('Xác nhận thu tiền mặt'), findsOneWidget);
+    expect(find.text('Đã nhận đủ tiền'), findsOneWidget);
+    await tester.tap(find.text('Bỏ qua'));
+    await tester.pumpAndSettle();
 
     // Actions should be present because it's PENDING
     expect(find.text('Sẵn sàng nhận hàng'), findsOneWidget);
